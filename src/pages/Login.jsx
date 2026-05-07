@@ -19,7 +19,7 @@ export default function Login() {
   }
 
   const quickLogin = (user) => {
-    try { login(user.email, user.password) } catch {}
+    try { login(user.email, user.password) } catch (err) { setError(err.message) }
   }
 
   return (

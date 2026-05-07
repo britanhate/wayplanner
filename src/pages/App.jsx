@@ -1,20 +1,42 @@
-import { useState } from 'react'
-import Topbar from '../components/UI/Topbar'
-import MapView from '../components/Map/MapView'
-import NotesView from '../components/Notes/NotesView'
-import FinanceView from '../components/Finance/FinanceView'
+import { useState } from "react";
+import Topbar from "../components/UI/Topbar";
+import BottomNav from "../components/UI/BottomNav";
+import MapView from "../components/Map/MapView";
+import NotesView from "../components/Notes/NotesView";
+import FinanceView from "../components/Finance/FinanceView";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('map')
+  const [activeTab, setActiveTab] = useState("map");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="app">
-      <Topbar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Topbar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
       <div className="content">
-        {activeTab === 'map'     && <MapView />}
-        {activeTab === 'notes'   && <NotesView />}
-        {activeTab === 'finance' && <FinanceView />}
+        {activeTab === "map" && (
+          <MapView
+            sidebarOpen={sidebarOpen}
+            onSidebarClose={() => setSidebarOpen(false)}
+          />
+        )}
+        {activeTab === "notes" && (
+          <NotesView
+            sidebarOpen={sidebarOpen}
+            onSidebarClose={() => setSidebarOpen(false)}
+          />
+        )}
+        {activeTab === "finance" && (
+          <FinanceView
+            sidebarOpen={sidebarOpen}
+            onSidebarClose={() => setSidebarOpen(false)}
+          />
+        )}
       </div>
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
-  )
+  );
 }
