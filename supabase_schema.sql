@@ -33,6 +33,7 @@ create table expenses (
   amount numeric not null,
   currency text default 'UAH',
   category text not null,
+  point_id uuid references points(id) on delete cascade,
   created_at timestamptz default now()
 );
 
@@ -66,6 +67,7 @@ create policy "public update notes" on notes   for update using (true);
 create policy "public read expenses"  on expenses  for select using (true);
 create policy "public write expenses" on expenses  for insert with check (true);
 create policy "public delete expenses" on expenses for delete using (true);
+create policy "public update expenses" on expenses for update using (true);
 
 create policy "public read settings"  on trip_settings for select using (true);
 create policy "public write settings" on trip_settings for all using (true);

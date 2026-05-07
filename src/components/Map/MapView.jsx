@@ -3,16 +3,20 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../lib/AuthContext";
 import { usePoints } from "../../hooks/usePoints";
+import { useExpenses } from "../../hooks/useExpenses";
+import { supabase } from "../../lib/supabase";
 import { buildRoute } from "../../lib/arcgis";
 import { POINT_TYPES } from "../../lib/constants";
 import SearchBox from "./SearchBox";
 import PointsSidebar from "./PointsSidebar";
 import AddPointModal from "./AddPointModal";
+import EditPointModal from "./EditPointModal";
 import RoutePanel, { buildLegs } from "./RoutePanel";
 
 export default function MapView() {
   const { user } = useAuth();
-  const { points, addPoint, deletePoint } = usePoints();
+  const { points, addPoint, deletePoint, updatePoint } = usePoints();
+  const { addExpense, updateExpense, deleteExpenseByPointId } = useExpenses();
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersRef = useRef({});
@@ -20,6 +24,7 @@ export default function MapView() {
 
   const [pendingPos, setPendingPos] = useState(null);
   const [geocoded, setGeocoded] = useState(null);
+  const [editingPoint, setEditingPoint] = useState(null);
   const [routeMode, setRouteMode] = useState(false);
   const [routeStep, setRouteStep] = useState(0); // 1=pick A, 2=pick B
   const [routeFrom, setRouteFrom] = useState(null);
@@ -98,9 +103,81 @@ export default function MapView() {
   };
 
   const handleSavePoint = async (data) => {
-    await addPoint({ ...data, created_by: user.id });
-    setPendingPos(null);
-    setGeocoded(null);
+    try {
+      const newPoint = { ...data, created_by: user.id };
+      const { data: inserted, error } = await supabase
+        .from("points")
+        .insert([newPoint])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Create expense if there's an estimated cost
+      if (data.estimated_cost && data.estimated_cost > 0) {
+        await addExpense({
+          name: `🏷️ ${data.name}`,
+          amount: data.estimated_cost,
+          category: "Місце",
+          currency: data.currency,
+          created_by: user.id,
+          point_id: inserted.id,
+        });
+      }
+
+      setPendingPos(null);
+      setGeocoded(null);
+    } catch (error) {
+      console.error("Error saving point:", error);
+      alert("Помилка при збереженні точки");
+    }
+  };
+
+  const handleEditPoint = async (data) => {
+    try {
+      const pointId = editingPoint.id;
+      const oldCost = editingPoint.estimated_cost;
+
+      // Update point
+      await updatePoint(pointId, data);
+
+      // Sync expense: if cost changed or added
+      if (data.estimated_cost && data.estimated_cost > 0) {
+        // Check if expense exists for this point
+        const { data: existingExpense } = await supabase
+          .from("expenses")
+          .select("id")
+          .eq("point_id", pointId)
+          .single();
+
+        if (existingExpense) {
+          // Update existing expense
+          await updateExpense(existingExpense.id, {
+            name: `🏷️ ${data.name}`,
+            amount: data.estimated_cost,
+            currency: data.currency,
+          });
+        } else {
+          // Create new expense
+          await addExpense({
+            name: `🏷️ ${data.name}`,
+            amount: data.estimated_cost,
+            category: "Місце",
+            currency: data.currency,
+            created_by: user.id,
+            point_id: pointId,
+          });
+        }
+      } else if (oldCost && !data.estimated_cost) {
+        // Cost was removed, delete the expense
+        await deleteExpenseByPointId(pointId);
+      }
+
+      setEditingPoint(null);
+    } catch (error) {
+      console.error("Error editing point:", error);
+      alert("Помилка при редагуванні точки");
+    }
   };
 
   // ROUTE
@@ -198,6 +275,7 @@ export default function MapView() {
           points={points}
           onFly={flyTo}
           onDelete={deletePoint}
+          onEdit={setEditingPoint}
           routeMode={routeMode}
           routeFrom={routeFrom}
           onRouteToggle={handleRoutePointSelect}
@@ -233,6 +311,14 @@ export default function MapView() {
             setPendingPos(null);
             setGeocoded(null);
           }}
+        />
+      )}
+
+      {editingPoint && (
+        <EditPointModal
+          point={editingPoint}
+          onSave={handleEditPoint}
+          onClose={() => setEditingPoint(null)}
         />
       )}
     </div>

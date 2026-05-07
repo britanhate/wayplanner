@@ -373,6 +373,23 @@ body {
   align-self: center;
   flex-shrink: 0;
 }
+.point-actions {
+  display: flex;
+  gap: 4px;
+  align-self: center;
+  flex-shrink: 0;
+}
+.point-edit {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink3);
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.12s;
+  padding: 2px 4px;
+}
+.point-item:hover .point-edit,
 .point-item:hover .point-del {
   opacity: 1;
 }
