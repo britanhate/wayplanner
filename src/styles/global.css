@@ -91,6 +91,38 @@ body {
   flex-shrink: 0;
 }
 
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 24px;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.hamburger-btn:hover {
+  background: var(--bg3);
+}
+
+.hamburger-btn .material-icons {
+  font-size: 24px;
+  display: flex;
+}
+
+@media (max-width: 768px) {
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .topbar {
+    gap: 12px;
+  }
+}
+
 .logo {
   font-size: 18px;
   font-weight: 700;
@@ -1581,6 +1613,72 @@ body {
   .budget-inp {
     width: 100%;
   }
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 100;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+  }
+  .content {
+    margin-bottom: 60px;
+  }
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  height: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink3);
+  transition: all 0.2s;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.bottom-nav-item:hover {
+  color: var(--ink2);
+}
+
+.bottom-nav-item.active {
+  color: var(--accent);
+  background: rgba(10, 132, 255, 0.1);
+}
+
+.bottom-nav-item .material-icons {
+  font-size: 24px;
+}
+
+.bottom-nav-label {
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
 }
 
 /* ── SCROLLBAR ── */
