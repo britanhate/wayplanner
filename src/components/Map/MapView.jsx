@@ -46,7 +46,7 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
 
     L.control
       .zoom({
-        position: "topright",
+        position: "bottomright",
       })
       .addTo(mapInstance.current);
 
