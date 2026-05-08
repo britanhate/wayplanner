@@ -1663,7 +1663,7 @@ body {
   flex-direction: row;
   justify-content: space-around;
   align-items: center;
-  z-index: 100;
+  z-index: 1000;
 }
 
 @media (max-width: 768px) {
