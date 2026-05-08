@@ -6,23 +6,23 @@ export const USERS = [
     email: "utkinam@wayplanner.app",
     password: "maria2024",
     color: "#e8622a",
-    avatar: "🧡",
+    avatar: "👩🏻‍💼",
   },
   {
     id: "user2",
     name: "Богдан",
     email: "pishcholinb@wayplanner.app",
     password: "bohdan2024",
-    color: "#2a7de8",
-    avatar: "💙",
+    color: "#2abf6e",
+    avatar: "🧑🏼‍💼",
   },
   {
     id: "user3",
     name: "Нікіта",
     email: "kuschn@wayplanner.app",
     password: "nikita2024",
-    color: "#2abf6e",
-    avatar: "💚",
+    color: "#2a7de8",
+    avatar: "🧑🏻‍💼",
   },
 ];
 
