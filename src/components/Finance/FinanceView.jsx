@@ -3,7 +3,7 @@ import { useAuth } from "../../lib/AuthContext";
 import { useExpenses } from "../../hooks/useExpenses";
 import { EXPENSE_CATEGORIES, CURRENCIES, USERS } from "../../lib/constants";
 
-export default function FinanceView() {
+export default function FinanceView({ sidebarOpen, onSidebarClose }) {
   const { user } = useAuth();
   const { expenses, budget, addExpense, deleteExpense, saveBudget } =
     useExpenses();
