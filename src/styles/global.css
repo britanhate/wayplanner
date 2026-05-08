@@ -193,7 +193,6 @@ body {
   border: none;
   cursor: pointer;
   color: var(--ink3);
-  font-size: 16px;
   padding: 4px;
   border-radius: 6px;
   transition: all 0.2s;
@@ -204,6 +203,10 @@ body {
 
 .logout-btn:hover {
   color: var(--accent3);
+}
+
+.logout-btn .material-icons {
+  font-size: 18px;
 }
 
 /* ── MAP VIEW ── */
@@ -1424,15 +1427,13 @@ body {
   .topbar {
     gap: 12px;
     padding: 10px 12px;
-    flex-wrap: wrap;
   }
   .logo {
     font-size: 14px;
+    display: none;
   }
   .nav-tabs {
-    order: 3;
-    width: 100%;
-    margin: 0;
+    display: none;
   }
   .user-badge {
     margin-left: 0;
