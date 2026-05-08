@@ -6,7 +6,7 @@ export const USERS = [
     email: "utkinam@wayplanner.app",
     password: "maria2024",
     color: "#e8622a",
-    avatar: "👩🏻‍💼",
+    avatar: "🦸🏻‍♀️",
   },
   {
     id: "user2",
@@ -14,7 +14,7 @@ export const USERS = [
     email: "pishcholinb@wayplanner.app",
     password: "bohdan2024",
     color: "#2abf6e",
-    avatar: "🧑🏼‍💼",
+    avatar: "🦸🏼",
   },
   {
     id: "user3",
@@ -22,7 +22,7 @@ export const USERS = [
     email: "kuschn@wayplanner.app",
     password: "nikita2024",
     color: "#2a7de8",
-    avatar: "🧑🏻‍💼",
+    avatar: "🦸🏽‍♂️",
   },
 ];
 
