@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../../lib/AuthContext";
 import { useNotes } from "../../hooks/useNotes";
 
-export default function NotesView() {
+export default function NotesView({ sidebarOpen, onSidebarClose }) {
   const { user } = useAuth();
   const { notes, addNote, updateNote, deleteNote } = useNotes(user?.id);
   const [activeId, setActiveId] = useState(null);
