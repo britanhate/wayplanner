@@ -30,7 +30,7 @@ export const POINT_TYPES = {
   hotel: { label: "Готель", emoji: "🏨", color: "#2a7de8" },
   sight: { label: "Пам'ятка", emoji: "📍", color: "#e8622a" },
   food: { label: "Ресторан", emoji: "🍽", color: "#2abf6e" },
-  airport: {label: 'Аеропорт', emoji: '', color: '#e8b52a'}
+  airport: {label: 'Аеропорт', emoji: '✈️', color: '#e8b52a'}
 };
 
 export const EXPENSE_CATEGORIES = [
