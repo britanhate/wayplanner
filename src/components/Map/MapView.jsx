@@ -13,7 +13,7 @@ import AddPointModal from "./AddPointModal";
 import EditPointModal from "./EditPointModal";
 import RoutePanel, { buildLegs } from "./RoutePanel";
 
-export default function MapView() {
+export default function MapView({ sidebarOpen, onSidebarClose }) {
   const { user } = useAuth();
   const { points, addPoint, deletePoint, updatePoint } = usePoints();
   const { addExpense, updateExpense, deleteExpenseByPointId } = useExpenses();
@@ -30,7 +30,6 @@ export default function MapView() {
   const [routeFrom, setRouteFrom] = useState(null);
   const [routeResult, setRouteResult] = useState(null);
   const [routeBuilding, setRouteBuilding] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Init map
   useEffect(() => {
@@ -247,7 +246,12 @@ export default function MapView() {
     <div className="map-view">
       <div className={`map-sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-section">
-          <SearchBox onResult={handleGeocodeResult} />
+          <SearchBox
+            onResult={(result) => {
+              handleGeocodeResult(result);
+              onSidebarClose();
+            }}
+          />
         </div>
 
         <div className="sidebar-section">
@@ -259,6 +263,7 @@ export default function MapView() {
                     setRouteMode(false);
                     setRouteStep(0);
                     setRouteFrom(null);
+                    onSidebarClose();
                   }
                 : startRouteMode
             }
@@ -273,9 +278,15 @@ export default function MapView() {
 
         <PointsSidebar
           points={points}
-          onFly={flyTo}
+          onFly={(p) => {
+            flyTo(p);
+            onSidebarClose();
+          }}
           onDelete={deletePoint}
-          onEdit={setEditingPoint}
+          onEdit={(p) => {
+            setEditingPoint(p);
+            onSidebarClose();
+          }}
           routeMode={routeMode}
           routeFrom={routeFrom}
           onRouteToggle={handleRoutePointSelect}
@@ -283,12 +294,6 @@ export default function MapView() {
       </div>
 
       <div className="map-wrap">
-        <button
-          className="sidebar-toggle"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          ☰
-        </button>
         <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
 
         {routeResult && (
