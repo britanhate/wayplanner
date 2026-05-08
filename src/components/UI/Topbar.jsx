@@ -15,14 +15,6 @@ export default function Topbar({ activeTab, onTabChange, onSidebarToggle }) {
         <span className="material-icons">menu</span>
       </button>
 
-      <div className="user-badge" style={{ "--user-color": user?.color }}>
-        <span className="user-avatar">{user?.avatar}</span>
-        <span className="user-name">{user?.name}</span>
-        <button className="logout-btn" onClick={logout} title="Вийти">
-          <span className="material-icons">logout</span>
-        </button>
-      </div>
-
       <div className="logo">
         <span className="logo-dot" />
         WayPlanner
@@ -39,6 +31,14 @@ export default function Topbar({ activeTab, onTabChange, onSidebarToggle }) {
           </button>
         ))}
       </nav>
+
+      <div className="user-badge" style={{ "--user-color": user?.color }}>
+        <span className="user-avatar">{user?.avatar}</span>
+        <span className="user-name">{user?.name}</span>
+        <button className="logout-btn" onClick={logout} title="Вийти">
+          <span className="material-icons">logout</span>
+        </button>
+      </div>
     </header>
   );
 }
