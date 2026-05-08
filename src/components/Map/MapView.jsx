@@ -34,18 +34,30 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
   // Init map
   useEffect(() => {
     if (mapInstance.current) return;
-    mapInstance.current = L.map(mapRef.current, { zoomControl: true }).setView(
-      [48.8566, 2.3522],
-      12,
-    );
+
+    mapInstance.current = L.map(mapRef.current, {
+      zoomControl: false,
+    }).setView([48.8566, 2.3522], 12);
+
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap",
       maxZoom: 19,
     }).addTo(mapInstance.current);
 
+    L.control
+      .zoom({
+        position: "topright",
+      })
+      .addTo(mapInstance.current);
+
     mapInstance.current.on("click", (e) => {
       if (routeModeRef.current) return;
-      setPendingPos({ lat: e.latlng.lat, lng: e.latlng.lng });
+
+      setPendingPos({
+        lat: e.latlng.lat,
+        lng: e.latlng.lng,
+      });
+
       setGeocoded(null);
     });
   }, []);
