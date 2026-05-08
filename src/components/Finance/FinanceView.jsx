@@ -178,6 +178,18 @@ export default function FinanceView({ sidebarOpen, onSidebarClose }) {
         </div>
 
         <div className={`finance-right ${statsOpen ? "open" : ""}`}>
+          <div className="drawer-header">
+            <span className="sidebar-section-title" style={{ margin: 0 }}>
+              Статистика
+            </span>
+            <button
+              className="close-btn"
+              onClick={() => setStatsOpen(false)}
+              title="Закрити"
+            >
+              ✕
+            </button>
+          </div>
           <div className="stat-card">
             <div className="stat-label">Витрачено</div>
             <div className="stat-value">

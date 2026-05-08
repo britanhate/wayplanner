@@ -84,7 +84,7 @@ body {
 .topbar {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 16px;
   padding: 12px 24px;
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
@@ -148,7 +148,7 @@ body {
 .nav-tabs {
   display: flex;
   gap: 8px;
-  margin: 0 auto;
+  margin-left: auto;
 }
 
 .tab-btn {
@@ -1168,6 +1168,32 @@ body {
   color: var(--accent3);
 }
 
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink3);
+  font-size: 20px;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: var(--bg3);
+  color: var(--ink);
+}
+
 .stat-card {
   background: var(--bg3);
   border: 1px solid var(--border);
@@ -1243,7 +1269,7 @@ body {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   background: linear-gradient(135deg, var(--bg2) 0%, var(--bg) 100%);
   padding: 20px;
 }
@@ -1542,7 +1568,7 @@ body {
     top: 0;
     right: 0;
     width: calc(100% - 32px);
-    max-height: 60%;
+    max-height: 45%;
     z-index: 1000;
     background: var(--bg2);
     border: 1px solid var(--border);
@@ -1553,7 +1579,8 @@ body {
     padding: 16px;
   }
   .finance-right.open {
-    display: block;
+    display: flex;
+    flex-direction: column;
   }
 
   .modal-box {
@@ -1658,6 +1685,7 @@ body {
   left: 0;
   right: 0;
   height: 60px;
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
   background: var(--bg2);
   border-top: 1px solid var(--border);
   flex-direction: row;
@@ -1672,6 +1700,7 @@ body {
   }
   .content {
     margin-bottom: 60px;
+    margin-bottom: calc(60px + max(0px, env(safe-area-inset-bottom)));
   }
 }
 
