@@ -15,12 +15,13 @@ import RoutePanel, { buildLegs } from "./RoutePanel";
 
 export default function MapView({ sidebarOpen, onSidebarClose }) {
   const { user } = useAuth();
-  const { points, addPoint, deletePoint, updatePoint } = usePoints();
+  const { points, deletePoint, updatePoint } = usePoints();
   const { addExpense, updateExpense, deleteExpenseByPointId } = useExpenses();
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersRef = useRef({});
   const routeLayers = useRef([]);
+  const routeModeRef = useRef(false);
 
   const [pendingPos, setPendingPos] = useState(null);
   const [geocoded, setGeocoded] = useState(null);
@@ -62,8 +63,6 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     });
   }, []);
 
-  // Keep ref for routeMode (used in map click closure)
-  const routeModeRef = useRef(false);
   useEffect(() => {
     routeModeRef.current = routeMode;
   }, [routeMode]);
