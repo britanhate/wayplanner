@@ -1243,8 +1243,8 @@ body {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: var(--bg);
+  justify-content: flex-end;
+  background: linear-gradient(135deg, var(--bg2) 0%, var(--bg) 100%);
   padding: 20px;
 }
 
@@ -1395,6 +1395,36 @@ body {
   font-size: 12px;
   color: var(--ink3);
   line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .login-wrap {
+    justify-content: center;
+    padding: 16px;
+  }
+  .login-box {
+    max-width: 100%;
+    padding: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-box {
+    padding: 24px;
+  }
+  .login-logo {
+    font-size: 20px;
+  }
+  .login-subtitle {
+    font-size: 13px;
+  }
+  .quick-users {
+    gap: 8px;
+  }
+  .quick-user-btn {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
 }
 
 .leaflet-popup-content-wrapper {
