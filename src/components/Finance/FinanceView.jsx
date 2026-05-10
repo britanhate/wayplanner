@@ -5,7 +5,7 @@ import { EXPENSE_CATEGORIES, CURRENCIES, USERS } from "../../lib/constants";
 
 export default function FinanceView({ sidebarOpen, onSidebarClose }) {
   const { user } = useAuth();
-  const { expenses, budget, addExpense, deleteExpense, saveBudget } =
+  const { expenses, budget, addExpense, deleteExpense, updateExpense, saveBudget } =
     useExpenses();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -15,6 +15,8 @@ export default function FinanceView({ sidebarOpen, onSidebarClose }) {
   const [statsOpen, setStatsOpen] = useState(false);
 
   const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const totalPaid = expenses.reduce((s, e) => s + (e.paid ? e.amount || 0 : 0), 0);
+  const totalUnpaid = total - totalPaid;
   const pct =
     budget.amount > 0
       ? Math.min(100, Math.round((total / budget.amount) * 100))
@@ -39,6 +41,7 @@ export default function FinanceView({ sidebarOpen, onSidebarClose }) {
       category,
       created_by: user.id,
       currency: budget.currency,
+      paid: false,
     });
     setName("");
     setAmount("");
@@ -46,6 +49,10 @@ export default function FinanceView({ sidebarOpen, onSidebarClose }) {
 
   const handleBudgetSave = async () => {
     await saveBudget({ amount: parseFloat(budgetInput) || 0, currency });
+  };
+
+  const togglePaid = async (expense) => {
+    await updateExpense(expense.id, { paid: !expense.paid });
   };
 
   // Category breakdown
@@ -143,12 +150,21 @@ export default function FinanceView({ sidebarOpen, onSidebarClose }) {
               const col = catColors[e.category] || "#8888aa";
               return (
                 <div key={e.id} className="expense-item">
+                  <input
+                    type="checkbox"
+                    className="expense-checkbox"
+                    checked={e.paid || false}
+                    onChange={() => togglePaid(e)}
+                    title={e.paid ? "Позначено як сплачено" : "Позначити як сплачено"}
+                  />
                   <div
                     className="expense-cat-dot"
                     style={{ background: col }}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="expense-name">{e.name}</div>
+                    <div className="expense-name" style={{ textDecoration: e.paid ? "line-through" : "none", opacity: e.paid ? 0.6 : 1 }}>
+                      {e.name}
+                    </div>
                     <div className="expense-meta">
                       <span style={{ color: creator.color }}>
                         {creator.avatar} {creator.name}
@@ -201,7 +217,19 @@ export default function FinanceView({ sidebarOpen, onSidebarClose }) {
             <div className="progress-bar">
               <div
                 className="progress-fill"
-                style={{
+                
+
+          <div className="stat-card" style={{ marginTop: 8, borderTop: "1px solid var(--ink2)", paddingTop: 12 }}>
+            <div style={{ fontSize: 12, color: "var(--ink3)", marginBottom: 8 }}>Статус оплати:</div>
+            <div className="stat-row">
+              <span style={{ color: "#2abf6e" }}>✓ Сплачено:</span>
+              <span style={{ fontWeight: 600 }}>{totalPaid.toFixed(0)} {budget.currency}</span>
+            </div>
+            <div className="stat-row">
+              <span style={{ color: "#e8622a" }}>◐ Не сплачено:</span>
+              <span style={{ fontWeight: 600 }}>{totalUnpaid.toFixed(0)} {budget.currency}</span>
+            </div>
+          </div>style={{
                   width: pct + "%",
                   background: pct >= 100 ? "#e8622a" : "#2abf6e",
                 }}

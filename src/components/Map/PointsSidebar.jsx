@@ -26,7 +26,7 @@ export default function PointsSidebar({
       {!points.length ? (
         <div className="empty-hint">Шукайте адресу або клацніть по карті</div>
       ) : (
-        points.map((p) => {
+        points.sort((a, b) => a.name.localeCompare(b.name, 'uk')).map((p) => {
           const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
           const creator = getUserInfo(p.created_by);
           const isRouteFrom = routeFrom?.id === p.id;
@@ -53,6 +53,11 @@ export default function PointsSidebar({
                   {p.estimated_cost && (
                     <span className="point-cost">
                       · {p.estimated_cost} {p.currency}
+                    </span>
+                  )}
+                  {p.point_date && (
+                    <span className="point-date">
+                      · 📅 {new Date(p.point_date).toLocaleDateString("uk-UA")}
                     </span>
                   )}
                 </div>
