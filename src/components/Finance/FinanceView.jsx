@@ -217,8 +217,16 @@ export default function FinanceView({ sidebarOpen, onSidebarClose }) {
             <div className="progress-bar">
               <div
                 className="progress-fill"
-                
-
+                style={{
+                  width: pct + "%",
+                  background: pct >= 100 ? "#e8622a" : "#2abf6e",
+                }}
+              />
+            </div>
+            <div style={{ fontSize: 11, color: "var(--ink3)" }}>
+              {pct}% використано
+            </div>
+          </div>
           <div className="stat-card" style={{ marginTop: 8, borderTop: "1px solid var(--ink2)", paddingTop: 12 }}>
             <div style={{ fontSize: 12, color: "var(--ink3)", marginBottom: 8 }}>Статус оплати:</div>
             <div className="stat-row">
@@ -228,15 +236,6 @@ export default function FinanceView({ sidebarOpen, onSidebarClose }) {
             <div className="stat-row">
               <span style={{ color: "#e8622a" }}>◐ Не сплачено:</span>
               <span style={{ fontWeight: 600 }}>{totalUnpaid.toFixed(0)} {budget.currency}</span>
-            </div>
-          </div>style={{
-                  width: pct + "%",
-                  background: pct >= 100 ? "#e8622a" : "#2abf6e",
-                }}
-              />
-            </div>
-            <div style={{ fontSize: 11, color: "var(--ink3)" }}>
-              {pct}% використано
             </div>
           </div>
 
