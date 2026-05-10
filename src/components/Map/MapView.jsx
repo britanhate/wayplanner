@@ -40,7 +40,7 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
       zoomControl: false,
     }).setView([48.8566, 2.3522], 12);
 
-    L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+    L.tileLayer('http://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png', {
       attribution: "© OpenStreetMap © OpenTopoMap",
       maxZoom: 19,
     }).addTo(mapInstance.current);
