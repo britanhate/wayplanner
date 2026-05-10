@@ -10,6 +10,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
   );
   const [currency, setCurrency] = useState(point.currency || "EUR");
   const [comment, setComment] = useState(point.comment || "");
+  const [pointDate, setPointDate] = useState(point.point_date || "");
 
   const handleSave = () => {
     if (!name.trim()) return;
@@ -20,6 +21,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
       estimated_cost: estimatedCost ? parseFloat(estimatedCost) : null,
       currency,
       comment: comment.trim(),
+      point_date: pointDate || null,
     });
   };
 
@@ -66,6 +68,18 @@ export default function EditPointModal({ point, onSave, onClose }) {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Коротко про місце..."
           />
+
+          <div className="field-row">
+            <div style={{ flex: 1 }}>
+              <label className="field-label">Дата</label>
+              <input
+                className="field-inp"
+                type="date"
+                value={pointDate}
+                onChange={(e) => setPointDate(e.target.value)}
+              />
+            </div>
+          </div>
 
           <div className="field-row">
             <div style={{ flex: 1 }}>

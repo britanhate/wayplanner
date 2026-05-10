@@ -13,6 +13,7 @@ create table points (
   estimated_cost numeric,
   currency text default 'EUR',
   comment text,
+  point_date date,
   created_at timestamptz default now()
 );
 
@@ -33,6 +34,7 @@ create table expenses (
   amount numeric not null,
   currency text default 'UAH',
   category text not null,
+  paid boolean default false,
   point_id uuid references points(id) on delete cascade,
   created_at timestamptz default now()
 );
