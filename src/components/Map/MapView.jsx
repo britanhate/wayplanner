@@ -40,8 +40,8 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
       zoomControl: false,
     }).setView([48.8566, 2.3522], 12);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap",
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      attribution: "© OpenStreetMap © CARTO",
       maxZoom: 19,
     }).addTo(mapInstance.current);
 
