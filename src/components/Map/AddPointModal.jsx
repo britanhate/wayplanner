@@ -10,6 +10,56 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
   const [comment, setComment] = useState("");
   const [pointDate, setPointDate] = useState("");
   const [isCompleted, setIsCompleted] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
+
+  const handleAddAttachment = () => {
+    if (newAttachmentUrl.trim()) {
+      setAttachments([
+        ...attachments,
+        {
+          url: newAttachmentUrl.trim(),
+          name: newAttachmentUrl.split("/").pop(),
+        },
+      ]);
+      setNewAttachmentUrl("");
+    }
+  };
+
+  const handleFileSelect = async (e) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (let file of files) {
+      // Only accept image files
+      if (!file.type.startsWith("image/")) {
+        alert("Будь ласка, виберіть тільки зображення");
+        continue;
+      }
+
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target.result;
+        setAttachments([
+          ...attachments,
+          {
+            data: base64,
+            name: file.name,
+            type: file.type,
+          },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Reset file input
+    e.target.value = "";
+  };
+
+  const handleRemoveAttachment = (index) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
+  };
 
   const handleSave = () => {
     if (!name.trim()) return;
@@ -22,6 +72,7 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
       comment: comment.trim(),
       point_date: pointDate || null,
       is_completed: isCompleted,
+      attachments,
       lat: position.lat,
       lng: position.lng,
       addr: geocoded?.addr || null,
@@ -121,15 +172,32 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
           />
 
           <label className="field-label" style={{ marginTop: "12px" }}>
-            📎 Приложення
+            � Фото
           </label>
+          <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileSelect}
+              style={{
+                flex: 1,
+                padding: "8px",
+                border: "1px solid #ddd",
+                borderRadius: "6px",
+                fontSize: "13px",
+              }}
+            />
+          </div>
+
+          <label className="field-label">📎 URL приложення (опційно)</label>
           <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
             <input
               type="text"
               className="field-inp"
               value={newAttachmentUrl}
               onChange={(e) => setNewAttachmentUrl(e.target.value)}
-              placeholder="URL фото, документа тощо..."
+              placeholder="https://example.com/file.pdf"
               onKeyPress={(e) => e.key === "Enter" && handleAddAttachment()}
               style={{ margin: 0 }}
             />
@@ -150,8 +218,14 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
               +
             </button>
           </div>
+
           {attachments.length > 0 && (
             <div style={{ marginBottom: "12px" }}>
+              <div
+                style={{ fontSize: "12px", color: "#666", marginBottom: "6px" }}
+              >
+                {attachments.length} файл/файлів додано
+              </div>
               {attachments.map((att, idx) => (
                 <div
                   key={idx}
@@ -166,8 +240,44 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
                     fontSize: "13px",
                   }}
                 >
+                  {att.type && att.type.startsWith("image/") ? (
+                    <div
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        background: "white",
+                        borderRadius: "4px",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <img
+                        src={att.data || att.url}
+                        alt={att.name}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        background: "#ddd",
+                        borderRadius: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "18px",
+                      }}
+                    >
+                      📄
+                    </div>
+                  )}
                   <span style={{ flex: 1, wordBreak: "break-all" }}>
-                    {typeof att === "string" ? att : att.name}
+                    {att.name}
                   </span>
                   <button
                     type="button"
