@@ -11,6 +11,26 @@ export default function EditPointModal({ point, onSave, onClose }) {
   const [currency, setCurrency] = useState(point.currency || "EUR");
   const [comment, setComment] = useState(point.comment || "");
   const [pointDate, setPointDate] = useState(point.point_date || "");
+  const [isCompleted, setIsCompleted] = useState(point.is_completed || false);
+  const [attachments, setAttachments] = useState(point.attachments || []);
+  const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
+
+  const handleAddAttachment = () => {
+    if (newAttachmentUrl.trim()) {
+      setAttachments([
+        ...attachments,
+        {
+          url: newAttachmentUrl.trim(),
+          name: newAttachmentUrl.split("/").pop(),
+        },
+      ]);
+      setNewAttachmentUrl("");
+    }
+  };
+
+  const handleRemoveAttachment = (index) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
+  };
 
   const handleSave = () => {
     if (!name.trim()) return;
@@ -22,6 +42,8 @@ export default function EditPointModal({ point, onSave, onClose }) {
       currency,
       comment: comment.trim(),
       point_date: pointDate || null,
+      is_completed: isCompleted,
+      attachments,
     });
   };
 
@@ -114,6 +136,104 @@ export default function EditPointModal({ point, onSave, onClose }) {
             placeholder="Додаткові нотатки..."
             rows={2}
           />
+
+          <label className="field-label" style={{ marginTop: "12px" }}>
+            📎 Приложення
+          </label>
+          <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
+            <input
+              type="text"
+              className="field-inp"
+              value={newAttachmentUrl}
+              onChange={(e) => setNewAttachmentUrl(e.target.value)}
+              placeholder="URL фото, документа тощо..."
+              onKeyPress={(e) => e.key === "Enter" && handleAddAttachment()}
+              style={{ margin: 0 }}
+            />
+            <button
+              type="button"
+              onClick={handleAddAttachment}
+              style={{
+                padding: "8px 14px",
+                background: "#2a7de8",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              +
+            </button>
+          </div>
+          {attachments.length > 0 && (
+            <div style={{ marginBottom: "12px" }}>
+              {attachments.map((att, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "8px",
+                    background: "#f2f2f7",
+                    borderRadius: "6px",
+                    marginBottom: "6px",
+                    fontSize: "13px",
+                  }}
+                >
+                  <span style={{ flex: 1, wordBreak: "break-all" }}>
+                    {typeof att === "string" ? att : att.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveAttachment(idx)}
+                    style={{
+                      background: "#ff3b30",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      padding: "4px 8px",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      fontWeight: "500",
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div
+            style={{
+              marginTop: "16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <input
+              type="checkbox"
+              id="isCompleted"
+              checked={isCompleted}
+              onChange={(e) => setIsCompleted(e.target.checked)}
+              style={{ cursor: "pointer", width: "18px", height: "18px" }}
+            />
+            <label
+              htmlFor="isCompleted"
+              style={{
+                cursor: "pointer",
+                margin: 0,
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              ✓ Завдання виконано
+            </label>
+          </div>
         </div>
 
         <div className="modal-footer">

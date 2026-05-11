@@ -14,6 +14,8 @@ create table points (
   currency text default 'EUR',
   comment text,
   point_date date,
+  is_completed boolean default false,
+  attachments jsonb default '[]'::jsonb,
   created_at timestamptz default now()
 );
 
@@ -78,3 +80,7 @@ create policy "public write settings" on trip_settings for all using (true);
 alter publication supabase_realtime add table points;
 alter publication supabase_realtime add table notes;
 alter publication supabase_realtime add table expenses;
+
+-- МІГРАЦІЯ (виконати окремо, якщо таблиці вже існують):
+-- ALTER TABLE points ADD COLUMN is_completed boolean DEFAULT false;
+-- ALTER TABLE points ADD COLUMN attachments jsonb DEFAULT '[]'::jsonb;
