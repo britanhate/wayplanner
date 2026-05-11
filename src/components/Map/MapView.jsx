@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../lib/AuthContext";
@@ -30,7 +30,7 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
   const [geocoded, setGeocoded] = useState(null);
   const [editingPoint, setEditingPoint] = useState(null);
   const [routeMode, setRouteMode] = useState(false);
-  const [routeStep, setRouteStep] = useState(0); // 1=pick A, 2=pick B
+  const [routeStep, setRouteStep] = useState(0);
   const [routeFrom, setRouteFrom] = useState(null);
   const [routeResult, setRouteResult] = useState(null);
   const [routeBuilding, setRouteBuilding] = useState(false);
@@ -43,7 +43,6 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
         const response = await fetch("/metro_paris.geojson");
         const text = await response.text();
 
-        // Parse NDJSON format
         const lines = text
           .trim()
           .split("\n")
@@ -68,105 +67,41 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     loadMetroData();
   }, []);
 
-  // Render metro lines
-  const renderMetro = () => {
+  const clearMetro = useCallback(() => {
+    metroLayersRef.current.forEach((layer) => layer.remove());
+    metroLayersRef.current = [];
+  }, []);
+
+  const renderMetro = useCallback(() => {
     if (!mapInstance.current || !metroDataRef.current) return;
 
     clearMetro();
 
-    // Separate nodes and edges
-    const nodes = metroDataRef.current.filter(
-      (f) => f.properties.type === "node",
-    );
     const edges = metroDataRef.current.filter(
-      (f) => f.properties.type === "edge",
+      (f) => f.geometry && f.geometry.type === "LineString",
     );
 
-    // Build node map for coordinates
-    const nodeMap = {};
-    nodes.forEach((node) => {
-      const id = node.properties.database_id;
-      const coords = node.geometry.coordinates;
-      nodeMap[id] = { lat: coords[1], lng: coords[0] }; // GeoJSON is [lng, lat]
-    });
-
-    // Group edges by line
-    const lines = {};
     edges.forEach((edge) => {
-      const lineName =
-        edge.properties.database_ref === "OSM"
-          ? "Paris Metro"
-          : edge.properties.database_id || "Unknown";
-
-      if (!lines[lineName]) {
-        lines[lineName] = [];
-      }
-      lines[lineName].push(edge);
-    });
-
-    // Draw each line with connected coordinates
-    Object.entries(lines).forEach(([lineName, edgeList]) => {
-      // Create a map of edges for path reconstruction
-      const edgesBySource = {};
-      edgeList.forEach((edge) => {
-        const sourceId =
-          edge.properties.source || edge.properties.database_id?.split("-")[0];
-        if (!edgesBySource[sourceId]) {
-          edgesBySource[sourceId] = [];
-        }
-        edgesBySource[sourceId].push(edge);
-      });
-
-      // Build paths by following edges
-      const processedEdges = new Set();
-      edgeList.forEach((startEdge) => {
-        const edgeId = startEdge.properties.database_id;
-        if (processedEdges.has(edgeId)) return;
-
-        const coords = [];
-        let currentEdge = startEdge;
-        const visitedEdges = new Set();
-
-        // Try to build a continuous path
-        while (
-          currentEdge &&
-          !visitedEdges.has(currentEdge.properties.database_id)
-        ) {
-          visitedEdges.add(currentEdge.properties.database_id);
-          processedEdges.add(currentEdge.properties.database_id);
-
-          // Add edge geometry if available
-          if (currentEdge.geometry.type === "LineString") {
-            currentEdge.geometry.coordinates.forEach((coord, idx) => {
-              if (idx === 0 || coords.length === 0) {
-                coords.push([coord[1], coord[0]]); // [lat, lng]
-              } else if (idx === currentEdge.geometry.coordinates.length - 1) {
-                coords.push([coord[1], coord[0]]);
-              }
-            });
-          }
-
-          currentEdge = null;
-        }
+      try {
+        const coords = edge.geometry.coordinates.map((coord) => [
+          coord[1],
+          coord[0],
+        ]);
 
         if (coords.length > 1) {
-          const lineColor = "#9b59b6"; // Metro purple
           const polyline = L.polyline(coords, {
-            color: lineColor,
+            color: "#0400f8",
             weight: 3,
-            opacity: 0.7,
+            opacity: 0.75,
             className: "metro-line",
           }).addTo(mapInstance.current);
           metroLayersRef.current.push(polyline);
         }
-      });
+      } catch (err) {
+        console.error("Error rendering metro edge:", err);
+      }
     });
-  };
-
-  const clearMetro = () => {
-    metroLayersRef.current.forEach((layer) => layer.remove());
-    metroLayersRef.current = [];
-  };
+  }, [clearMetro]);
 
   // Init map
   useEffect(() => {
@@ -189,21 +124,21 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
 
     mapInstance.current.on("click", (e) => {
       if (routeModeRef.current) return;
-
-      setPendingPos({
-        lat: e.latlng.lat,
-        lng: e.latlng.lng,
-      });
-
+      setPendingPos({ lat: e.latlng.lat, lng: e.latlng.lng });
       setGeocoded(null);
     });
+
+    return () => {
+      mapInstance.current?.remove();
+      mapInstance.current = null;
+    };
   }, []);
 
   useEffect(() => {
     routeModeRef.current = routeMode;
   }, [routeMode]);
 
-  // Manage metro lines visibility
+  // Metro visibility
   useEffect(() => {
     if (!mapInstance.current || !metroDataLoaded) return;
     if (showMetro) {
@@ -211,12 +146,13 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     } else {
       clearMetro();
     }
-  }, [showMetro, metroDataLoaded]);
+    return () => clearMetro();
+  }, [showMetro, metroDataLoaded, renderMetro, clearMetro]);
 
-  // Render markers when points change
+  // Render markers
   useEffect(() => {
     if (!mapInstance.current) return;
-    // Remove old markers
+
     Object.values(markersRef.current).forEach((m) => m.remove());
     markersRef.current = {};
 
@@ -245,6 +181,11 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
       m.bindPopup(popupContent);
       markersRef.current[p.id] = m;
     });
+
+    return () => {
+      Object.values(markersRef.current).forEach((m) => m.remove());
+      markersRef.current = {};
+    };
   }, [points, routeFrom]);
 
   const flyTo = (p) => {
@@ -269,7 +210,6 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
 
       if (error) throw error;
 
-      // Create expense if there's an estimated cost
       if (data.estimated_cost && data.estimated_cost > 0) {
         await addExpense({
           name: `🏷️ ${data.name}`,
@@ -294,12 +234,9 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
       const pointId = editingPoint.id;
       const oldCost = editingPoint.estimated_cost;
 
-      // Update point
       await updatePoint(pointId, data);
 
-      // Sync expense: if cost changed or added
       if (data.estimated_cost && data.estimated_cost > 0) {
-        // Check if expense exists for this point
         const { data: existingExpense } = await supabase
           .from("expenses")
           .select("id")
@@ -307,14 +244,12 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
           .single();
 
         if (existingExpense) {
-          // Update existing expense
           await updateExpense(existingExpense.id, {
             name: `🏷️ ${data.name}`,
             amount: data.estimated_cost,
             currency: data.currency,
           });
         } else {
-          // Create new expense
           await addExpense({
             name: `🏷️ ${data.name}`,
             amount: data.estimated_cost,
@@ -325,7 +260,6 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
           });
         }
       } else if (oldCost && !data.estimated_cost) {
-        // Cost was removed, delete the expense
         await deleteExpenseByPointId(pointId);
       }
 
@@ -336,7 +270,30 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     }
   };
 
-  // ROUTE
+  const clearRouteLines = useCallback(() => {
+    routeLayers.current.forEach((l) => l.remove());
+    routeLayers.current = [];
+  }, []);
+
+  const drawRoute = useCallback(
+    (paths) => {
+      clearRouteLines();
+      paths.forEach((path) => {
+        const l = L.polyline(
+          path.map((c) => [c[1], c[0]]),
+          { color: "#2a7de8", weight: 4, opacity: 0.8 },
+        ).addTo(mapInstance.current);
+        routeLayers.current.push(l);
+      });
+      if (routeLayers.current.length) {
+        mapInstance.current.fitBounds(
+          L.featureGroup(routeLayers.current).getBounds().pad(0.15),
+        );
+      }
+    },
+    [clearRouteLines],
+  );
+
   const startRouteMode = () => {
     if (points.length < 2) {
       alert("Додайте хоча б 2 точки!");
@@ -351,9 +308,7 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
 
   const handleToggleCompleted = async (point) => {
     try {
-      await updatePoint(point.id, {
-        is_completed: !point.is_completed,
-      });
+      await updatePoint(point.id, { is_completed: !point.is_completed });
     } catch (error) {
       console.error("Error toggling completed:", error);
       alert("Помилка при оновленні статусу");
@@ -388,26 +343,6 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
       setRouteBuilding(false);
       setRouteFrom(null);
     }
-  };
-
-  const drawRoute = (paths) => {
-    clearRouteLines();
-    paths.forEach((path) => {
-      const l = L.polyline(
-        path.map((c) => [c[1], c[0]]),
-        { color: "#2a7de8", weight: 4, opacity: 0.8 },
-      ).addTo(mapInstance.current);
-      routeLayers.current.push(l);
-    });
-    if (routeLayers.current.length)
-      mapInstance.current.fitBounds(
-        L.featureGroup(routeLayers.current).getBounds().pad(0.15),
-      );
-  };
-
-  const clearRouteLines = () => {
-    routeLayers.current.forEach((l) => l.remove());
-    routeLayers.current = [];
   };
 
   return (
@@ -445,7 +380,7 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
 
           <button
             className={`route-btn ${showMetro ? "active" : ""}`}
-            onClick={() => setShowMetro(!showMetro)}
+            onClick={() => setShowMetro((v) => !v)}
             style={{ marginTop: "8px" }}
           >
             {showMetro ? "🚇 Метро (вкл)" : "🚇 Метро (викл)"}
