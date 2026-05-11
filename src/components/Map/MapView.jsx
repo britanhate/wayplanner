@@ -375,13 +375,13 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
               ? "⏳ Будуємо..."
               : routeMode
                 ? `🔴 ${routeStep === 1 ? "Оберіть старт" : "Оберіть фініш"}`
-                : "🚌 Маршрут транспортом"}
+                : "🚌 Маршрут"}
           </button>
 
           <button
             className={`route-btn ${showMetro ? "active" : ""}`}
             onClick={() => setShowMetro((v) => !v)}
-            style={{ marginTop: "8px" }}
+            
           >
             {showMetro ? "🚇 Метро (вкл)" : "🚇 Метро (викл)"}
           </button>
