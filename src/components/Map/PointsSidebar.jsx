@@ -67,7 +67,7 @@ export default function PointsSidebar({
       <div className="section">
         <div className="section-title">Точки на карті</div>
 
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex gap-2 overflow-x-auto py-2 ">
           <button
             className={`badge ${selectedType === "all" ? "badge-secondary" : "badge"}`}
             onClick={() => setSelectedType("all")}

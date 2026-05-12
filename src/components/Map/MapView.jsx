@@ -27,6 +27,10 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
   const metroDataRef = useRef(null);
   const previewMarkerRef = useRef(null);
 
+  // Bottom-sheet drag
+  const dragStartY = useRef(null);
+  const [snap, setSnap] = useState("peek"); // "peek" | "half" | "full"
+
   const [metroDataLoaded, setMetroDataLoaded] = useState(false);
   const [pendingPos, setPendingPos] = useState(null);
   const [geocoded, setGeocoded] = useState(null);
@@ -39,78 +43,114 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
   const [routeBuilding, setRouteBuilding] = useState(false);
   const [showMetro, setShowMetro] = useState(true);
 
-  // ── Завантаження даних метро ──
+  // Sync external toggle (hamburger) → sheet
   useEffect(() => {
-    const loadMetroData = async () => {
+    if (sidebarOpen) setSnap("half");
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (snap === "peek") onSidebarClose?.();
+  }, [snap]);
+
+  // ── Drag handlers ──
+  const onTouchStart = (e) => {
+    dragStartY.current = e.touches[0].clientY;
+  };
+
+  const onTouchEnd = (e) => {
+    if (dragStartY.current === null) return;
+
+    const dy = dragStartY.current - e.changedTouches[0].clientY;
+
+    if (dy > 40) {
+      setSnap((s) => (s === "peek" ? "half" : "full"));
+    }
+
+    if (dy < -40) {
+      setSnap((s) => (s === "full" ? "half" : "peek"));
+    }
+
+    dragStartY.current = null;
+  };
+
+  // ── Metro data ──
+  useEffect(() => {
+    (async () => {
       try {
-        const response = await fetch("/metro_paris.geojson");
-        const text = await response.text();
-        const features = text
+        const res = await fetch("/metro_paris.geojson");
+        const text = await res.text();
+
+        metroDataRef.current = text
           .trim()
           .split("\n")
-          .filter((l) => l.trim())
-          .map((line) => { try { return JSON.parse(line); } catch { return null; } })
+          .map((l) => {
+            try {
+              return JSON.parse(l);
+            } catch {
+              return null;
+            }
+          })
           .filter(Boolean);
-        metroDataRef.current = features;
+
         setMetroDataLoaded(true);
-      } catch (error) {
-        console.error("Error loading metro data:", error);
+      } catch (e) {
+        console.error(e);
       }
-    };
-    loadMetroData();
+    })();
   }, []);
 
   const clearMetro = useCallback(() => {
-    metroLayersRef.current.forEach((layer) => layer.remove());
+    metroLayersRef.current.forEach((l) => l.remove());
     metroLayersRef.current = [];
   }, []);
 
   const renderMetro = useCallback(() => {
     if (!mapInstance.current || !metroDataRef.current) return;
+
     clearMetro();
+
     metroDataRef.current
       .filter((f) => f.geometry?.type === "LineString")
       .forEach((edge) => {
         try {
           const coords = edge.geometry.coordinates.map((c) => [c[1], c[0]]);
+
           if (coords.length > 1) {
             const pl = L.polyline(coords, {
               color: "#0400f8",
               weight: 3,
               opacity: 0.75,
-              className: "metro-line",
             }).addTo(mapInstance.current);
+
             metroLayersRef.current.push(pl);
           }
-        } catch (err) {
-          console.error("Error rendering metro edge:", err);
-        }
+        } catch {}
       });
   }, [clearMetro]);
 
-  // ── Ініціалізація карти ──
+  // ── Init map ──
   useEffect(() => {
     if (mapInstance.current) return;
 
-    mapInstance.current = L.map(mapRef.current, { zoomControl: false }).setView(
-      [48.8566, 2.3522],
-      12,
-    );
+    mapInstance.current = L.map(mapRef.current, {
+      zoomControl: false,
+    }).setView([48.8566, 2.3522], 12);
 
     L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap",
       maxZoom: 19,
     }).addTo(mapInstance.current);
 
-    L.control.zoom({ position: "bottomright" }).addTo(mapInstance.current);
-
-    // Клік по карті — відкриваємо модалку одразу (без preview)
     mapInstance.current.on("click", (e) => {
       if (routeModeRef.current) return;
-      // Прибираємо preview якщо був
+
       setPreviewPos(null);
       setGeocoded(null);
-      setPendingPos({ lat: e.latlng.lat, lng: e.latlng.lng });
+
+      setPendingPos({
+        lat: e.latlng.lat,
+        lng: e.latlng.lng,
+      });
     });
 
     return () => {
@@ -123,15 +163,36 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     routeModeRef.current = routeMode;
   }, [routeMode]);
 
-  // ── Метро ──
+  useEffect(() => {
+    const handleResize = () => {
+      mapInstance.current?.invalidateSize();
+    };
+
+    const timeout = setTimeout(() => {
+      handleResize();
+    }, 350);
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   useEffect(() => {
     if (!mapInstance.current || !metroDataLoaded) return;
-    if (showMetro) renderMetro();
-    else clearMetro();
+
+    if (showMetro) {
+      renderMetro();
+    } else {
+      clearMetro();
+    }
+
     return () => clearMetro();
   }, [showMetro, metroDataLoaded, renderMetro, clearMetro]);
 
-  // ── Маркери точок ──
+  // ── Markers ──
   useEffect(() => {
     if (!mapInstance.current) return;
 
@@ -141,28 +202,71 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     points.forEach((p) => {
       const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
       const isFrom = routeFrom?.id === p.id;
-      const iconHtml = `<div class="wp-marker ${isFrom ? "wp-marker-from" : ""}" style="background:${t.color}dd">${t.emoji}</div>`;
 
       const icon = L.divIcon({
-        html: iconHtml,
+        html: `
+          <div
+            class="wp-marker ${isFrom ? "wp-marker-from" : ""}"
+            style="background:${t.color}dd"
+          >
+            ${t.emoji}
+          </div>
+        `,
         className: "wp-marker-wrap",
         iconSize: [32, 32],
         iconAnchor: [16, 16],
         popupAnchor: [0, -18],
       });
 
-      const popupContent = `
-        <div class="popup-card">
-          <div class="popup-title">${p.name}</div>
-          <div class="popup-meta">${t.emoji} ${t.label}</div>
-          ${p.addr ? `<div class="popup-addr">${p.addr}</div>` : ""}
-          ${p.description ? `<div class="popup-desc">${p.description}</div>` : ""}
-          ${p.estimated_cost ? `<div class="popup-cost">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}
-          ${p.comment ? `<div class="popup-comment">${p.comment}</div>` : ""}
-        </div>`;
+      const img = Array.isArray(p.attachments)
+        ? p.attachments.find(
+            (x) => typeof x === "string" && x.startsWith("http"),
+          )
+        : null;
 
-      const m = L.marker([p.lat, p.lng], { icon }).addTo(mapInstance.current);
-      m.bindPopup(popupContent);
+      const popup = `
+  <div class="ios-card">
+
+    ${
+      img
+        ? `
+      <div class="ios-card-media">
+        <img src="${img}" />
+      </div>
+    `
+        : ""
+    }
+
+    <div class="ios-card-content">
+
+      <div class="ios-title-row">
+        <div class="ios-title">${p.name}</div>
+      </div>
+
+      <div class="ios-subtitle">
+        ${t.emoji} ${t.label}
+      </div>
+
+      ${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}
+
+      ${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}
+
+      ${
+        p.estimated_cost
+          ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>`
+          : ""
+      }
+
+    </div>
+  </div>
+`;
+
+      const m = L.marker([p.lat, p.lng], {
+        icon,
+      }).addTo(mapInstance.current);
+
+      m.bindPopup(popup);
+
       markersRef.current[p.id] = m;
     });
 
@@ -172,43 +276,69 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     };
   }, [points, routeFrom]);
 
-  // ── Preview маркер (після пошуку адреси) ──
+  // ── Preview marker ──
   useEffect(() => {
-    // Прибираємо попередній preview
     previewMarkerRef.current?.remove();
     previewMarkerRef.current = null;
+
     delete window.__addPreviewPoint;
 
     if (!previewPos || !mapInstance.current) return;
 
     const icon = L.divIcon({
-      html: `<div class="wp-marker" style="background:#0a84ffdd;border-color:#0a84ff;border:3px solid #0a84ff">📍</div>`,
+      html: `
+        <div
+          class="wp-marker"
+          style="background:#0a84ffdd;border:3px solid #0a84ff"
+        >
+          📍
+        </div>
+      `,
       className: "wp-marker-wrap",
       iconSize: [32, 32],
       iconAnchor: [16, 16],
       popupAnchor: [0, -18],
     });
 
-    const popupContent = `
+    const popup = `
       <div class="popup-card">
-        <div class="popup-title">${geocoded?.name || "Знайдене місце"}</div>
-        ${geocoded?.addr ? `<div class="popup-addr">📍 ${geocoded.addr}</div>` : ""}
+        <div class="popup-title">
+          ${geocoded?.name || "Знайдене місце"}
+        </div>
+
+        ${
+          geocoded?.addr
+            ? `<div class="popup-addr">📍 ${geocoded.addr}</div>`
+            : ""
+        }
+
         <button
           onclick="window.__addPreviewPoint()"
-          style="margin-top:8px;width:100%;padding:8px;background:#0a84ff;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer"
+          style="
+            margin-top:8px;
+            width:100%;
+            padding:8px;
+            background:#0a84ff;
+            border:none;
+            border-radius:10px;
+            color:#fff;
+            font-size:13px;
+            font-weight:600;
+            cursor:pointer;
+          "
         >
           + Додати точку
         </button>
-      </div>`;
+      </div>
+    `;
 
     const marker = L.marker([previewPos.lat, previewPos.lng], { icon })
       .addTo(mapInstance.current)
-      .bindPopup(popupContent)
+      .bindPopup(popup)
       .openPopup();
 
     previewMarkerRef.current = marker;
 
-    // Глобальна функція для кнопки всередині popup
     window.__addPreviewPoint = () => {
       setPendingPos(previewPos);
       marker.closePopup();
@@ -221,33 +351,43 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     };
   }, [previewPos, geocoded]);
 
-  // ── Хелпери ──
+  // ── Helpers ──
   const flyTo = (p) => {
     mapInstance.current?.flyTo([p.lat, p.lng], 15, { duration: 0.8 });
+
     markersRef.current[p.id]?.openPopup();
   };
 
-  // Пошук адреси — тільки flyTo + preview, БЕЗ модалки
   const handleGeocodeResult = (result) => {
-    setPreviewPos({ lat: result.lat, lng: result.lng });
+    setPreviewPos({
+      lat: result.lat,
+      lng: result.lng,
+    });
+
     setGeocoded(result);
-    setPendingPos(null); // не відкриваємо модалку
+    setPendingPos(null);
+
     mapInstance.current?.flyTo([result.lat, result.lng], 15, { duration: 0.9 });
-    onSidebarClose?.();
+
+    setSnap("peek");
   };
 
   const handleSavePoint = async (data) => {
     try {
-      const newPoint = { ...data, created_by: user.id };
       const { data: inserted, error } = await supabase
         .from("points")
-        .insert([newPoint])
+        .insert([
+          {
+            ...data,
+            created_by: user.id,
+          },
+        ])
         .select()
         .single();
 
       if (error) throw error;
 
-      if (data.estimated_cost && data.estimated_cost > 0) {
+      if (data.estimated_cost > 0) {
         await addExpense({
           name: `🏷️ ${data.name}`,
           amount: data.estimated_cost,
@@ -261,28 +401,27 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
       setPendingPos(null);
       setGeocoded(null);
       setPreviewPos(null);
-    } catch (error) {
-      console.error("Error saving point:", error);
-      alert("Помилка при збереженні точки");
+    } catch (e) {
+      console.error(e);
+      alert("Помилка при збереженні");
     }
   };
 
   const handleEditPoint = async (data) => {
     try {
       const pointId = editingPoint.id;
-      const oldCost = editingPoint.estimated_cost;
 
       await updatePoint(pointId, data);
 
-      if (data.estimated_cost && data.estimated_cost > 0) {
-        const { data: existingExpense } = await supabase
+      if (data.estimated_cost > 0) {
+        const { data: ex } = await supabase
           .from("expenses")
           .select("id")
           .eq("point_id", pointId)
           .single();
 
-        if (existingExpense) {
-          await updateExpense(existingExpense.id, {
+        if (ex) {
+          await updateExpense(ex.id, {
             name: `🏷️ ${data.name}`,
             amount: data.estimated_cost,
             currency: data.currency,
@@ -297,14 +436,14 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
             point_id: pointId,
           });
         }
-      } else if (oldCost && !data.estimated_cost) {
+      } else if (editingPoint.estimated_cost && !data.estimated_cost) {
         await deleteExpenseByPointId(pointId);
       }
 
       setEditingPoint(null);
-    } catch (error) {
-      console.error("Error editing point:", error);
-      alert("Помилка при редагуванні точки");
+    } catch (e) {
+      console.error(e);
+      alert("Помилка при редагуванні");
     }
   };
 
@@ -316,13 +455,20 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
   const drawRoute = useCallback(
     (paths) => {
       clearRouteLines();
+
       paths.forEach((path) => {
         const l = L.polyline(
           path.map((c) => [c[1], c[0]]),
-          { color: "#2a7de8", weight: 4, opacity: 0.8 },
+          {
+            color: "#2a7de8",
+            weight: 4,
+            opacity: 0.8,
+          },
         ).addTo(mapInstance.current);
+
         routeLayers.current.push(l);
       });
+
       if (routeLayers.current.length) {
         mapInstance.current.fitBounds(
           L.featureGroup(routeLayers.current).getBounds().pad(0.15),
@@ -337,8 +483,10 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
       alert("Додайте хоча б 2 точки!");
       return;
     }
+
     clearRouteLines();
     setRouteResult(null);
+
     setRouteMode(true);
     setRouteStep(1);
     setRouteFrom(null);
@@ -346,10 +494,10 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
 
   const handleToggleCompleted = async (point) => {
     try {
-      await updatePoint(point.id, { is_completed: !point.is_completed });
-    } catch (error) {
-      console.error("Error toggling completed:", error);
-    }
+      await updatePoint(point.id, {
+        is_completed: !point.is_completed,
+      });
+    } catch {}
   };
 
   const handleRoutePointSelect = async (p) => {
@@ -361,12 +509,16 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
         alert("Оберіть іншу точку!");
         return;
       }
+
       setRouteMode(false);
       setRouteStep(0);
       setRouteBuilding(true);
+
       try {
         const res = await buildRoute(routeFrom, p);
+
         drawRoute(res.paths);
+
         setRouteResult({
           from: routeFrom,
           to: p,
@@ -377,31 +529,38 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
       } catch (e) {
         alert(e.message);
       }
+
       setRouteBuilding(false);
       setRouteFrom(null);
     }
   };
 
+  const snapClass =
+    snap === "full"
+      ? "sheet-full"
+      : snap === "half"
+        ? "sheet-half"
+        : "sheet-peek";
+
   return (
     <div className="map-view">
-      {/* ── Сайдбар / Bottom Sheet ── */}
-      <div className={`map-sidebar sheet-peek ${sidebarOpen ? "sheet-half" : ""}`}>
-        {/* Пошук — завжди зверху */}
-        <div className="sidebar-section">
-          <SearchBox
-            onResult={(result) => {
-              handleGeocodeResult(result);
-            }}
-          />
-        </div>
+      {/* Search floats ON the map */}
+      <div className="map-search-overlay">
+        <SearchBox onResult={handleGeocodeResult} />
+      </div>
 
-        {/* Кнопки маршруту і метро */}
+      {/* Desktop sidebar */}
+      <div className="map-sidebar">
         <div className="sidebar-section">
           <button
             className={`route-btn ${routeMode ? "active" : ""}`}
             onClick={
               routeMode
-                ? () => { setRouteMode(false); setRouteStep(0); setRouteFrom(null); }
+                ? () => {
+                    setRouteMode(false);
+                    setRouteStep(0);
+                    setRouteFrom(null);
+                  }
                 : startRouteMode
             }
           >
@@ -420,12 +579,11 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
           </button>
         </div>
 
-        {/* Список точок */}
         <PointsSidebar
           points={points}
-          onFly={(p) => { flyTo(p); onSidebarClose?.(); }}
+          onFly={(p) => flyTo(p)}
           onDelete={deletePoint}
-          onEdit={(p) => { setEditingPoint(p); onSidebarClose?.(); }}
+          onEdit={(p) => setEditingPoint(p)}
           onToggleCompleted={handleToggleCompleted}
           routeMode={routeMode}
           routeFrom={routeFrom}
@@ -433,19 +591,79 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
         />
       </div>
 
-      {/* ── Карта ── */}
+      {/* Map */}
       <div className="map-wrap">
-        <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
+        <div ref={mapRef} className="leaflet-map" />
 
         {routeResult && (
           <RoutePanel
             result={routeResult}
-            onClose={() => { setRouteResult(null); clearRouteLines(); }}
+            onClose={() => {
+              setRouteResult(null);
+              clearRouteLines();
+            }}
           />
         )}
       </div>
 
-      {/* ── Модалка додавання ── */}
+      {/* Mobile sheet */}
+      <div
+        className={`map-sheet ${snapClass}`}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <div className="sheet-handle-wrap">
+          <div className="sheet-handle" />
+        </div>
+
+        <div className="sheet-actions">
+          <button
+            className={`sheet-action-btn ${routeMode ? "active" : ""}`}
+            onClick={
+              routeMode
+                ? () => {
+                    setRouteMode(false);
+                    setRouteStep(0);
+                    setRouteFrom(null);
+                  }
+                : startRouteMode
+            }
+          >
+            {routeBuilding
+              ? "⏳"
+              : routeMode
+                ? `🔴 ${routeStep === 1 ? "Старт" : "Фініш"}`
+                : "🚌 Маршрут"}
+          </button>
+
+          <button
+            className={`sheet-action-btn ${showMetro ? "active" : ""}`}
+            onClick={() => setShowMetro((v) => !v)}
+          >
+            🚇 Метро
+          </button>
+        </div>
+
+        <div className="sheet-scroll">
+          <PointsSidebar
+            points={points}
+            onFly={(p) => {
+              flyTo(p);
+              setSnap("peek");
+            }}
+            onDelete={deletePoint}
+            onEdit={(p) => {
+              setEditingPoint(p);
+              setSnap("peek");
+            }}
+            onToggleCompleted={handleToggleCompleted}
+            routeMode={routeMode}
+            routeFrom={routeFrom}
+            onRouteToggle={handleRoutePointSelect}
+          />
+        </div>
+      </div>
+
       {pendingPos && (
         <AddPointModal
           position={pendingPos}
@@ -459,7 +677,6 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
         />
       )}
 
-      {/* ── Модалка редагування ── */}
       {editingPoint && (
         <EditPointModal
           point={editingPoint}
