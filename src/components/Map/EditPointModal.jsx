@@ -5,27 +5,33 @@ export default function EditPointModal({ point, onSave, onClose }) {
   const [name, setName] = useState(point.name || "");
   const [type, setType] = useState(point.type || "sight");
   const [description, setDescription] = useState(point.description || "");
-  const [estimatedCost, setEstimatedCost] = useState(
-    point.estimated_cost || "",
-  );
+  const [estimatedCost, setEstimatedCost] = useState(point.estimated_cost || "");
   const [currency, setCurrency] = useState(point.currency || "EUR");
   const [comment, setComment] = useState(point.comment || "");
   const [pointDate, setPointDate] = useState(point.point_date || "");
   const [isCompleted, setIsCompleted] = useState(point.is_completed || false);
-  const [attachments, setAttachments] = useState(point.attachments || []);
-  const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
+  const [attachments, setAttachments] = useState(
+    (point.attachments || []).filter((a) => a.data || a.url)
+  );
 
-  const handleAddAttachment = () => {
-    if (newAttachmentUrl.trim()) {
-      setAttachments([
-        ...attachments,
-        {
-          url: newAttachmentUrl.trim(),
-          name: newAttachmentUrl.split("/").pop(),
-        },
-      ]);
-      setNewAttachmentUrl("");
+  const handleFileSelect = (e) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (let file of files) {
+      if (!file.type.startsWith("image/")) continue;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAttachments((prev) => [
+          ...prev,
+          { data: event.target.result, name: file.name, type: file.type },
+        ]);
+      };
+      reader.readAsDataURL(file);
     }
+
+    e.target.value = "";
   };
 
   const handleRemoveAttachment = (index) => {
@@ -52,9 +58,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title">Редагувати точку</div>
-          <button className="modal-close" onClick={onClose}>
-            ×
-          </button>
+          <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
         <div className="modal-body">
@@ -67,7 +71,9 @@ export default function EditPointModal({ point, onSave, onClose }) {
             autoFocus
           />
 
-          {point.addr && <div className="field-addr">📍 {point.addr}</div>}
+          {point.addr && (
+            <div className="field-addr">📍 {point.addr}</div>
+          )}
 
           <label className="field-label">Тип</label>
           <div className="type-row">
@@ -137,68 +143,29 @@ export default function EditPointModal({ point, onSave, onClose }) {
             rows={2}
           />
 
-          <label className="field-label" style={{ marginTop: "12px" }}>
-            📎 Приложення
-          </label>
-          <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
+          <label className="field-label">Фото</label>
+          <label className="file-upload-btn">
+            📎 Вибрати фото
             <input
-              type="text"
-              className="field-inp"
-              value={newAttachmentUrl}
-              onChange={(e) => setNewAttachmentUrl(e.target.value)}
-              placeholder="URL фото, документа тощо..."
-              onKeyPress={(e) => e.key === "Enter" && handleAddAttachment()}
-              style={{ margin: 0 }}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileSelect}
             />
-            <button
-              type="button"
-              onClick={handleAddAttachment}
-              style={{
-                padding: "8px 14px",
-                background: "#2a7de8",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: "500",
-              }}
-            >
-              +
-            </button>
-          </div>
+          </label>
+
           {attachments.length > 0 && (
-            <div style={{ marginBottom: "12px" }}>
+            <div className="attachments-grid">
               {attachments.map((att, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px",
-                    background: "#f2f2f7",
-                    borderRadius: "6px",
-                    marginBottom: "6px",
-                    fontSize: "13px",
-                  }}
-                >
-                  <span style={{ flex: 1, wordBreak: "break-all" }}>
-                    {typeof att === "string" ? att : att.name}
-                  </span>
+                <div key={idx} className="attachment-thumb-wrap">
+                  <img
+                    className="attachment-thumb"
+                    src={att.data || att.url}
+                    alt={att.name}
+                  />
                   <button
-                    type="button"
+                    className="attachment-remove"
                     onClick={() => handleRemoveAttachment(idx)}
-                    style={{
-                      background: "#ff3b30",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      padding: "4px 8px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      fontWeight: "500",
-                    }}
                   >
                     ×
                   </button>
@@ -207,39 +174,20 @@ export default function EditPointModal({ point, onSave, onClose }) {
             </div>
           )}
 
-          <div
-            style={{
-              marginTop: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
+          <div className="check-row" onClick={() => setIsCompleted((v) => !v)}>
             <input
               type="checkbox"
               id="isCompleted"
               checked={isCompleted}
               onChange={(e) => setIsCompleted(e.target.checked)}
-              style={{ cursor: "pointer", width: "18px", height: "18px" }}
+              onClick={(e) => e.stopPropagation()}
             />
-            <label
-              htmlFor="isCompleted"
-              style={{
-                cursor: "pointer",
-                margin: 0,
-                fontSize: "14px",
-                fontWeight: "500",
-              }}
-            >
-              ✓ Завдання виконано
-            </label>
+            <label htmlFor="isCompleted">✓ Завдання виконано</label>
           </div>
         </div>
 
         <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>
-            Скасувати
-          </button>
+          <button className="btn-secondary" onClick={onClose}>Скасувати</button>
           <button
             className="btn-primary"
             onClick={handleSave}
