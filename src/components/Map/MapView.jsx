@@ -17,6 +17,7 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
   const { user } = useAuth();
   const { points, deletePoint, updatePoint } = usePoints();
   const { addExpense, updateExpense, deleteExpenseByPointId } = useExpenses();
+
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersRef = useRef({});
@@ -24,10 +25,12 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
   const routeModeRef = useRef(false);
   const metroLayersRef = useRef([]);
   const metroDataRef = useRef(null);
-  const [metroDataLoaded, setMetroDataLoaded] = useState(false);
+  const previewMarkerRef = useRef(null);
 
+  const [metroDataLoaded, setMetroDataLoaded] = useState(false);
   const [pendingPos, setPendingPos] = useState(null);
   const [geocoded, setGeocoded] = useState(null);
+  const [previewPos, setPreviewPos] = useState(null);
   const [editingPoint, setEditingPoint] = useState(null);
   const [routeMode, setRouteMode] = useState(false);
   const [routeStep, setRouteStep] = useState(0);
@@ -36,34 +39,24 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
   const [routeBuilding, setRouteBuilding] = useState(false);
   const [showMetro, setShowMetro] = useState(true);
 
-  // Load metro data
+  // ── Завантаження даних метро ──
   useEffect(() => {
     const loadMetroData = async () => {
       try {
         const response = await fetch("/metro_paris.geojson");
         const text = await response.text();
-
-        const lines = text
+        const features = text
           .trim()
           .split("\n")
-          .filter((l) => l.trim());
-        const features = lines
-          .map((line) => {
-            try {
-              return JSON.parse(line);
-            } catch (e) {
-              return null;
-            }
-          })
+          .filter((l) => l.trim())
+          .map((line) => { try { return JSON.parse(line); } catch { return null; } })
           .filter(Boolean);
-
         metroDataRef.current = features;
         setMetroDataLoaded(true);
       } catch (error) {
         console.error("Error loading metro data:", error);
       }
     };
-
     loadMetroData();
   }, []);
 
@@ -74,58 +67,50 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
 
   const renderMetro = useCallback(() => {
     if (!mapInstance.current || !metroDataRef.current) return;
-
     clearMetro();
-
-    const edges = metroDataRef.current.filter(
-      (f) => f.geometry && f.geometry.type === "LineString",
-    );
-
-    edges.forEach((edge) => {
-      try {
-        const coords = edge.geometry.coordinates.map((coord) => [
-          coord[1],
-          coord[0],
-        ]);
-
-        if (coords.length > 1) {
-          const polyline = L.polyline(coords, {
-            color: "#0400f8",
-            weight: 3,
-            opacity: 0.75,
-            className: "metro-line",
-          }).addTo(mapInstance.current);
-          metroLayersRef.current.push(polyline);
+    metroDataRef.current
+      .filter((f) => f.geometry?.type === "LineString")
+      .forEach((edge) => {
+        try {
+          const coords = edge.geometry.coordinates.map((c) => [c[1], c[0]]);
+          if (coords.length > 1) {
+            const pl = L.polyline(coords, {
+              color: "#0400f8",
+              weight: 3,
+              opacity: 0.75,
+              className: "metro-line",
+            }).addTo(mapInstance.current);
+            metroLayersRef.current.push(pl);
+          }
+        } catch (err) {
+          console.error("Error rendering metro edge:", err);
         }
-      } catch (err) {
-        console.error("Error rendering metro edge:", err);
-      }
-    });
+      });
   }, [clearMetro]);
 
-  // Init map
+  // ── Ініціалізація карти ──
   useEffect(() => {
     if (mapInstance.current) return;
 
-    mapInstance.current = L.map(mapRef.current, {
-      zoomControl: false,
-    }).setView([48.8566, 2.3522], 12);
+    mapInstance.current = L.map(mapRef.current, { zoomControl: false }).setView(
+      [48.8566, 2.3522],
+      12,
+    );
 
     L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap",
       maxZoom: 19,
     }).addTo(mapInstance.current);
 
-    L.control
-      .zoom({
-        position: "bottomright",
-      })
-      .addTo(mapInstance.current);
+    L.control.zoom({ position: "bottomright" }).addTo(mapInstance.current);
 
+    // Клік по карті — відкриваємо модалку одразу (без preview)
     mapInstance.current.on("click", (e) => {
       if (routeModeRef.current) return;
-      setPendingPos({ lat: e.latlng.lat, lng: e.latlng.lng });
+      // Прибираємо preview якщо був
+      setPreviewPos(null);
       setGeocoded(null);
+      setPendingPos({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
 
     return () => {
@@ -138,18 +123,15 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     routeModeRef.current = routeMode;
   }, [routeMode]);
 
-  // Metro visibility
+  // ── Метро ──
   useEffect(() => {
     if (!mapInstance.current || !metroDataLoaded) return;
-    if (showMetro) {
-      renderMetro();
-    } else {
-      clearMetro();
-    }
+    if (showMetro) renderMetro();
+    else clearMetro();
     return () => clearMetro();
   }, [showMetro, metroDataLoaded, renderMetro, clearMetro]);
 
-  // Render markers
+  // ── Маркери точок ──
   useEffect(() => {
     if (!mapInstance.current) return;
 
@@ -159,22 +141,24 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     points.forEach((p) => {
       const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
       const isFrom = routeFrom?.id === p.id;
+      const iconHtml = `<div class="wp-marker ${isFrom ? "wp-marker-from" : ""}" style="background:${t.color}dd">${t.emoji}</div>`;
+
       const icon = L.divIcon({
-        html: `<div style="width:32px;height:32px;border-radius:50%;background:${t.color};display:flex;align-items:center;justify-content:center;font-size:16px;border:${isFrom ? "3px solid #e8622a" : "2px solid white"};box-shadow:0 2px 8px rgba(0,0,0,.25)">${t.emoji}</div>`,
-        className: "",
+        html: iconHtml,
+        className: "wp-marker-wrap",
         iconSize: [32, 32],
         iconAnchor: [16, 16],
         popupAnchor: [0, -18],
       });
 
       const popupContent = `
-        <div style="font-family:sans-serif;min-width:160px">
-          <b style="font-size:14px">${p.name}</b>
-          <div style="color:#8888aa;font-size:12px;margin:2px 0">${t.emoji} ${t.label}</div>
-          ${p.addr ? `<div style="font-size:11px;color:#8888aa">${p.addr}</div>` : ""}
-          ${p.description ? `<div style="margin-top:6px;font-size:12px">${p.description}</div>` : ""}
-          ${p.estimated_cost ? `<div style="margin-top:4px;font-size:12px;font-weight:500">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}
-          ${p.comment ? `<div style="margin-top:4px;font-size:11px;color:#666;font-style:italic">"${p.comment}"</div>` : ""}
+        <div class="popup-card">
+          <div class="popup-title">${p.name}</div>
+          <div class="popup-meta">${t.emoji} ${t.label}</div>
+          ${p.addr ? `<div class="popup-addr">${p.addr}</div>` : ""}
+          ${p.description ? `<div class="popup-desc">${p.description}</div>` : ""}
+          ${p.estimated_cost ? `<div class="popup-cost">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}
+          ${p.comment ? `<div class="popup-comment">${p.comment}</div>` : ""}
         </div>`;
 
       const m = L.marker([p.lat, p.lng], { icon }).addTo(mapInstance.current);
@@ -188,15 +172,68 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
     };
   }, [points, routeFrom]);
 
+  // ── Preview маркер (після пошуку адреси) ──
+  useEffect(() => {
+    // Прибираємо попередній preview
+    previewMarkerRef.current?.remove();
+    previewMarkerRef.current = null;
+    delete window.__addPreviewPoint;
+
+    if (!previewPos || !mapInstance.current) return;
+
+    const icon = L.divIcon({
+      html: `<div class="wp-marker" style="background:#0a84ffdd;border-color:#0a84ff;border:3px solid #0a84ff">📍</div>`,
+      className: "wp-marker-wrap",
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -18],
+    });
+
+    const popupContent = `
+      <div class="popup-card">
+        <div class="popup-title">${geocoded?.name || "Знайдене місце"}</div>
+        ${geocoded?.addr ? `<div class="popup-addr">📍 ${geocoded.addr}</div>` : ""}
+        <button
+          onclick="window.__addPreviewPoint()"
+          style="margin-top:8px;width:100%;padding:8px;background:#0a84ff;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer"
+        >
+          + Додати точку
+        </button>
+      </div>`;
+
+    const marker = L.marker([previewPos.lat, previewPos.lng], { icon })
+      .addTo(mapInstance.current)
+      .bindPopup(popupContent)
+      .openPopup();
+
+    previewMarkerRef.current = marker;
+
+    // Глобальна функція для кнопки всередині popup
+    window.__addPreviewPoint = () => {
+      setPendingPos(previewPos);
+      marker.closePopup();
+    };
+
+    return () => {
+      previewMarkerRef.current?.remove();
+      previewMarkerRef.current = null;
+      delete window.__addPreviewPoint;
+    };
+  }, [previewPos, geocoded]);
+
+  // ── Хелпери ──
   const flyTo = (p) => {
     mapInstance.current?.flyTo([p.lat, p.lng], 15, { duration: 0.8 });
     markersRef.current[p.id]?.openPopup();
   };
 
+  // Пошук адреси — тільки flyTo + preview, БЕЗ модалки
   const handleGeocodeResult = (result) => {
+    setPreviewPos({ lat: result.lat, lng: result.lng });
     setGeocoded(result);
-    setPendingPos({ lat: result.lat, lng: result.lng });
+    setPendingPos(null); // не відкриваємо модалку
     mapInstance.current?.flyTo([result.lat, result.lng], 15, { duration: 0.9 });
+    onSidebarClose?.();
   };
 
   const handleSavePoint = async (data) => {
@@ -223,6 +260,7 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
 
       setPendingPos(null);
       setGeocoded(null);
+      setPreviewPos(null);
     } catch (error) {
       console.error("Error saving point:", error);
       alert("Помилка при збереженні точки");
@@ -311,7 +349,6 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
       await updatePoint(point.id, { is_completed: !point.is_completed });
     } catch (error) {
       console.error("Error toggling completed:", error);
-      alert("Помилка при оновленні статусу");
     }
   };
 
@@ -347,27 +384,24 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
 
   return (
     <div className="map-view">
-      <div className={`map-sidebar ${sidebarOpen ? "open" : ""}`}>
+      {/* ── Сайдбар / Bottom Sheet ── */}
+      <div className={`map-sidebar sheet-peek ${sidebarOpen ? "sheet-half" : ""}`}>
+        {/* Пошук — завжди зверху */}
         <div className="sidebar-section">
           <SearchBox
             onResult={(result) => {
               handleGeocodeResult(result);
-              onSidebarClose();
             }}
           />
         </div>
 
+        {/* Кнопки маршруту і метро */}
         <div className="sidebar-section">
           <button
             className={`route-btn ${routeMode ? "active" : ""}`}
             onClick={
               routeMode
-                ? () => {
-                    setRouteMode(false);
-                    setRouteStep(0);
-                    setRouteFrom(null);
-                    onSidebarClose();
-                  }
+                ? () => { setRouteMode(false); setRouteStep(0); setRouteFrom(null); }
                 : startRouteMode
             }
           >
@@ -381,23 +415,17 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
           <button
             className={`route-btn ${showMetro ? "active" : ""}`}
             onClick={() => setShowMetro((v) => !v)}
-            
           >
             {showMetro ? "🚇 Метро (вкл)" : "🚇 Метро (викл)"}
           </button>
         </div>
 
+        {/* Список точок */}
         <PointsSidebar
           points={points}
-          onFly={(p) => {
-            flyTo(p);
-            onSidebarClose();
-          }}
+          onFly={(p) => { flyTo(p); onSidebarClose?.(); }}
           onDelete={deletePoint}
-          onEdit={(p) => {
-            setEditingPoint(p);
-            onSidebarClose();
-          }}
+          onEdit={(p) => { setEditingPoint(p); onSidebarClose?.(); }}
           onToggleCompleted={handleToggleCompleted}
           routeMode={routeMode}
           routeFrom={routeFrom}
@@ -405,20 +433,19 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
         />
       </div>
 
+      {/* ── Карта ── */}
       <div className="map-wrap">
         <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
 
         {routeResult && (
           <RoutePanel
             result={routeResult}
-            onClose={() => {
-              setRouteResult(null);
-              clearRouteLines();
-            }}
+            onClose={() => { setRouteResult(null); clearRouteLines(); }}
           />
         )}
       </div>
 
+      {/* ── Модалка додавання ── */}
       {pendingPos && (
         <AddPointModal
           position={pendingPos}
@@ -427,10 +454,12 @@ export default function MapView({ sidebarOpen, onSidebarClose }) {
           onClose={() => {
             setPendingPos(null);
             setGeocoded(null);
+            setPreviewPos(null);
           }}
         />
       )}
 
+      {/* ── Модалка редагування ── */}
       {editingPoint && (
         <EditPointModal
           point={editingPoint}
