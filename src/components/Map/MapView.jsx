@@ -398,6 +398,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
                 setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
               }
               onBuild={handleBuildRoute}
+              onFitRoute={() => fitToWaypoints()}
               result={routeResult}
               building={routeBuilding}
               minimized={routeMinimized}
@@ -466,6 +467,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
                 setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
               }
               onBuild={handleBuildRoute}
+              onFitRoute={() => fitToWaypoints()}
               result={routeResult}
               building={routeBuilding}
               minimized={routeMinimized}
