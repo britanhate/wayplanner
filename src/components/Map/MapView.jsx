@@ -27,7 +27,7 @@ export default function MapView({ onSidebarClose }) {
   const metroLayersRef = useRef([]);
   const metroDataRef = useRef(null);
   const previewMarkerRef = useRef(null);
-
+  const SWIPE_THRESHOLD = 60;
   const dragStartY = useRef(null);
   const sidebarScrollRef = useRef(null);
   const [snap, setSnap] = useState("keep");
@@ -66,12 +66,11 @@ export default function MapView({ onSidebarClose }) {
     const dy = dragStartY.current - e.changedTouches[0].clientY;
 
     // свайп вверх
-    if (dy > 40) {
+    if (dy > SWIPE_THRESHOLD) {
       setSnap("full");
     }
 
-    // свайп вниз
-    if (dy < -40) {
+    if (dy < -SWIPE_THRESHOLD) {
       setSnap("keep");
     }
 
