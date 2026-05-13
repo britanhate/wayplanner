@@ -62,9 +62,19 @@ export default function MapView({ onSidebarClose }) {
   };
   const onTouchEnd = (e) => {
     if (dragStartY.current === null) return;
+
     const dy = dragStartY.current - e.changedTouches[0].clientY;
-    if (dy > 40) setSnap((s) => (s === "keep" ? "full" : "keep"));
-    if (dy < -40) setSnap((s) => (s === "full" ? "keep" : "full"));
+
+    // свайп вверх
+    if (dy > 40) {
+      setSnap("full");
+    }
+
+    // свайп вниз
+    if (dy < -40) {
+      setSnap("keep");
+    }
+
     dragStartY.current = null;
   };
 
@@ -269,7 +279,7 @@ export default function MapView({ onSidebarClose }) {
     setGeocoded(result);
     setPendingPos(null);
     mapInstance.current?.flyTo([result.lat, result.lng], 15, { duration: 0.9 });
-    setSnap("keep");
+    setSnap("full");
   };
 
   const handleSavePoint = async (data) => {
@@ -411,7 +421,7 @@ export default function MapView({ onSidebarClose }) {
         });
         setRouteMinimized(false);
         // Auto-open route detail on mobile
-        setMobileRouteOpen(true);
+        // setMobileRouteOpen(true);
         setSnap("full");
       } catch (e) {
         alert(e.message);
@@ -669,12 +679,12 @@ export default function MapView({ onSidebarClose }) {
       </div>
 
       {/* ── Mobile bottom sheet ── */}
-      <div
-        className={`map-sheet ${snapClass}`}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
-        <div className="sheet-handle-wrap">
+      <div className={`map-sheet ${snapClass}`}>
+        <div
+          className="sheet-handle-wrap"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
           <div className="sheet-handle" />
         </div>
 
@@ -777,12 +787,10 @@ export default function MapView({ onSidebarClose }) {
               points={points}
               onFly={(p) => {
                 flyTo(p);
-                setSnap("keep");
               }}
               onDelete={deletePoint}
               onEdit={(p) => {
                 setEditingPoint(p);
-                setSnap("keep");
               }}
               onToggleCompleted={handleToggleCompleted}
               routeMode={routeMode}
