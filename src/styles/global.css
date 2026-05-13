@@ -2834,3 +2834,12 @@ header[style] {
 .rp-build-btn { flex:1.4; }
 .rp-leg-dist { opacity:.5; }
 .rp-leg-expand { opacity:.4; font-size:12px; }
+
+.route-panel-inline{position:static;width:100%;right:auto;bottom:auto;margin-bottom:10px;}
+.rp-select-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
+.rp-select-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#fff;}
+.rp-select-btn span{font-size:11px;opacity:.65}.rp-select-btn strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.rp-select-btn.active{border-color:rgba(10,132,255,.5);background:rgba(10,132,255,.16);}
+.rp-stops-list{display:flex;flex-direction:column;gap:6px;margin:8px 0;}
+.rp-stop-chip{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.05);font-size:12px;}
+.rp-stop-chip button{background:none;border:none;color:#fff;opacity:.65;}
