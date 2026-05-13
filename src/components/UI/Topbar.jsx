@@ -1,25 +1,14 @@
 import { useAuth } from "../../lib/AuthContext";
 
-export default function Topbar({
-  activeTab,
-  onSidebarToggle,
-}) {
+export default function Topbar({ activeTab, onTabChange, onSidebarToggle }) {
   const { user, logout } = useAuth();
 
   return (
     <header className="topbar-ios">
       <div className="topbar-left">
         {activeTab === "map" && (
-          <button
-            className="topbar-btn"
-            onClick={onSidebarToggle}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
+          <button className="topbar-btn" onClick={onSidebarToggle}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
                 d="M3 6h18M3 12h18M3 18h18"
                 stroke="currentColor"
@@ -41,26 +30,14 @@ export default function Topbar({
           <span className="avatar">{user?.avatar}</span>
 
           <div className="user-meta">
-            <div className="user-name">
-              {user?.name}
-            </div>
+            <div className="user-name">{user?.name}</div>
 
-            <div className="user-status">
-              online
-            </div>
+            <div className="user-status">online</div>
           </div>
         </div>
 
-        <button
-          className="topbar-btn"
-          onClick={logout}
-        >
-          <svg
-            width="19"
-            height="19"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
+        <button className="topbar-btn" onClick={logout}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
             <path
               d="M16 17l5-5-5-5"
               stroke="currentColor"

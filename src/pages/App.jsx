@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Topbar from "../components/UI/Topbar";
-import BottomNav from "../components/UI/BottomNav";
 import MapView from "../components/Map/MapView";
 import NotesView from "../components/Notes/NotesView";
 import FinanceView from "../components/Finance/FinanceView";
@@ -10,18 +9,32 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-gradient-dark overflow-hidden">
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden",
+      background: "linear-gradient(180deg, #05060a, #0b1220)",
+      // iOS Safari fix
+      height: "100%",
+      WebkitOverflowScrolling: "touch",
+    }}>
+      {/* Topbar floats on top — NO layout space consumed */}
       <Topbar
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
       />
-      <div className="flex flex-1 overflow-hidden min-h-0">
+
+      {/* Content fills entire screen — topbar overlays it */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        overflow: "hidden",
+      }}>
         {activeTab === "map" && (
-          <MapView
-            sidebarOpen={sidebarOpen}
-            onSidebarClose={() => setSidebarOpen(false)}
-          />
+          <MapView onSidebarClose={() => setSidebarOpen(false)} />
         )}
         {activeTab === "notes" && (
           <NotesView
@@ -36,7 +49,6 @@ export default function App() {
           />
         )}
       </div>
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 }
