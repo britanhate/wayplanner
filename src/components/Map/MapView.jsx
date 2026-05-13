@@ -40,11 +40,20 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const [showMetro, setShowMetro] = useState(true);
 
   // ── Route state (новий) ──
+<<<<<<< HEAD
   const [routePanelOpen, setRoutePanelOpen] = useState(false);
   const [routeWaypoints, setRouteWaypoints] = useState([]);
   const [routePickMode, setRoutePickMode] = useState(false); // вибір точки для маршруту
   const [routeResult, setRouteResult] = useState(null);
   const [routeBuilding, setRouteBuilding] = useState(false);
+=======
+  const [routePanelOpen,  setRoutePanelOpen]  = useState(false);
+  const [routeWaypoints,  setRouteWaypoints]  = useState([]);
+  const [routePickTarget, setRoutePickTarget] = useState(null);
+  const [routeMinimized,  setRouteMinimized]  = useState(false);
+  const [routeResult,     setRouteResult]     = useState(null);
+  const [routeBuilding,   setRouteBuilding]   = useState(false);
+>>>>>>> 32312152615f039acc6319ddd8a675038bc9ec9b
 
   // ── Swipe ──
   const onTouchStart = (e) => {
@@ -125,7 +134,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
       },
     ).addTo(mapInstance.current);
     mapInstance.current.on("click", (e) => {
-      if (routePickMode) return;
+      if (routePickTarget) return;
       setPreviewPos(null);
       setGeocoded(null);
       setPendingPos({ lat: e.latlng.lat, lng: e.latlng.lng });
@@ -136,12 +145,15 @@ export default function MapView({ searchOpen, onSearchClose }) {
     };
   }, []);
 
+<<<<<<< HEAD
   // routePickMode ref для map click
   const routePickModeRef = useRef(false);
   useEffect(() => {
     routePickModeRef.current = routePickMode;
   }, [routePickMode]);
 
+=======
+>>>>>>> 32312152615f039acc6319ddd8a675038bc9ec9b
   useEffect(() => {
     const handleResize = () => mapInstance.current?.invalidateSize();
     const t = setTimeout(handleResize, 350);
@@ -303,7 +315,8 @@ export default function MapView({ searchOpen, onSearchClose }) {
     setRoutePanelOpen(true);
     setRouteResult(null);
     clearRouteLines();
-    setRoutePickMode(true);
+    setRoutePickTarget("start");
+    setRouteMinimized(false);
     setSnap("full");
   };
 
@@ -335,17 +348,31 @@ export default function MapView({ searchOpen, onSearchClose }) {
 
   // Вибір точки зі списку для додавання в маршрут
   const handleRoutePointPick = (p) => {
+<<<<<<< HEAD
     if (!routePickMode) {
       flyTo(p);
       return;
     }
+=======
+    if (!routePickTarget) { flyTo(p); return; }
+>>>>>>> 32312152615f039acc6319ddd8a675038bc9ec9b
     const wp = { id: p.id, name: p.name, lat: p.lat, lng: p.lng };
     setRouteWaypoints((prev) => {
-      if (prev.some((item) => item.id === wp.id)) return prev;
-      const next = [...prev, wp];
+      let next = prev.filter((item) => item.id !== wp.id);
+      if (routePickTarget === "start") {
+        const finish = next.length ? next[next.length - 1] : null;
+        next = finish && finish.id !== wp.id ? [wp, finish] : [wp];
+      } else if (routePickTarget === "finish") {
+        const start = next.length ? next[0] : null;
+        next = start && start.id !== wp.id ? [start, wp] : [...next, wp];
+      } else {
+        if (next.length >= 2) next = [...next.slice(0, -1), wp, next[next.length - 1]];
+        else next = [...next, wp];
+      }
       if (next.length >= 2) setTimeout(() => fitToWaypoints(next), 0);
       return next;
     });
+    setRoutePickTarget(null);
   };
 
   const handleSavePoint = async (data) => {
@@ -448,6 +475,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
         <div className="sidebar-section" style={{ marginTop: 8 }}>
           <button
             className={`route-btn ${routePanelOpen ? "active" : ""}`}
+<<<<<<< HEAD
             onClick={
               routePanelOpen
                 ? () => {
@@ -458,6 +486,11 @@ export default function MapView({ searchOpen, onSearchClose }) {
                   }
                 : startRouteMode
             }
+=======
+            onClick={routePanelOpen
+              ? () => { setRoutePanelOpen(false); setRouteResult(null); clearRouteLines(); setRoutePickTarget(null); }
+              : startRouteMode}
+>>>>>>> 32312152615f039acc6319ddd8a675038bc9ec9b
           >
             {routeBuilding
               ? "⏳ Будуємо..."
@@ -478,9 +511,11 @@ export default function MapView({ searchOpen, onSearchClose }) {
           <div style={{ margin: "0 12px 8px" }}>
             <RoutePanel
               waypoints={routeWaypoints}
-              allPoints={points}
-              onWaypointsChange={setRouteWaypoints}
-              onAddWaypoint={() => setRoutePickMode(true)}
+              buildState={routePickTarget ? "pick" : "edit"}
+              pickTarget={routePickTarget}
+              onPickStart={() => setRoutePickTarget("start")}
+              onPickFinish={() => setRoutePickTarget("finish")}
+              onPickStop={() => setRoutePickTarget("stop")}
               onRemoveWaypoint={(i) =>
                 setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
               }
@@ -488,12 +523,13 @@ export default function MapView({ searchOpen, onSearchClose }) {
               onFitRoute={() => fitToWaypoints()}
               result={routeResult}
               building={routeBuilding}
-              pickMode={routePickMode}
+              minimized={routeMinimized}
+              onMinimize={() => setRouteMinimized((v) => !v)}
               onClose={() => {
                 setRoutePanelOpen(false);
                 setRouteResult(null);
                 clearRouteLines();
-                setRoutePickMode(false);
+                setRoutePickTarget(null);
               }}
             />
           </div>
@@ -505,7 +541,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
           onDelete={deletePoint}
           onEdit={(p) => setEditingPoint(p)}
           onToggleCompleted={handleToggleCompleted}
-          routeMode={routePickMode}
+          routeMode={!!routePickTarget}
           routeFrom={null}
           onRouteToggle={handleRoutePointPick}
         />
@@ -529,6 +565,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
         <div className="sheet-actions">
           <button
             className={`sheet-action-btn ${routePanelOpen ? "active" : ""}`}
+<<<<<<< HEAD
             onClick={
               routePanelOpen
                 ? () => {
@@ -539,6 +576,11 @@ export default function MapView({ searchOpen, onSearchClose }) {
                   }
                 : startRouteMode
             }
+=======
+            onClick={routePanelOpen
+              ? () => { setRoutePanelOpen(false); setRouteResult(null); clearRouteLines(); setRoutePickTarget(null); }
+              : startRouteMode}
+>>>>>>> 32312152615f039acc6319ddd8a675038bc9ec9b
           >
             {routeBuilding
               ? "⏳"
@@ -559,9 +601,11 @@ export default function MapView({ searchOpen, onSearchClose }) {
           <div style={{ padding: "0 12px 8px" }}>
             <RoutePanel
               waypoints={routeWaypoints}
-              allPoints={points}
-              onWaypointsChange={setRouteWaypoints}
-              onAddWaypoint={() => setRoutePickMode(true)}
+              buildState={routePickTarget ? "pick" : "edit"}
+              pickTarget={routePickTarget}
+              onPickStart={() => setRoutePickTarget("start")}
+              onPickFinish={() => setRoutePickTarget("finish")}
+              onPickStop={() => setRoutePickTarget("stop")}
               onRemoveWaypoint={(i) =>
                 setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
               }
@@ -569,12 +613,13 @@ export default function MapView({ searchOpen, onSearchClose }) {
               onFitRoute={() => fitToWaypoints()}
               result={routeResult}
               building={routeBuilding}
-              pickMode={routePickMode}
+              minimized={routeMinimized}
+              onMinimize={() => setRouteMinimized((v) => !v)}
               onClose={() => {
                 setRoutePanelOpen(false);
                 setRouteResult(null);
                 clearRouteLines();
-                setRoutePickMode(false);
+                setRoutePickTarget(null);
               }}
             />
           </div>
@@ -589,7 +634,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
             onDelete={deletePoint}
             onEdit={(p) => setEditingPoint(p)}
             onToggleCompleted={handleToggleCompleted}
-            routeMode={routePickMode}
+            routeMode={!!routePickTarget}
             routeFrom={null}
             onRouteToggle={handleRoutePointPick}
           />
