@@ -52,160 +52,6 @@ button {
 }
 
 /* ============================================================
-   TOPBAR — fixed, 3-column, properly centered
-   ============================================================ */
-.navbar-glass {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: calc(48px + max(0px, env(safe-area-inset-top, 0px)));
-  padding: max(0px, env(safe-area-inset-top, 0px)) 12px 0;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  z-index: 60;
-  background: rgba(8, 10, 15, 0.85);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-bottom: 0.5px solid var(--glass-border);
-}
-
-/* Left slot */
-.navbar-glass > :first-child {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-start;
-}
-
-/* Center slot */
-.navbar-glass > :nth-child(2) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Right slot */
-.navbar-glass > :last-child {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-/* Logo */
-.navbar-glass .logo-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
-}
-.navbar-glass .logo-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  flex-shrink: 0;
-}
-
-/* Desktop tabs in center */
-.navbar-glass .desktop-tabs {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-.navbar-glass .desktop-tabs .btn-ghost {
-  padding: 6px 12px;
-  font-size: 13px;
-  font-weight: 500;
-  border-radius: 10px;
-}
-
-/* User badge */
-.navbar-glass .user-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
-}
-.navbar-glass .user-avatar {
-  font-size: 14px;
-}
-.navbar-glass .user-name {
-  font-size: 13px;
-  opacity: 0.9;
-}
-
-@media (max-width: 640px) {
-  .navbar-glass .desktop-tabs {
-    display: none;
-  }
-  .navbar-glass .user-name {
-    display: none;
-  }
-  .navbar-glass .user-badge {
-    padding: 5px 8px;
-    background: transparent;
-    border: none;
-  }
-}
-
-/* ============================================================
-   TOPBAR MENU DROPDOWN
-   ============================================================ */
-.topbar-menu-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: rgba(10, 14, 25, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  z-index: 1300;
-  min-width: 160px;
-}
-
-.topbar-menu-item {
-  display: block;
-  width: 100%;
-  padding: 12px 16px;
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.7);
-  text-align: left;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
-}
-
-.topbar-menu-item:last-child {
-  border-bottom: none;
-}
-
-.topbar-menu-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-}
-
-.topbar-menu-item.active {
-  background: rgba(10, 132, 255, 0.15);
-  color: var(--accent);
-  border-left: 2px solid var(--accent);
-  padding-left: 14px;
-}
-
-/* ============================================================
    BOTTOM NAV — centered pill, fixed
    ============================================================ */
 .bottom-nav-wrap {
@@ -284,16 +130,6 @@ button {
 /* ============================================================
    MAIN CONTENT — below topbar
    ============================================================ */
-.main-content {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  min-height: 0;
-  margin-top: 56px;
-  width: 100%;
-  max-width: 100vw;
-}
-
 /* compat: old selector used in App.jsx */
 .flex.flex-1.overflow-hidden.min-h-0 {
   margin-top: calc(56px + max(0px, env(safe-area-inset-top, 0px)));
@@ -523,11 +359,6 @@ button {
 
   z-index: 1100;
 }
-.search-input-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
 .search-inp {
   width: 100%;
   padding: 13px 42px 13px 18px;
@@ -679,9 +510,6 @@ button {
     display: inline !important;
   }
 }
-.space-y-3 > * + * {
-  margin-top: 8px;
-}
 .text-small {
   font-size: 12px;
 }
@@ -769,21 +597,6 @@ button {
   color: rgba(255, 255, 255, 0.6) !important;
 }
 
-.btn-icon {
-  background: transparent;
-  border: none;
-  color: #cbd5e1;
-  padding: 8px;
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn-icon:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
 .list-item {
   display: flex;
   align-items: center;
@@ -855,55 +668,6 @@ button {
   50% {
     transform: scale(1.12);
   }
-}
-.popup-card {
-  background: rgba(6, 8, 14, 0.95);
-  padding: 10px 12px;
-  border-radius: 12px;
-  min-width: 160px;
-  color: #e6eef800;
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
-}
-.popup-title {
-  font-weight: 600;
-  margin-bottom: 5px;
-  font-size: 14px;
-}
-.popup-meta {
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-.popup-addr {
-  font-size: 12px;
-  color: var(--muted);
-}
-.popup-desc {
-  font-size: 13px;
-  color: #dfe7f7;
-  margin-top: 4px;
-}
-.popup-cost {
-  font-size: 12px;
-  color: var(--success);
-  margin-top: 4px;
-}
-.popup-comment {
-  font-size: 12px;
-  color: var(--muted);
-  font-style: italic;
-  margin-top: 4px;
-}
-
-.leaflet-container {
-  background: transparent;
-}
-.leaflet-control-attribution,
-.leaflet-control.leaflet-control-attribution {
-  background: transparent !important;
-  color: rgba(255, 255, 255, 0.45) !important;
-  border: none !important;
-  font-size: 10px !important;
 }
 
 /* ============================================================
@@ -1149,27 +913,6 @@ button {
   color: rgba(154, 163, 178, 0.5);
 }
 
-.field-textarea {
-  width: 100%;
-  padding: 11px 14px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
-  color: #e6eef8;
-  font-size: 15px;
-  font-family: inherit;
-  outline: none;
-  resize: none;
-  min-height: 72px;
-  transition: border-color 0.15s;
-}
-.field-textarea:focus {
-  border-color: rgba(10, 132, 255, 0.5);
-}
-.field-textarea::placeholder {
-  color: rgba(154, 163, 178, 0.5);
-}
-
 .field-sel {
   padding: 11px 14px;
   border-radius: 12px;
@@ -1268,22 +1011,6 @@ button {
   object-fit: cover;
   display: block;
 }
-.attachment-remove {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
-  border: none;
-  color: #fff;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 /* ============================================================
    CHECKBOX
@@ -1374,22 +1101,6 @@ button {
   .notes-editor {
     flex: 1;
   }
-
-  /* JS toggles these */
-  .notes-list-panel.mobile-hidden {
-    display: none;
-  }
-  .notes-editor.mobile-hidden {
-    display: none;
-  }
-  .notes-list-panel.mobile-visible {
-    display: flex;
-    flex-direction: column;
-  }
-  .notes-editor.mobile-visible {
-    display: flex;
-    flex-direction: column;
-  }
 }
 
 /* Desktop: both panes side by side */
@@ -1406,9 +1117,6 @@ button {
     flex-direction: column;
   }
   /* Remove mobile-only back button on desktop */
-  .notes-back-btn {
-    display: none;
-  }
 }
 
 .notes-list-panel {
@@ -1506,26 +1214,6 @@ button {
   border-bottom: 0.5px solid var(--glass-border);
   flex-shrink: 0;
 }
-.notes-back-btn {
-  background: transparent;
-  border: none;
-  color: var(--accent);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 4px 0;
-}
-.notes-del-btn {
-  background: transparent;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 4px;
-  opacity: 0.7;
-}
-.notes-del-btn:hover {
-  opacity: 1;
-}
 
 /* Desktop: old note-editor-header replaces topbar */
 .note-editor-header {
@@ -1552,10 +1240,6 @@ button {
 }
 .notes-placeholder-text {
   font-size: 14px;
-}
-
-.notes-list-toggle {
-  display: none; /* keep for desktop compat but not needed now */
 }
 
 .note-title-inp {
@@ -1770,12 +1454,6 @@ button {
   height: 16px;
   accent-color: var(--accent);
   cursor: pointer;
-  flex-shrink: 0;
-}
-.expense-cat-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
   flex-shrink: 0;
 }
 .expense-info {
@@ -2231,14 +1909,6 @@ button {
     font-size: 14px;
   }
 }
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none; /* IE/Edge */
-  scrollbar-width: none; /* Firefox */
-}
 
 .finance-view {
   display: flex;
@@ -2277,19 +1947,6 @@ button {
 
   color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-}
-
-.ios-popup-image {
-  width: 100%;
-  height: 110px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.ios-popup-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .ios-popup-body {
@@ -2373,28 +2030,35 @@ button {
   letter-spacing: -0.2px;
 }
 
-.ios-subtitle {
-  font-size: 12px;
-  opacity: 0.7;
+/* ============================================================
+   MISSING CLASSES
+   ============================================================ */
+.p-panel {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 0.5px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-soft);
+  padding: 16px; /* Додано базовий відступ */
 }
 
-.ios-line {
-  font-size: 12px;
-  opacity: 0.65;
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-900); /* Використовуємо змінну для фону */
+  color: #fff;
+  font-size: 24px;
+  z-index: 9999;
 }
 
-.ios-desc {
-  font-size: 12px;
-  opacity: 0.85;
-  line-height: 1.3;
-}
-
-.ios-price {
-  font-size: 13px;
-  font-weight: 600;
-  color: #30d158;
-  margin-top: 4px;
-}
 /* ============================================================
    PATCHES — append these at the END of global.css
    ============================================================ */
