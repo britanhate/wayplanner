@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import L from "leaflet";
+import "@maptiler/leaflet-maptilersdk";
 import "leaflet/dist/leaflet.css";
 import { useAuth } from "../../lib/AuthContext";
 import { usePoints } from "../../hooks/usePoints";
@@ -19,12 +20,12 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const { points, deletePoint, updatePoint } = usePoints();
   const { addExpense, updateExpense, deleteExpenseByPointId } = useExpenses();
 
-  const mapRef         = useRef(null);
-  const mapInstance    = useRef(null);
-  const markersRef     = useRef({});
-  const routeLayers    = useRef([]);
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  const markersRef = useRef({});
+  const routeLayers = useRef([]);
   const metroLayersRef = useRef([]);
-  const metroDataRef   = useRef(null);
+  const metroDataRef = useRef(null);
   const previewMarkerRef = useRef(null);
 
   const SWIPE_THRESHOLD = 60;
@@ -32,25 +33,27 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const [snap, setSnap] = useState("keep");
 
   const [metroDataLoaded, setMetroDataLoaded] = useState(false);
-  const [pendingPos,   setPendingPos]   = useState(null);
-  const [geocoded,     setGeocoded]     = useState(null);
-  const [previewPos,   setPreviewPos]   = useState(null);
+  const [pendingPos, setPendingPos] = useState(null);
+  const [geocoded, setGeocoded] = useState(null);
+  const [previewPos, setPreviewPos] = useState(null);
   const [editingPoint, setEditingPoint] = useState(null);
-  const [showMetro,    setShowMetro]    = useState(true);
+  const [showMetro, setShowMetro] = useState(true);
 
   // ── Route state (новий) ──
-  const [routePanelOpen,  setRoutePanelOpen]  = useState(false);
-  const [routeWaypoints,  setRouteWaypoints]  = useState([]);
-  const [routePickMode,   setRoutePickMode]   = useState(false); // вибір точки для маршруту
-  const [routeResult,     setRouteResult]     = useState(null);
-  const [routeBuilding,   setRouteBuilding]   = useState(false);
+  const [routePanelOpen, setRoutePanelOpen] = useState(false);
+  const [routeWaypoints, setRouteWaypoints] = useState([]);
+  const [routePickMode, setRoutePickMode] = useState(false); // вибір точки для маршруту
+  const [routeResult, setRouteResult] = useState(null);
+  const [routeBuilding, setRouteBuilding] = useState(false);
 
   // ── Swipe ──
-  const onTouchStart = (e) => { dragStartY.current = e.touches[0].clientY; };
-  const onTouchEnd   = (e) => {
+  const onTouchStart = (e) => {
+    dragStartY.current = e.touches[0].clientY;
+  };
+  const onTouchEnd = (e) => {
     if (dragStartY.current === null) return;
     const dy = dragStartY.current - e.changedTouches[0].clientY;
-    if (dy >  SWIPE_THRESHOLD) setSnap("full");
+    if (dy > SWIPE_THRESHOLD) setSnap("full");
     if (dy < -SWIPE_THRESHOLD) setSnap("keep");
     dragStartY.current = null;
   };
@@ -59,13 +62,23 @@ export default function MapView({ searchOpen, onSearchClose }) {
   useEffect(() => {
     (async () => {
       try {
-        const res  = await fetch("/metro_paris.geojson");
+        const res = await fetch("/metro_paris.geojson");
         const text = await res.text();
-        metroDataRef.current = text.trim().split("\n")
-          .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+        metroDataRef.current = text
+          .trim()
+          .split("\n")
+          .map((l) => {
+            try {
+              return JSON.parse(l);
+            } catch {
+              return null;
+            }
+          })
           .filter(Boolean);
         setMetroDataLoaded(true);
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     })();
   }, []);
 
@@ -84,10 +97,15 @@ export default function MapView({ searchOpen, onSearchClose }) {
           const coords = feature.geometry.coordinates.map((c) => [c[1], c[0]]);
           if (coords.length < 2) return;
           const color = getLineColor(feature);
-          const pl = L.polyline(coords, { color, weight: 3.5, opacity: 0.85 })
-            .addTo(mapInstance.current);
+          const pl = L.polyline(coords, {
+            color,
+            weight: 3.5,
+            opacity: 0.85,
+          }).addTo(mapInstance.current);
           metroLayersRef.current.push(pl);
-        } catch (e) { console.error(e); }
+        } catch (e) {
+          console.error(e);
+        }
       });
   }, [clearMetro]);
 
@@ -98,33 +116,46 @@ export default function MapView({ searchOpen, onSearchClose }) {
       zoomControl: false,
       tap: false,
     }).setView([48.8566, 2.3522], 12);
-    L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap",
-      maxZoom: 19,
-    }).addTo(mapInstance.current);
+    L.tileLayer(
+      "https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=53DOD0o2wMmfZs5C4sZP",
+      {
+        tileSize: 512,
+        zoomOffset: -1,
+        attribution: "© OpenStreetMap contributors",
+      },
+    ).addTo(mapInstance.current);
     mapInstance.current.on("click", (e) => {
       if (routePickMode) return;
       setPreviewPos(null);
       setGeocoded(null);
       setPendingPos({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
-    return () => { mapInstance.current?.remove(); mapInstance.current = null; };
+    return () => {
+      mapInstance.current?.remove();
+      mapInstance.current = null;
+    };
   }, []);
 
   // routePickMode ref для map click
   const routePickModeRef = useRef(false);
-  useEffect(() => { routePickModeRef.current = routePickMode; }, [routePickMode]);
+  useEffect(() => {
+    routePickModeRef.current = routePickMode;
+  }, [routePickMode]);
 
   useEffect(() => {
     const handleResize = () => mapInstance.current?.invalidateSize();
     const t = setTimeout(handleResize, 350);
     window.addEventListener("resize", handleResize);
-    return () => { clearTimeout(t); window.removeEventListener("resize", handleResize); };
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
     if (!mapInstance.current || !metroDataLoaded) return;
-    if (showMetro) renderMetro(); else clearMetro();
+    if (showMetro) renderMetro();
+    else clearMetro();
     return () => clearMetro();
   }, [showMetro, metroDataLoaded, renderMetro, clearMetro]);
 
@@ -139,12 +170,17 @@ export default function MapView({ searchOpen, onSearchClose }) {
       const icon = L.divIcon({
         html: `<div class="wp-marker ${isWaypoint ? "wp-marker-from" : ""}" style="background:${t.color}dd">${t.emoji}</div>`,
         className: "wp-marker-wrap",
-        iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18],
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -18],
       });
       const img = Array.isArray(p.attachments)
-        ? p.attachments.find((x) =>
-            (typeof x === "string" && (x.startsWith("http") || x.startsWith("data:"))) ||
-            (typeof x === "object" && x.data))
+        ? p.attachments.find(
+            (x) =>
+              (typeof x === "string" &&
+                (x.startsWith("http") || x.startsWith("data:"))) ||
+              (typeof x === "object" && x.data),
+          )
         : null;
       const imgSrc = img ? (typeof img === "string" ? img : img.data) : null;
       const popup = `
@@ -177,7 +213,9 @@ export default function MapView({ searchOpen, onSearchClose }) {
     const icon = L.divIcon({
       html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff">📍</div>`,
       className: "wp-marker-wrap",
-      iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18],
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -18],
     });
     const popup = `
       <div class="ios-card">
@@ -188,9 +226,14 @@ export default function MapView({ searchOpen, onSearchClose }) {
         </div>
       </div>`;
     const marker = L.marker([previewPos.lat, previewPos.lng], { icon })
-      .addTo(mapInstance.current).bindPopup(popup).openPopup();
+      .addTo(mapInstance.current)
+      .bindPopup(popup)
+      .openPopup();
     previewMarkerRef.current = marker;
-    window.__addPreviewPoint = () => { setPendingPos(previewPos); marker.closePopup(); };
+    window.__addPreviewPoint = () => {
+      setPendingPos(previewPos);
+      marker.closePopup();
+    };
     return () => {
       previewMarkerRef.current?.remove();
       previewMarkerRef.current = null;
@@ -218,32 +261,44 @@ export default function MapView({ searchOpen, onSearchClose }) {
     routeLayers.current = [];
   }, []);
 
-  const drawRouteLegs = useCallback((legs) => {
-    clearRouteLines();
-    // SerpApi не дає polyline — малюємо пряму лінію між точками як заглушку
-    legs.forEach((leg) => {
-      const l = L.polyline(
-        [[leg.from.lat, leg.from.lng], [leg.to.lat, leg.to.lng]],
-        { color: "#2a7de8", weight: 4, opacity: 0.7, dashArray: "8 6" },
-      ).addTo(mapInstance.current);
-      routeLayers.current.push(l);
-    });
-    if (routeLayers.current.length) {
-      mapInstance.current.fitBounds(
-        L.featureGroup(routeLayers.current).getBounds().pad(0.2),
-      );
-    }
-  }, [clearRouteLines]);
+  const drawRouteLegs = useCallback(
+    (legs) => {
+      clearRouteLines();
+      // SerpApi не дає polyline — малюємо пряму лінію між точками як заглушку
+      legs.forEach((leg) => {
+        const l = L.polyline(
+          [
+            [leg.from.lat, leg.from.lng],
+            [leg.to.lat, leg.to.lng],
+          ],
+          { color: "#2a7de8", weight: 4, opacity: 0.7, dashArray: "8 6" },
+        ).addTo(mapInstance.current);
+        routeLayers.current.push(l);
+      });
+      if (routeLayers.current.length) {
+        mapInstance.current.fitBounds(
+          L.featureGroup(routeLayers.current).getBounds().pad(0.2),
+        );
+      }
+    },
+    [clearRouteLines],
+  );
 
   // ── Route logic ──
-  const fitToWaypoints = useCallback((wps = routeWaypoints) => {
-    if (!mapInstance.current || wps.length < 2) return;
-    const bounds = L.latLngBounds(wps.map((wp) => [wp.lat, wp.lng]));
-    mapInstance.current.fitBounds(bounds.pad(0.22));
-  }, [routeWaypoints]);
+  const fitToWaypoints = useCallback(
+    (wps = routeWaypoints) => {
+      if (!mapInstance.current || wps.length < 2) return;
+      const bounds = L.latLngBounds(wps.map((wp) => [wp.lat, wp.lng]));
+      mapInstance.current.fitBounds(bounds.pad(0.22));
+    },
+    [routeWaypoints],
+  );
 
   const startRouteMode = () => {
-    if (points.length < 2) { alert("Додайте хоча б 2 точки для маршруту"); return; }
+    if (points.length < 2) {
+      alert("Додайте хоча б 2 точки для маршруту");
+      return;
+    }
     setRouteWaypoints([]);
     setRoutePanelOpen(true);
     setRouteResult(null);
@@ -260,14 +315,14 @@ export default function MapView({ searchOpen, onSearchClose }) {
       const legs = data.legs.map((leg) => {
         const parsed = parseLeg(leg);
         return {
-          from:         leg.from,
-          to:           leg.to,
-          totalDurFmt:  parsed?.totalDurFmt  || "—",
+          from: leg.from,
+          to: leg.to,
+          totalDurFmt: parsed?.totalDurFmt || "—",
           totalDistFmt: parsed?.totalDistFmt || "—",
-          totalDurSec:  parsed?.totalDurSec  || 0,
-          totalDistM:   parsed?.totalDistM   || 0,
-          via:          parsed?.via          || "",
-          steps:        parsed?.steps        || [],
+          totalDurSec: parsed?.totalDurSec || 0,
+          totalDistM: parsed?.totalDistM || 0,
+          via: parsed?.via || "",
+          steps: parsed?.steps || [],
         };
       });
       setRouteResult({ legs });
@@ -280,7 +335,10 @@ export default function MapView({ searchOpen, onSearchClose }) {
 
   // Вибір точки зі списку для додавання в маршрут
   const handleRoutePointPick = (p) => {
-    if (!routePickMode) { flyTo(p); return; }
+    if (!routePickMode) {
+      flyTo(p);
+      return;
+    }
     const wp = { id: p.id, name: p.name, lat: p.lat, lng: p.lng };
     setRouteWaypoints((prev) => {
       if (prev.some((item) => item.id === wp.id)) return prev;
@@ -293,17 +351,28 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const handleSavePoint = async (data) => {
     try {
       const { data: inserted, error } = await supabase
-        .from("points").insert([{ ...data, created_by: user.id }]).select().single();
+        .from("points")
+        .insert([{ ...data, created_by: user.id }])
+        .select()
+        .single();
       if (error) throw error;
       if (data.estimated_cost > 0) {
         await addExpense({
-          name: `🏷️ ${data.name}`, amount: data.estimated_cost,
-          category: "Місце", currency: data.currency,
-          created_by: user.id, point_id: inserted.id,
+          name: `🏷️ ${data.name}`,
+          amount: data.estimated_cost,
+          category: "Місце",
+          currency: data.currency,
+          created_by: user.id,
+          point_id: inserted.id,
         });
       }
-      setPendingPos(null); setGeocoded(null); setPreviewPos(null);
-    } catch (e) { console.error(e); alert("Помилка при збереженні"); }
+      setPendingPos(null);
+      setGeocoded(null);
+      setPreviewPos(null);
+    } catch (e) {
+      console.error(e);
+      alert("Помилка при збереженні");
+    }
   };
 
   const handleEditPoint = async (data) => {
@@ -311,41 +380,58 @@ export default function MapView({ searchOpen, onSearchClose }) {
       const pointId = editingPoint.id;
       await updatePoint(pointId, data);
       if (data.estimated_cost > 0) {
-        const { data: ex } = await supabase.from("expenses").select("id")
-          .eq("point_id", pointId).single();
+        const { data: ex } = await supabase
+          .from("expenses")
+          .select("id")
+          .eq("point_id", pointId)
+          .single();
         if (ex) {
           await updateExpense(ex.id, {
-            name: `🏷️ ${data.name}`, amount: data.estimated_cost, currency: data.currency,
+            name: `🏷️ ${data.name}`,
+            amount: data.estimated_cost,
+            currency: data.currency,
           });
         } else {
           await addExpense({
-            name: `🏷️ ${data.name}`, amount: data.estimated_cost,
-            category: "Місце", currency: data.currency,
-            created_by: user.id, point_id: pointId,
+            name: `🏷️ ${data.name}`,
+            amount: data.estimated_cost,
+            category: "Місце",
+            currency: data.currency,
+            created_by: user.id,
+            point_id: pointId,
           });
         }
       } else if (editingPoint.estimated_cost && !data.estimated_cost) {
         await deleteExpenseByPointId(pointId);
       }
       setEditingPoint(null);
-    } catch (e) { console.error(e); alert("Помилка при редагуванні"); }
+    } catch (e) {
+      console.error(e);
+      alert("Помилка при редагуванні");
+    }
   };
 
   const handleToggleCompleted = async (point) => {
-    try { await updatePoint(point.id, { is_completed: !point.is_completed }); }
-    catch (e) { console.error(e); }
+    try {
+      await updatePoint(point.id, { is_completed: !point.is_completed });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const snapClass = snap === "full" ? "sheet-full" : "sheet-keep";
 
   return (
     <div className="map-view">
-
       {/* ── Floating search overlay (mobile) ── */}
       {searchOpen && (
         <div className="map-search-overlay">
           <SearchBox onResult={handleGeocodeResult} />
-          <button className="search-close-btn" onClick={onSearchClose} aria-label="Закрити пошук">
+          <button
+            className="search-close-btn"
+            onClick={onSearchClose}
+            aria-label="Закрити пошук"
+          >
             ×
           </button>
         </div>
@@ -362,11 +448,22 @@ export default function MapView({ searchOpen, onSearchClose }) {
         <div className="sidebar-section" style={{ marginTop: 8 }}>
           <button
             className={`route-btn ${routePanelOpen ? "active" : ""}`}
-            onClick={routePanelOpen
-              ? () => { setRoutePanelOpen(false); setRouteResult(null); clearRouteLines(); setRoutePickMode(false); }
-              : startRouteMode}
+            onClick={
+              routePanelOpen
+                ? () => {
+                    setRoutePanelOpen(false);
+                    setRouteResult(null);
+                    clearRouteLines();
+                    setRoutePickMode(false);
+                  }
+                : startRouteMode
+            }
           >
-            {routeBuilding ? "⏳ Будуємо..." : routePanelOpen ? "🔴 Закрити маршрут" : "🚌 Маршрут"}
+            {routeBuilding
+              ? "⏳ Будуємо..."
+              : routePanelOpen
+                ? "🔴 Закрити маршрут"
+                : "🚌 Маршрут"}
           </button>
           <button
             className={`route-btn ${showMetro ? "active" : ""}`}
@@ -421,18 +518,33 @@ export default function MapView({ searchOpen, onSearchClose }) {
 
       {/* ── Mobile bottom sheet ── */}
       <div className={`map-sheet ${snapClass}`}>
-        <div className="sheet-handle-wrap" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <div
+          className="sheet-handle-wrap"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
           <div className="sheet-handle" />
         </div>
 
         <div className="sheet-actions">
           <button
             className={`sheet-action-btn ${routePanelOpen ? "active" : ""}`}
-            onClick={routePanelOpen
-              ? () => { setRoutePanelOpen(false); setRouteResult(null); clearRouteLines(); setRoutePickMode(false); }
-              : startRouteMode}
+            onClick={
+              routePanelOpen
+                ? () => {
+                    setRoutePanelOpen(false);
+                    setRouteResult(null);
+                    clearRouteLines();
+                    setRoutePickMode(false);
+                  }
+                : startRouteMode
+            }
           >
-            {routeBuilding ? "⏳" : routePanelOpen ? "🔴 Маршрут" : "🚌 Маршрут"}
+            {routeBuilding
+              ? "⏳"
+              : routePanelOpen
+                ? "🔴 Маршрут"
+                : "🚌 Маршрут"}
           </button>
           <button
             className={`sheet-action-btn ${showMetro ? "active" : ""}`}
@@ -471,7 +583,9 @@ export default function MapView({ searchOpen, onSearchClose }) {
         <div className="sheet-scroll">
           <PointsSidebar
             points={points}
-            onFly={(p) => { flyTo(p); }}
+            onFly={(p) => {
+              flyTo(p);
+            }}
             onDelete={deletePoint}
             onEdit={(p) => setEditingPoint(p)}
             onToggleCompleted={handleToggleCompleted}
@@ -487,7 +601,11 @@ export default function MapView({ searchOpen, onSearchClose }) {
           position={pendingPos}
           geocoded={geocoded}
           onSave={handleSavePoint}
-          onClose={() => { setPendingPos(null); setGeocoded(null); setPreviewPos(null); }}
+          onClose={() => {
+            setPendingPos(null);
+            setGeocoded(null);
+            setPreviewPos(null);
+          }}
         />
       )}
       {editingPoint && (
