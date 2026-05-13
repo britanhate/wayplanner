@@ -308,6 +308,12 @@ export default function MapView({ searchOpen, onSearchClose }) {
     setSnap("full");
   };
 
+  const startWaypointPicking = () => {
+    if (!routeWaypoints.length) setRoutePickTarget("start");
+    else if (routeWaypoints.length === 1) setRoutePickTarget("finish");
+    else setRoutePickTarget("stop");};
+
+
   const handleBuildRoute = async (travelMode) => {
     if (routeWaypoints.length < 2) return;
     setRouteBuilding(true);
