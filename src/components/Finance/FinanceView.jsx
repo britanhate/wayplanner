@@ -375,7 +375,7 @@ export default function FinanceView() {
               </div>
               <div className="stat-block">
                 <div className="stat-label" style={{ color: "#ff9f0a" }}>
-                  ◐ Борг
+                  ◐ Заплановано
                 </div>
                 <div className="stat-value" style={{ color: "#ff9f0a" }}>
                   {totalUnpaid.toFixed(0)}
