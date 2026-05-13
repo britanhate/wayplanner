@@ -255,17 +255,55 @@ export default function MapView({ searchOpen, onSearchClose }) {
     routeLayers.current = [];
   }, []);
 
+  const extractRouteCoords = useCallback((leg) => {
+    const encoded = leg?.best?.polyline || leg?.best?.overview_polyline;
+    if (Array.isArray(encoded) && encoded.length > 1) {
+      return encoded
+        .map((pt) =>
+          Array.isArray(pt) && pt.length >= 2 ? [pt[0], pt[1]] : null,
+        )
+        .filter(Boolean);
+    }
+
+    const geometry = leg?.best?.geometry || leg?.geometry;
+    if (Array.isArray(geometry?.coordinates)) {
+      return geometry.coordinates
+        .map((pt) =>
+          Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null,
+        )
+        .filter(Boolean);
+    }
+
+    if (Array.isArray(leg?.polyline)) {
+      return leg.polyline
+        .map((pt) =>
+          Array.isArray(pt) && pt.length >= 2 ? [pt[0], pt[1]] : null,
+        )
+        .filter(Boolean);
+    }
+
+    return null;
+  }, []);
+
   const drawRouteLegs = useCallback(
-    (legs) => {
+    (legs, rawLegs = []) => {
       clearRouteLines();
-      // SerpApi не дає polyline — малюємо пряму лінію між точками як заглушку
-      legs.forEach((leg) => {
+      legs.forEach((leg, idx) => {
+        const coords = extractRouteCoords(rawLegs[idx]);
+        const hasRealGeometry = Array.isArray(coords) && coords.length > 1;
         const l = L.polyline(
-          [
-            [leg.from.lat, leg.from.lng],
-            [leg.to.lat, leg.to.lng],
-          ],
-          { color: "#2a7de8", weight: 4, opacity: 0.7, dashArray: "8 6" },
+          hasRealGeometry
+            ? coords
+            : [
+                [leg.from.lat, leg.from.lng],
+                [leg.to.lat, leg.to.lng],
+              ],
+          {
+            color: "#2a7de8",
+            weight: 4,
+            opacity: 0.8,
+            dashArray: hasRealGeometry ? null : "8 6",
+          },
         ).addTo(mapInstance.current);
         routeLayers.current.push(l);
       });
@@ -275,7 +313,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
         );
       }
     },
-    [clearRouteLines],
+    [clearRouteLines, extractRouteCoords],
   );
 
   // ── Route logic ──
@@ -308,11 +346,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
     setSnap("full");
   };
 
-  const startWaypointPicking = () => {
-    if (!routeWaypoints.length) setRoutePickTarget("start");
-    else if (routeWaypoints.length === 1) setRoutePickTarget("finish");
-    else setRoutePickTarget("stop");};
-
 
   const handleBuildRoute = async (travelMode) => {
     if (routeWaypoints.length < 2) return;
@@ -333,7 +366,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
         };
       });
       setRouteResult({ legs });
-      drawRouteLegs(legs);
+      drawRouteLegs(legs, data.legs);
     } catch (e) {
       alert("Помилка маршруту: " + e.message);
     }
