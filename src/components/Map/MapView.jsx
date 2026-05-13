@@ -12,6 +12,7 @@ import SearchBox from "./SearchBox";
 import PointsSidebar from "./PointsSidebar";
 import AddPointModal from "./AddPointModal";
 import EditPointModal from "./EditPointModal";
+import { getLineColor } from "../../lib/metroColors";
 
 export default function MapView({ onSidebarClose }) {
   const { user } = useAuth();
@@ -27,9 +28,9 @@ export default function MapView({ onSidebarClose }) {
   const metroDataRef = useRef(null);
   const previewMarkerRef = useRef(null);
 
-  // Bottom-sheet drag
   const dragStartY = useRef(null);
-  const [snap, setSnap] = useState("keep"); // "keep" | "full"
+  const sidebarScrollRef = useRef(null);
+  const [snap, setSnap] = useState("keep");
 
   const [metroDataLoaded, setMetroDataLoaded] = useState(false);
   const [pendingPos, setPendingPos] = useState(null);
@@ -43,12 +44,19 @@ export default function MapView({ onSidebarClose }) {
   const [routeBuilding, setRouteBuilding] = useState(false);
   const [showMetro, setShowMetro] = useState(true);
   const [routeMinimized, setRouteMinimized] = useState(false);
+  // Mobile: show route detail panel instead of points list
+  const [mobileRouteOpen, setMobileRouteOpen] = useState(false);
 
   useEffect(() => {
-    if (snap === "keep") onSidebarClose?.();
+    if (snap === "keep") {
+      // Скидаємо скрол при закритті сайдбара
+      if (sidebarScrollRef.current) {
+        sidebarScrollRef.current.scrollTop = 0;
+      }
+      onSidebarClose?.();
+    }
   }, [snap, onSidebarClose]);
 
-  // ── Drag handlers ──
   const onTouchStart = (e) => {
     dragStartY.current = e.touches[0].clientY;
   };
@@ -69,10 +77,29 @@ export default function MapView({ onSidebarClose }) {
         metroDataRef.current = text
           .trim()
           .split("\n")
-          .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+          .map((l) => {
+            try {
+              return JSON.parse(l);
+            } catch {
+              return null;
+            }
+          })
           .filter(Boolean);
+        const sample = metroDataRef.current.find(
+          (f) => f.geometry?.type === "LineString",
+        );
+        if (sample) {
+          console.log("Metro feature properties:", sample.properties);
+          console.log(
+            "Metro feature keys:",
+            Object.keys(sample.properties || {}),
+          );
+        }
+
         setMetroDataLoaded(true);
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     })();
   }, []);
 
@@ -84,61 +111,70 @@ export default function MapView({ onSidebarClose }) {
   const renderMetro = useCallback(() => {
     if (!mapInstance.current || !metroDataRef.current) return;
     clearMetro();
+
     metroDataRef.current
       .filter((f) => f.geometry?.type === "LineString")
-      .forEach((edge) => {
+      .forEach((feature) => {
         try {
-          const coords = edge.geometry.coordinates.map((c) => [c[1], c[0]]);
-          if (coords.length > 1) {
-            const pl = L.polyline(coords, { color: "#0400f8", weight: 3, opacity: 0.75 })
-              .addTo(mapInstance.current);
-            metroLayersRef.current.push(pl);
-          }
-        } catch (e) { console.error(e); }
+          const coords = feature.geometry.coordinates.map((c) => [c[1], c[0]]);
+          if (coords.length < 2) return;
+
+          const color = getLineColor(feature);
+
+          const pl = L.polyline(coords, {
+            color,
+            weight: 3.5,
+            opacity: 0.85,
+          }).addTo(mapInstance.current);
+
+          metroLayersRef.current.push(pl);
+        } catch (e) {
+          console.error(e);
+        }
       });
   }, [clearMetro]);
 
   // ── Init map ──
   useEffect(() => {
     if (mapInstance.current) return;
-
     mapInstance.current = L.map(mapRef.current, {
       zoomControl: false,
-      // Tell Leaflet not to listen to touch events on the document
-      // (prevents scroll-blocking on iOS)
       tap: false,
     }).setView([48.8566, 2.3522], 12);
-
     L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap",
       maxZoom: 19,
     }).addTo(mapInstance.current);
-
     mapInstance.current.on("click", (e) => {
       if (routeModeRef.current) return;
       setPreviewPos(null);
       setGeocoded(null);
       setPendingPos({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
-
     return () => {
       mapInstance.current?.remove();
       mapInstance.current = null;
     };
   }, []);
 
-  useEffect(() => { routeModeRef.current = routeMode; }, [routeMode]);
+  useEffect(() => {
+    routeModeRef.current = routeMode;
+  }, [routeMode]);
 
   useEffect(() => {
     const handleResize = () => mapInstance.current?.invalidateSize();
     const t = setTimeout(handleResize, 350);
     window.addEventListener("resize", handleResize);
-    return () => { clearTimeout(t); window.removeEventListener("resize", handleResize); };
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
     if (!mapInstance.current || !metroDataLoaded) return;
-    if (showMetro) renderMetro(); else clearMetro();
+    if (showMetro) renderMetro();
+    else clearMetro();
     return () => clearMetro();
   }, [showMetro, metroDataLoaded, renderMetro, clearMetro]);
 
@@ -147,11 +183,9 @@ export default function MapView({ onSidebarClose }) {
     if (!mapInstance.current) return;
     Object.values(markersRef.current).forEach((m) => m.remove());
     markersRef.current = {};
-
     points.forEach((p) => {
       const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
       const isFrom = routeFrom?.id === p.id;
-
       const icon = L.divIcon({
         html: `<div class="wp-marker ${isFrom ? "wp-marker-from" : ""}" style="background:${t.color}dd">${t.emoji}</div>`,
         className: "wp-marker-wrap",
@@ -159,14 +193,15 @@ export default function MapView({ onSidebarClose }) {
         iconAnchor: [16, 16],
         popupAnchor: [0, -18],
       });
-
       const img = Array.isArray(p.attachments)
-        ? p.attachments.find((x) =>
-            (typeof x === "string" && (x.startsWith("http") || x.startsWith("data:"))) ||
-            (typeof x === "object" && x.data))
+        ? p.attachments.find(
+            (x) =>
+              (typeof x === "string" &&
+                (x.startsWith("http") || x.startsWith("data:"))) ||
+              (typeof x === "object" && x.data),
+          )
         : null;
       const imgSrc = img ? (typeof img === "string" ? img : img.data) : null;
-
       const popup = `
         <div class="ios-card">
           ${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}
@@ -178,12 +213,10 @@ export default function MapView({ onSidebarClose }) {
             ${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}
           </div>
         </div>`;
-
       const m = L.marker([p.lat, p.lng], { icon }).addTo(mapInstance.current);
       m.bindPopup(popup);
       markersRef.current[p.id] = m;
     });
-
     return () => {
       Object.values(markersRef.current).forEach((m) => m.remove());
       markersRef.current = {};
@@ -195,9 +228,7 @@ export default function MapView({ onSidebarClose }) {
     previewMarkerRef.current?.remove();
     previewMarkerRef.current = null;
     delete window.__addPreviewPoint;
-
     if (!previewPos || !mapInstance.current) return;
-
     const icon = L.divIcon({
       html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff">📍</div>`,
       className: "wp-marker-wrap",
@@ -205,23 +236,21 @@ export default function MapView({ onSidebarClose }) {
       iconAnchor: [16, 16],
       popupAnchor: [0, -18],
     });
-
     const popup = `
       <div class="popup-card">
         <div class="popup-title">${geocoded?.name || "Знайдене місце"}</div>
         ${geocoded?.addr ? `<div class="popup-addr">📍 ${geocoded.addr}</div>` : ""}
         <button onclick="window.__addPreviewPoint()" style="margin-top:8px;width:100%;padding:8px;background:#0a84ff;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">+ Додати точку</button>
       </div>`;
-
     const marker = L.marker([previewPos.lat, previewPos.lng], { icon })
-      .addTo(mapInstance.current).bindPopup(popup).openPopup();
+      .addTo(mapInstance.current)
+      .bindPopup(popup)
+      .openPopup();
     previewMarkerRef.current = marker;
-
     window.__addPreviewPoint = () => {
       setPendingPos(previewPos);
       marker.closePopup();
     };
-
     return () => {
       previewMarkerRef.current?.remove();
       previewMarkerRef.current = null;
@@ -246,13 +275,28 @@ export default function MapView({ onSidebarClose }) {
   const handleSavePoint = async (data) => {
     try {
       const { data: inserted, error } = await supabase
-        .from("points").insert([{ ...data, created_by: user.id }]).select().single();
+        .from("points")
+        .insert([{ ...data, created_by: user.id }])
+        .select()
+        .single();
       if (error) throw error;
       if (data.estimated_cost > 0) {
-        await addExpense({ name: `🏷️ ${data.name}`, amount: data.estimated_cost, category: "Місце", currency: data.currency, created_by: user.id, point_id: inserted.id });
+        await addExpense({
+          name: `🏷️ ${data.name}`,
+          amount: data.estimated_cost,
+          category: "Місце",
+          currency: data.currency,
+          created_by: user.id,
+          point_id: inserted.id,
+        });
       }
-      setPendingPos(null); setGeocoded(null); setPreviewPos(null);
-    } catch (e) { console.error(e); alert("Помилка при збереженні"); }
+      setPendingPos(null);
+      setGeocoded(null);
+      setPreviewPos(null);
+    } catch (e) {
+      console.error(e);
+      alert("Помилка при збереженні");
+    }
   };
 
   const handleEditPoint = async (data) => {
@@ -260,14 +304,35 @@ export default function MapView({ onSidebarClose }) {
       const pointId = editingPoint.id;
       await updatePoint(pointId, data);
       if (data.estimated_cost > 0) {
-        const { data: ex } = await supabase.from("expenses").select("id").eq("point_id", pointId).single();
-        if (ex) { await updateExpense(ex.id, { name: `🏷️ ${data.name}`, amount: data.estimated_cost, currency: data.currency }); }
-        else { await addExpense({ name: `🏷️ ${data.name}`, amount: data.estimated_cost, category: "Місце", currency: data.currency, created_by: user.id, point_id: pointId }); }
+        const { data: ex } = await supabase
+          .from("expenses")
+          .select("id")
+          .eq("point_id", pointId)
+          .single();
+        if (ex) {
+          await updateExpense(ex.id, {
+            name: `🏷️ ${data.name}`,
+            amount: data.estimated_cost,
+            currency: data.currency,
+          });
+        } else {
+          await addExpense({
+            name: `🏷️ ${data.name}`,
+            amount: data.estimated_cost,
+            category: "Місце",
+            currency: data.currency,
+            created_by: user.id,
+            point_id: pointId,
+          });
+        }
       } else if (editingPoint.estimated_cost && !data.estimated_cost) {
         await deleteExpenseByPointId(pointId);
       }
       setEditingPoint(null);
-    } catch (e) { console.error(e); alert("Помилка при редагуванні"); }
+    } catch (e) {
+      console.error(e);
+      alert("Помилка при редагуванні");
+    }
   };
 
   const clearRouteLines = useCallback(() => {
@@ -275,30 +340,44 @@ export default function MapView({ onSidebarClose }) {
     routeLayers.current = [];
   }, []);
 
-  const drawRoute = useCallback((paths) => {
-    clearRouteLines();
-    paths.forEach((path) => {
-      const l = L.polyline(path.map((c) => [c[1], c[0]]), { color: "#2a7de8", weight: 4, opacity: 0.8 })
-        .addTo(mapInstance.current);
-      routeLayers.current.push(l);
-    });
-    if (routeLayers.current.length) {
-      mapInstance.current.fitBounds(L.featureGroup(routeLayers.current).getBounds().pad(0.15));
-    }
-  }, [clearRouteLines]);
+  const drawRoute = useCallback(
+    (paths) => {
+      clearRouteLines();
+      paths.forEach((path) => {
+        const l = L.polyline(
+          path.map((c) => [c[1], c[0]]),
+          { color: "#2a7de8", weight: 4, opacity: 0.8 },
+        ).addTo(mapInstance.current);
+        routeLayers.current.push(l);
+      });
+      if (routeLayers.current.length) {
+        mapInstance.current.fitBounds(
+          L.featureGroup(routeLayers.current).getBounds().pad(0.15),
+        );
+      }
+    },
+    [clearRouteLines],
+  );
 
   const startRouteMode = () => {
-    if (points.length < 2) { alert("Додайте хоча б 2 точки!"); return; }
+    if (points.length < 2) {
+      alert("Додайте хоча б 2 точки!");
+      return;
+    }
     clearRouteLines();
     setRouteResult(null);
+    setMobileRouteOpen(false);
     setRouteMode(true);
     setRouteStep(1);
     setRouteFrom(null);
   };
 
   const handleToggleCompleted = async (point) => {
-    try { await updatePoint(point.id, { is_completed: !point.is_completed }); }
-    catch (e) { console.error(e); }
+    try {
+      await updatePoint(point.id, { is_completed: !point.is_completed });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleRoutePointSelect = async (p) => {
@@ -306,14 +385,37 @@ export default function MapView({ onSidebarClose }) {
       setRouteFrom(p);
       setRouteStep(2);
     } else if (routeStep === 2) {
-      if (p.id === routeFrom.id) { alert("Оберіть іншу точку!"); return; }
-      setRouteMode(false); setRouteStep(0); setRouteBuilding(true);
+      if (p.id === routeFrom.id) {
+        alert("Оберіть іншу точку!");
+        return;
+      }
+      setRouteMode(false);
+      setRouteStep(0);
+      setRouteBuilding(true);
       try {
         const res = await buildRoute(routeFrom, p);
         drawRoute(res.paths);
-        setRouteResult({ from: routeFrom, to: p, totalMin: res.totalMin, totalKm: res.totalKm, legs: buildLegs(routeFrom, p, res.totalMin, res.totalKm) });
+        const legs = buildLegs(
+          routeFrom,
+          p,
+          res.totalMin,
+          res.totalKm,
+          res.directions,
+        );
+        setRouteResult({
+          from: routeFrom,
+          to: p,
+          totalMin: res.totalMin,
+          totalKm: res.totalKm,
+          legs,
+        });
         setRouteMinimized(false);
-      } catch (e) { alert(e.message); }
+        // Auto-open route detail on mobile
+        setMobileRouteOpen(true);
+        setSnap("full");
+      } catch (e) {
+        alert(e.message);
+      }
       setRouteBuilding(false);
       setRouteFrom(null);
     }
@@ -321,31 +423,154 @@ export default function MapView({ onSidebarClose }) {
 
   const snapClass = snap === "full" ? "sheet-full" : "sheet-keep";
 
+  // ── Shared route legs renderer ──
+  const renderLegs = (legs) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {legs.map((leg, i) => (
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "flex-start",
+            padding: "4px 0",
+          }}
+        >
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              background: leg.color + "22",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 15,
+              flexShrink: 0,
+            }}
+          >
+            {leg.icon}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 500,
+                color: "#f0f4ff",
+                lineHeight: 1.3,
+              }}
+            >
+              {leg.main}
+            </div>
+            {leg.sub && (
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.5)",
+                  marginTop: 2,
+                }}
+              >
+                {leg.sub}
+              </div>
+            )}
+          </div>
+          {/* Connector line except last */}
+          {i < legs.length - 1 && (
+            <div
+              style={{
+                position: "absolute",
+                left: 27,
+                top: 36,
+                width: 2,
+                height: 10,
+                background: "rgba(255,255,255,0.08)",
+              }}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  // ── Route summary header ──
+  const renderRouteSummary = () => {
+    if (!routeResult) return null;
+    const h = Math.floor(routeResult.totalMin / 60);
+    const m = routeResult.totalMin % 60;
+    const timeStr = h > 0 ? `${h}г ${m}хв` : `${m} хв`;
+    return (
+      <div
+        style={{
+          display: "flex",
+          gap: 20,
+          marginBottom: 12,
+          paddingBottom: 12,
+          borderBottom: "0.5px solid rgba(255,255,255,0.07)",
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: "#0a84ff" }}>
+            {timeStr}
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
+            Час
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 24, fontWeight: 700 }}>
+            {routeResult.totalKm}
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>км</div>
+        </div>
+        <div style={{ flex: 1, textAlign: "right" }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: "rgba(255,255,255,0.5)",
+              lineHeight: 1.4,
+            }}
+          >
+            {routeResult.from.name}
+            <br />↓<br />
+            {routeResult.to.name}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="map-view">
-      {/* Floating search — only on mobile (desktop gets it in sidebar top) */}
+      {/* Floating search — mobile */}
       <div className="map-search-overlay">
         <SearchBox onResult={handleGeocodeResult} />
       </div>
 
       {/* ── Desktop sidebar ── */}
       <div className="map-sidebar">
-        {/* Search inside sidebar on desktop */}
         <div style={{ padding: "12px 12px 0" }}>
           <SearchBox onResult={handleGeocodeResult} />
         </div>
 
-        {/* Route / Metro controls */}
         <div className="sidebar-section" style={{ marginTop: 8 }}>
           <button
             className={`route-btn ${routeMode ? "active" : ""}`}
-            onClick={routeMode
-              ? () => { setRouteMode(false); setRouteStep(0); setRouteFrom(null); }
-              : startRouteMode}
+            onClick={
+              routeMode
+                ? () => {
+                    setRouteMode(false);
+                    setRouteStep(0);
+                    setRouteFrom(null);
+                  }
+                : startRouteMode
+            }
           >
-            {routeBuilding ? "⏳ Будуємо..." : routeMode ? `🔴 ${routeStep === 1 ? "Оберіть старт" : "Оберіть фініш"}` : "🚌 Маршрут"}
+            {routeBuilding
+              ? "⏳ Будуємо..."
+              : routeMode
+                ? `🔴 ${routeStep === 1 ? "Оберіть старт" : "Оберіть фініш"}`
+                : "🚌 Маршрут"}
           </button>
-
           <button
             className={`route-btn ${showMetro ? "active" : ""}`}
             onClick={() => setShowMetro((v) => !v)}
@@ -354,79 +579,78 @@ export default function MapView({ onSidebarClose }) {
           </button>
         </div>
 
-        {/* ── Route result panel — Google Maps style, inside sidebar ── */}
+        {/* Desktop route result */}
         {routeResult && (
-          <div style={{
-            margin: "0 12px 8px",
-            borderRadius: 14,
-            border: "0.5px solid rgba(255,255,255,0.1)",
-            background: "rgba(10,132,255,0.08)",
-            overflow: "hidden",
-          }}>
-            {/* Header */}
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "10px 14px",
-              borderBottom: routeMinimized ? "none" : "0.5px solid rgba(255,255,255,0.07)",
-            }}>
+          <div
+            style={{
+              margin: "0 12px 8px",
+              borderRadius: 14,
+              border: "0.5px solid rgba(255,255,255,0.1)",
+              background: "rgba(10,132,255,0.08)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "10px 14px",
+                borderBottom: routeMinimized
+                  ? "none"
+                  : "0.5px solid rgba(255,255,255,0.07)",
+              }}
+            >
               <span style={{ fontSize: 13, fontWeight: 600 }}>
                 🚌 {routeResult.from.name} → {routeResult.to.name}
               </span>
               <div style={{ display: "flex", gap: 4 }}>
                 <button
                   onClick={() => setRouteMinimized((v) => !v)}
-                  style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", fontSize: 14, padding: "2px 6px" }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "rgba(255,255,255,0.5)",
+                    cursor: "pointer",
+                    fontSize: 14,
+                    padding: "2px 6px",
+                  }}
                 >
                   {routeMinimized ? "▼" : "▲"}
                 </button>
                 <button
-                  onClick={() => { setRouteResult(null); clearRouteLines(); }}
-                  style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", fontSize: 16, padding: "2px 6px" }}
+                  onClick={() => {
+                    setRouteResult(null);
+                    clearRouteLines();
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "rgba(255,255,255,0.5)",
+                    cursor: "pointer",
+                    fontSize: 16,
+                    padding: "2px 6px",
+                  }}
                 >
                   ×
                 </button>
               </div>
             </div>
-
             {!routeMinimized && (
-              <div style={{ padding: "10px 14px 14px" }}>
-                {/* Summary stats */}
-                <div style={{ display: "flex", gap: 20, marginBottom: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: "#0a84ff" }}>
-                      {(() => { const h = Math.floor(routeResult.totalMin / 60); const m = routeResult.totalMin % 60; return h > 0 ? `${h}г ${m}хв` : `${m} хв`; })()}
-                    </div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Час</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 22, fontWeight: 700 }}>{routeResult.totalKm}</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>км</div>
-                  </div>
-                </div>
-
-                {/* Legs */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {routeResult.legs.map((leg, i) => (
-                    <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: "50%",
-                        background: leg.color + "22",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 15, flexShrink: 0,
-                      }}>{leg.icon}</div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 500 }}>{leg.main}</div>
-                        {leg.sub && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{leg.sub}</div>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div
+                style={{
+                  padding: "10px 14px 14px",
+                  maxHeight: 400,
+                  overflowY: "auto",
+                }}
+              >
+                {renderRouteSummary()}
+                {renderLegs(routeResult.legs)}
               </div>
             )}
           </div>
         )}
 
-        {/* Points list */}
         <PointsSidebar
           points={points}
           onFly={flyTo}
@@ -449,70 +673,125 @@ export default function MapView({ onSidebarClose }) {
         className={`map-sheet ${snapClass}`}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
+        ref={sidebarScrollRef}
       >
         <div className="sheet-handle-wrap">
           <div className="sheet-handle" />
         </div>
 
-        {/* Route result — compact strip on mobile */}
-        {routeResult && (
-          <div style={{
-            margin: "0 12px 6px",
-            padding: "8px 12px",
-            borderRadius: 12,
-            background: "rgba(10,132,255,0.1)",
-            border: "0.5px solid rgba(10,132,255,0.25)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-            flexShrink: 0,
-          }}>
-            <span style={{ fontSize: 13, fontWeight: 600 }}>🚌</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>
-                {routeResult.from.name} → {routeResult.to.name}
-              </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
-                {(() => { const h = Math.floor(routeResult.totalMin / 60); const m = routeResult.totalMin % 60; return h > 0 ? `${h}г ${m}хв` : `${m} хв`; })()} · {routeResult.totalKm} км
-              </div>
-            </div>
-            <button
-              onClick={() => { setRouteResult(null); clearRouteLines(); }}
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", fontSize: 18, padding: "0 4px" }}
-            >×</button>
-          </div>
-        )}
-
         <div className="sheet-actions">
           <button
             className={`sheet-action-btn ${routeMode ? "active" : ""}`}
-            onClick={routeMode
-              ? () => { setRouteMode(false); setRouteStep(0); setRouteFrom(null); }
-              : startRouteMode}
+            onClick={
+              routeMode
+                ? () => {
+                    setRouteMode(false);
+                    setRouteStep(0);
+                    setRouteFrom(null);
+                  }
+                : startRouteMode
+            }
           >
-            {routeBuilding ? "⏳" : routeMode ? `🔴 ${routeStep === 1 ? "Старт" : "Фініш"}` : "🚌 Маршрут"}
+            {routeBuilding
+              ? "⏳"
+              : routeMode
+                ? `🔴 ${routeStep === 1 ? "Старт" : "Фініш"}`
+                : "🚌 Маршрут"}
           </button>
-
           <button
             className={`sheet-action-btn ${showMetro ? "active" : ""}`}
             onClick={() => setShowMetro((v) => !v)}
           >
             🚇 Метро
           </button>
+          {/* Toggle between route and points list */}
+          {routeResult && (
+            <button
+              className={`sheet-action-btn ${mobileRouteOpen ? "active" : ""}`}
+              onClick={() => {
+                setMobileRouteOpen((v) => !v);
+                setSnap("full");
+              }}
+            >
+              🗺 Деталі
+            </button>
+          )}
         </div>
 
-        <div className="sheet-scroll">
-          <PointsSidebar
-            points={points}
-            onFly={(p) => { flyTo(p); setSnap("keep"); }}
-            onDelete={deletePoint}
-            onEdit={(p) => { setEditingPoint(p); setSnap("keep"); }}
-            onToggleCompleted={handleToggleCompleted}
-            routeMode={routeMode}
-            routeFrom={routeFrom}
-            onRouteToggle={handleRoutePointSelect}
-          />
+        <div className="sheet-scroll" ref={sidebarScrollRef}>
+          {/* Mobile: route detail view */}
+          {mobileRouteOpen && routeResult ? (
+            <div style={{ padding: "0 14px 24px" }}>
+              {/* Header with close */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 12,
+                }}
+              >
+                <span style={{ fontSize: 14, fontWeight: 600 }}>
+                  Деталі маршруту
+                </span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => setMobileRouteOpen(false)}
+                    style={{
+
+                      border: "none",
+                      color: "rgba(255,255,255,0.5)",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      padding: "4px 8px",
+                      borderRadius: 8,
+                      background: "rgba(255,255,255,0.06)",
+                    }}
+                  >
+                    ← Точки
+                  </button>
+                  <button
+                    onClick={() => {
+                      setRouteResult(null);
+                      clearRouteLines();
+                      setMobileRouteOpen(false);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "rgba(255,255,255,0.5)",
+                      cursor: "pointer",
+                      fontSize: 18,
+                      padding: "0 4px",
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              {renderRouteSummary()}
+              {renderLegs(routeResult.legs)}
+            </div>
+          ) : (
+            /* Normal points list */
+            <PointsSidebar
+              points={points}
+              onFly={(p) => {
+                flyTo(p);
+                setSnap("keep");
+              }}
+              onDelete={deletePoint}
+              onEdit={(p) => {
+                setEditingPoint(p);
+                setSnap("keep");
+              }}
+              onToggleCompleted={handleToggleCompleted}
+              routeMode={routeMode}
+              routeFrom={routeFrom}
+              onRouteToggle={handleRoutePointSelect}
+            />
+          )}
         </div>
       </div>
 
@@ -521,10 +800,13 @@ export default function MapView({ onSidebarClose }) {
           position={pendingPos}
           geocoded={geocoded}
           onSave={handleSavePoint}
-          onClose={() => { setPendingPos(null); setGeocoded(null); setPreviewPos(null); }}
+          onClose={() => {
+            setPendingPos(null);
+            setGeocoded(null);
+            setPreviewPos(null);
+          }}
         />
       )}
-
       {editingPoint && (
         <EditPointModal
           point={editingPoint}

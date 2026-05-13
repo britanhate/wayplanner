@@ -368,7 +368,7 @@ button {
 /* ── Search box floating ON the map, Google Maps style ── */
 .map-search-overlay {
   position: absolute;
-  top: 22px;
+  top: 12px;
   left: 12px;
   right: 12px;
   z-index: 30;
@@ -516,7 +516,7 @@ button {
    ============================================================ */
 .search-wrap {
   position: absolute;
-  top: calc(env(safe-area-inset-top, 0px) + 48px);
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
 
   left: 12px;
   right: 12px;
@@ -653,6 +653,11 @@ button {
 }
 .overflow-x-auto {
   overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+}
+.overflow-x-auto::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 .flex {
   display: flex;
@@ -1640,11 +1645,22 @@ button {
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
+  position: relative;
 }
 .budget-progress-fill {
   height: 100%;
-  border-radius: 3px;
+  position: absolute;
+  top: 0;
+  left: 0;
   transition: width 0.4s;
+}
+.budget-progress-unpaid {
+  background: #9aa3b2;
+  z-index: 1;
+}
+.budget-progress-paid {
+  background: #30d158;
+  z-index: 2;
 }
 .budget-progress-labels {
   display: flex;
@@ -2378,4 +2394,246 @@ button {
   font-weight: 600;
   color: #30d158;
   margin-top: 4px;
+}
+/* ============================================================
+   PATCHES — append these at the END of global.css
+   ============================================================ */
+
+/* ── Topbar tab label: hide on very small screens ── */
+@media (max-width: 380px) {
+  .topbar-tab-label {
+    display: none;
+  }
+}
+
+/* ── Map fills entire screen (topbar overlays) ── */
+.map-view {
+  position: absolute !important;
+  inset: 0 !important;
+  /* override any old margin/padding */
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Desktop sidebar: starts below topbar so content isn't hidden */
+.map-sidebar {
+  /* topbar height + safe-area */
+  padding-top: calc(52px + env(safe-area-inset-top, 0px));
+}
+
+/* Search overlay on map: starts below topbar */
+.map-search-overlay {
+  top: calc(52px + env(safe-area-inset-top, 0px) + 10px) !important;
+}
+@media (min-width: 768px) {
+  .map-search-overlay {
+    left: 332px !important;
+    top: calc(52px + env(safe-area-inset-top, 0px) + 10px) !important;
+  }
+}
+
+/* Notes & Finance: push content below topbar */
+.notes-view,
+.finance-view {
+  padding-top: calc(52px + env(safe-area-inset-top, 0px)) !important;
+}
+
+/* ── iOS Safari: prevent bounce, fix 100vh ── */
+html {
+  /* Prevent elastic scroll on body */
+  overscroll-behavior: none;
+  /* Use dvh where supported */
+  height: -webkit-fill-available;
+}
+body {
+  min-height: -webkit-fill-available;
+  overscroll-behavior: none;
+}
+#root {
+  height: -webkit-fill-available;
+}
+
+/* ── Leaflet popup: remove white background / margin ── */
+.leaflet-popup-content-wrapper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  line-height: normal !important;
+}
+.leaflet-popup-tip-container,
+.leaflet-popup-tip {
+  display: none !important;
+}
+/* Dark map attribution */
+.leaflet-control-attribution {
+  background: rgba(5, 6, 10, 0.55) !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  border-radius: 8px 0 0 0 !important;
+  padding: 2px 6px !important;
+  font-size: 10px !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.leaflet-control-attribution a {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* ── Route result panel in sidebar: nicer legs ── */
+.leg-info {
+  flex: 1;
+  min-width: 0;
+}
+.leg-main {
+  font-size: 13px;
+  font-weight: 500;
+  color: #f0f4ff;
+}
+.leg-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+  line-height: 1.35;
+}
+
+/* ── Bottom sheet: sit above iOS home bar ── */
+.map-sheet {
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+}
+
+/* Topbar itself always on top */
+header.topbar-ios,
+header[style] {
+  z-index: 1200 !important;
+}
+
+/* ============================================================
+   DESKTOP FIXES — додати в кінець global.css
+   ============================================================ */
+
+/* ── Topbar: full-width на десктопі, не floating pill ── */
+@media (min-width: 768px) {
+  .topbar-ios {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    height: 56px !important;
+    padding: 0 20px !important;
+    background: rgba(8, 10, 15, 0.92) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: none !important;
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.07) !important;
+    z-index: 1200 !important;
+  }
+}
+
+/* ── Sidebar: починається рівно під topbar ── */
+@media (min-width: 768px) {
+  .map-sidebar {
+    padding-top: 56px !important;
+    /* Sidebar fixed height = full screen */
+    position: relative;
+    height: 100%;
+  }
+
+  /* Search всередині sidebar — не абсолютний, а звичайний flow */
+  .map-sidebar .search-wrap {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: auto !important;
+    margin: 0 !important;
+  }
+}
+
+/* ── Search overlay поверх карти: тільки на десктопі ── */
+@media (min-width: 768px) {
+  /* Пошук в sidebar — показуємо */
+  /* Пошук поверх карти (map-search-overlay) — ховаємо, бо він дублюється */
+  .map-search-overlay {
+    display: none !important;
+  }
+}
+
+/* ── map-view: враховує topbar зверху ── */
+@media (min-width: 768px) {
+  .map-view {
+    position: absolute !important;
+    top: 56px !important; /* під topbar */
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: auto !important;
+  }
+}
+
+/* ── notes-view і finance-view: відступ під topbar ── */
+@media (min-width: 768px) {
+  .notes-view,
+  .finance-view {
+    padding-top: 56px !important;
+  }
+}
+
+/* ── Список точок: назви не обрізаються дивно ── */
+@media (min-width: 768px) {
+  .list-item {
+    padding: 8px 10px;
+  }
+
+  /* Обрізати довгі адреси в одну лінію */
+  .truncate-lines-2 {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+
+  /* Назва точки — не переноситься */
+  .font-medium {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* ── sidebar-section (кнопки маршрут/метро) — горизонтально ── */
+@media (min-width: 768px) {
+  .sidebar-section {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 6px !important;
+    padding: 10px 12px !important;
+  }
+
+  .route-btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+}
+
+/* ── Route result в sidebar: обмежена висота зі скролом ── */
+@media (min-width: 768px) {
+  .map-sidebar > div[style*="margin: 0 12px"] {
+    max-height: 45vh;
+    overflow-y: auto;
+  }
+}
+
+/* ── User meta на десктопі — показати ── */
+@media (min-width: 768px) {
+  .user-meta {
+    display: flex !important;
+  }
 }
