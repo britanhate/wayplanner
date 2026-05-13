@@ -673,7 +673,6 @@ export default function MapView({ onSidebarClose }) {
         className={`map-sheet ${snapClass}`}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        ref={sidebarScrollRef}
       >
         <div className="sheet-handle-wrap">
           <div className="sheet-handle" />
@@ -738,7 +737,6 @@ export default function MapView({ onSidebarClose }) {
                   <button
                     onClick={() => setMobileRouteOpen(false)}
                     style={{
-
                       border: "none",
                       color: "rgba(255,255,255,0.5)",
                       cursor: "pointer",
