@@ -112,8 +112,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
     return () => { mapInstance.current?.remove(); mapInstance.current = null; };
   }, []);
 
-  // routePickMode ref для map click
-
   useEffect(() => {
     const handleResize = () => mapInstance.current?.invalidateSize();
     const t = setTimeout(handleResize, 350);
@@ -391,8 +389,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
           <div style={{ margin: "0 12px 8px" }}>
             <RoutePanel
               waypoints={routeWaypoints}
-              allPoints={points}
-              onWaypointsChange={setRouteWaypoints}
               buildState={routePickTarget ? "pick" : "edit"}
               pickTarget={routePickTarget}
               onPickStart={() => setRoutePickTarget("start")}
@@ -461,8 +457,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
           <div style={{ padding: "0 12px 8px" }}>
             <RoutePanel
               waypoints={routeWaypoints}
-              allPoints={points}
-              onWaypointsChange={setRouteWaypoints}
               buildState={routePickTarget ? "pick" : "edit"}
               pickTarget={routePickTarget}
               onPickStart={() => setRoutePickTarget("start")}
