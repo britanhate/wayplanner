@@ -325,6 +325,59 @@ export default function MapView({ searchOpen, onSearchClose }) {
     return null;
   }, []);
 
+  const fetchPublicRouteGeometry = useCallback(async (waypoints, travelMode) => {
+    if (!Array.isArray(waypoints) || waypoints.length < 2) return [];
+
+    const profile =
+      travelMode === 2
+        ? "walking"
+        : travelMode === 1
+          ? "cycling"
+          : "driving";
+
+    const coords = waypoints.map((wp) => `${wp.lng},${wp.lat}`).join(";");
+    const url = `https://router.project-osrm.org/route/v1/${profile}/${coords}?alternatives=false&overview=full&geometries=geojson&steps=false`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`OSRM error: ${res.status}`);
+    const data = await res.json();
+    const geometry = data?.routes?.[0]?.geometry?.coordinates;
+    if (!Array.isArray(geometry)) return [];
+    return geometry
+      .map((pt) => (Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null))
+      .filter(Boolean);
+  }, []);
+
+  const extractRouteCoords = useCallback((leg) => {
+    const encoded = leg?.best?.polyline || leg?.best?.overview_polyline;
+    if (Array.isArray(encoded) && encoded.length > 1) {
+      return encoded
+        .map((pt) =>
+          Array.isArray(pt) && pt.length >= 2 ? [pt[0], pt[1]] : null,
+        )
+        .filter(Boolean);
+    }
+
+    const geometry = leg?.best?.geometry || leg?.geometry;
+    if (Array.isArray(geometry?.coordinates)) {
+      return geometry.coordinates
+        .map((pt) =>
+          Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null,
+        )
+        .filter(Boolean);
+    }
+
+    if (Array.isArray(leg?.polyline)) {
+      return leg.polyline
+        .map((pt) =>
+          Array.isArray(pt) && pt.length >= 2 ? [pt[0], pt[1]] : null,
+        )
+        .filter(Boolean);
+    }
+
+    return null;
+  }, []);
+
   const drawRouteLegs = useCallback(
     (legs, rawLegs = []) => {
       clearRouteLines();
