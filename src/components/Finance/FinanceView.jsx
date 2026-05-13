@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "../../lib/AuthContext";
 import { useExpenses } from "../../hooks/useExpenses";
 import {
@@ -24,23 +24,21 @@ export default function FinanceView() {
   const [category, setCategory] = useState("Їжа");
   const [statsOpen, setStatsOpen] = useState(false);
 
-  // ── Бюджет: синхронізуємо з budget коли він завантажується ──
-  const [budgetInput, setBudgetInput] = useState("");
-  const [currency, setCurrency] = useState("EUR");
+  // ── Бюджет ──
+  const [budgetInput, setBudgetInput] = useState(null);
+  const [currency, setCurrency] = useState(null);
 
-  useEffect(() => {
-    // Оновити поля форми коли budget прийшов з Supabase
-    if (budget.amount != null && budget.amount !== 0) {
-      setBudgetInput(String(budget.amount));
-    }
-    if (budget.currency) {
-      setCurrency(budget.currency);
-    }
-  }, [budget.amount, budget.currency]);
+  const currentBudgetInput =
+    budgetInput !== null
+      ? budgetInput
+      : budget.amount != null && budget.amount !== 0
+        ? String(budget.amount)
+        : "";
+
+  const currentCurrency = currency || budget.currency || "EUR";
 
   // ── Рахуємо тільки витрати у валюті бюджету ──
-  // Витрати в інших валютах показуємо окремо
-  const budgetCurrency = budget.currency || currency;
+  const budgetCurrency = currentCurrency;
 
   const expensesInBudgetCurrency = expenses.filter(
     (e) => (e.currency || budgetCurrency) === budgetCurrency,
@@ -105,15 +103,25 @@ export default function FinanceView() {
     const newAmount = parseFloat(budgetInput) || 0;
 
     // Якщо валюта змінилася - конвертуємо всі витрати
-    if (currency !== budget.currency && expenses.length > 0) {
+    if (currentCurrency !== budget.currency && expenses.length > 0) {
       const oldCurrency = budget.currency || "EUR";
       for (const expense of expensesInBudgetCurrency) {
-        const newAmount = convertAmount(expense.amount, oldCurrency, currency);
-        await updateExpense(expense.id, { amount: newAmount, currency });
+        const newAmount = convertAmount(
+          expense.amount,
+          oldCurrency,
+          currentCurrency,
+        );
+        await updateExpense(expense.id, {
+          amount: newAmount,
+          currency: currentCurrency,
+        });
       }
     }
 
-    await saveBudget({ amount: newAmount, currency });
+    await saveBudget({
+      amount: newAmount,
+      currency: currentCurrency,
+    });
   };
 
   const togglePaid = async (expense) => {
@@ -134,14 +142,14 @@ export default function FinanceView() {
           <input
             className="budget-inp"
             type="number"
-            value={budgetInput}
+            value={currentBudgetInput}
             onChange={(e) => setBudgetInput(e.target.value)}
             placeholder="0"
           />
           <select
             className="field-sel"
             style={{ width: 80 }}
-            value={currency}
+            value={currentCurrency}
             onChange={(e) => setCurrency(e.target.value)}
           >
             {CURRENCIES.map((c) => (
