@@ -12,7 +12,6 @@ export default function RoutePanel({
   onRemoveWaypoint,
   onAddWaypoint,
   onBuild,
-  onFitRoute,
   result,
   building,
   onClose,
@@ -107,9 +106,6 @@ export default function RoutePanel({
           </div>
 
           <div className="rp-actions-row">
-            <button className="rp-outline-btn" onClick={onFitRoute} disabled={waypoints.length < 2}>
-              🎯 Показати точки
-            </button>
             <button
               className="rp-build-btn"
               onClick={() => onBuild(travelMode)}

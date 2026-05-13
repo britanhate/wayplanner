@@ -43,7 +43,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const [routePanelOpen,  setRoutePanelOpen]  = useState(false);
   const [routeWaypoints,  setRouteWaypoints]  = useState([]);
   const [routePickTarget, setRoutePickTarget] = useState(null);
-  const [routeMinimized,  setRouteMinimized]  = useState(false);
   const [routeResult,     setRouteResult]     = useState(null);
   const [routeBuilding,   setRouteBuilding]   = useState(false);
 
@@ -299,7 +298,13 @@ export default function MapView({ searchOpen, onSearchClose }) {
     setRouteResult(null);
     clearRouteLines();
     setRoutePickTarget("start");
-    setRouteMinimized(false);
+    setSnap("full");
+  };
+
+  const startWaypointPicking = () => {
+    if (!routeWaypoints.length) setRoutePickTarget("start");
+    else if (routeWaypoints.length === 1) setRoutePickTarget("finish");
+    else setRoutePickTarget("stop");
     setSnap("full");
   };
 
@@ -469,45 +474,51 @@ export default function MapView({ searchOpen, onSearchClose }) {
           </button>
         </div>
 
-        {/* RoutePanel — в desktop sidebar */}
-        {routePanelOpen && (
-          <div style={{ margin: "0 12px 8px" }}>
-            <RoutePanel
-              waypoints={routeWaypoints}
-              buildState={routePickTarget ? "pick" : "edit"}
-              pickTarget={routePickTarget}
-              onPickStart={() => setRoutePickTarget("start")}
-              onPickFinish={() => setRoutePickTarget("finish")}
-              onPickStop={() => setRoutePickTarget("stop")}
-              onRemoveWaypoint={(i) =>
-                setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
-              }
-              onBuild={handleBuildRoute}
-              onFitRoute={() => fitToWaypoints()}
-              result={routeResult}
-              building={routeBuilding}
-              minimized={routeMinimized}
-              onMinimize={() => setRouteMinimized((v) => !v)}
-              onClose={() => {
-                setRoutePanelOpen(false);
-                setRouteResult(null);
-                clearRouteLines();
-                setRoutePickTarget(null);
-              }}
+        {routePanelOpen ? (
+          routePickTarget ? (
+            <PointsSidebar
+              points={points}
+              onFly={flyTo}
+              onDelete={deletePoint}
+              onEdit={(p) => setEditingPoint(p)}
+              onToggleCompleted={handleToggleCompleted}
+              routeMode
+              routeFrom={null}
+              onRouteToggle={handleRoutePointPick}
             />
-          </div>
+          ) : (
+            <div style={{ margin: "0 12px 8px" }}>
+              <RoutePanel
+                waypoints={routeWaypoints}
+                onAddWaypoint={startWaypointPicking}
+                onRemoveWaypoint={(i) =>
+                  setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
+                }
+                onBuild={handleBuildRoute}
+                result={routeResult}
+                building={routeBuilding}
+                pickMode={false}
+                onClose={() => {
+                  setRoutePanelOpen(false);
+                  setRouteResult(null);
+                  clearRouteLines();
+                  setRoutePickTarget(null);
+                }}
+              />
+            </div>
+          )
+        ) : (
+          <PointsSidebar
+            points={points}
+            onFly={flyTo}
+            onDelete={deletePoint}
+            onEdit={(p) => setEditingPoint(p)}
+            onToggleCompleted={handleToggleCompleted}
+            routeMode={false}
+            routeFrom={null}
+            onRouteToggle={handleRoutePointPick}
+          />
         )}
-
-        <PointsSidebar
-          points={points}
-          onFly={flyTo}
-          onDelete={deletePoint}
-          onEdit={(p) => setEditingPoint(p)}
-          onToggleCompleted={handleToggleCompleted}
-          routeMode={!!routePickTarget}
-          routeFrom={null}
-          onRouteToggle={handleRoutePointPick}
-        />
       </div>
 
       {/* ── Map ── */}
@@ -546,48 +557,52 @@ export default function MapView({ searchOpen, onSearchClose }) {
           </button>
         </div>
 
-        {/* RoutePanel — в mobile sheet */}
-        {routePanelOpen && (
-          <div style={{ padding: "0 12px 8px" }}>
-            <RoutePanel
-              waypoints={routeWaypoints}
-              buildState={routePickTarget ? "pick" : "edit"}
-              pickTarget={routePickTarget}
-              onPickStart={() => setRoutePickTarget("start")}
-              onPickFinish={() => setRoutePickTarget("finish")}
-              onPickStop={() => setRoutePickTarget("stop")}
-              onRemoveWaypoint={(i) =>
-                setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
-              }
-              onBuild={handleBuildRoute}
-              onFitRoute={() => fitToWaypoints()}
-              result={routeResult}
-              building={routeBuilding}
-              minimized={routeMinimized}
-              onMinimize={() => setRouteMinimized((v) => !v)}
-              onClose={() => {
-                setRoutePanelOpen(false);
-                setRouteResult(null);
-                clearRouteLines();
-                setRoutePickTarget(null);
-              }}
-            />
-          </div>
-        )}
-
         <div className="sheet-scroll">
-          <PointsSidebar
-            points={points}
-            onFly={(p) => {
-              flyTo(p);
-            }}
-            onDelete={deletePoint}
-            onEdit={(p) => setEditingPoint(p)}
-            onToggleCompleted={handleToggleCompleted}
-            routeMode={!!routePickTarget}
-            routeFrom={null}
-            onRouteToggle={handleRoutePointPick}
-          />
+          {routePanelOpen ? (
+            routePickTarget ? (
+              <PointsSidebar
+                points={points}
+                onFly={flyTo}
+                onDelete={deletePoint}
+                onEdit={(p) => setEditingPoint(p)}
+                onToggleCompleted={handleToggleCompleted}
+                routeMode
+                routeFrom={null}
+                onRouteToggle={handleRoutePointPick}
+              />
+            ) : (
+              <div style={{ padding: "0 12px 8px" }}>
+                <RoutePanel
+                  waypoints={routeWaypoints}
+                  onAddWaypoint={startWaypointPicking}
+                  onRemoveWaypoint={(i) =>
+                    setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
+                  }
+                  onBuild={handleBuildRoute}
+                    result={routeResult}
+                  building={routeBuilding}
+                  pickMode={false}
+                  onClose={() => {
+                    setRoutePanelOpen(false);
+                    setRouteResult(null);
+                    clearRouteLines();
+                    setRoutePickTarget(null);
+                  }}
+                />
+              </div>
+            )
+          ) : (
+            <PointsSidebar
+              points={points}
+              onFly={flyTo}
+              onDelete={deletePoint}
+              onEdit={(p) => setEditingPoint(p)}
+              onToggleCompleted={handleToggleCompleted}
+              routeMode={false}
+              routeFrom={null}
+              onRouteToggle={handleRoutePointPick}
+            />
+          )}
         </div>
       </div>
 
