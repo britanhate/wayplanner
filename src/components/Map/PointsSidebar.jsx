@@ -9,7 +9,7 @@ export default function PointsSidebar({
   onEdit,
   onToggleCompleted,
   routeMode,
-  routeFrom,
+
   onRouteToggle,
 }) {
   const { user } = useAuth();
