@@ -2527,6 +2527,12 @@ header[style] {
   overflow: hidden;
   font-size: 13px;
   color: #fff;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  max-height: min(74vh, 860px);
+  display: flex;
+  flex-direction: column;
 }
 
 .route-panel-header {
@@ -2662,6 +2668,9 @@ header[style] {
 /* Results */
 .rp-results {
   padding: 0 0 8px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 auto;
 }
 
 .rp-summary-bar {
@@ -2834,3 +2843,9 @@ header[style] {
 .rp-build-btn { flex:1.4; }
 .rp-leg-dist { opacity:.5; }
 .rp-leg-expand { opacity:.4; font-size:12px; }
+
+@media (max-width: 767px) {
+  .map-sheet .route-panel {
+    max-height: none;
+  }
+}

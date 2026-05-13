@@ -24,6 +24,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const mapInstance = useRef(null);
   const markersRef = useRef({});
   const routeLayers = useRef([]);
+  const routeStepLayers = useRef([]);
   const metroLayersRef = useRef([]);
   const metroDataRef = useRef(null);
   const previewMarkerRef = useRef(null);
@@ -258,6 +259,70 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const clearRouteLines = useCallback(() => {
     routeLayers.current.forEach((l) => l.remove());
     routeLayers.current = [];
+    routeStepLayers.current.forEach((l) => l.remove());
+    routeStepLayers.current = [];
+  }, []);
+
+  const fetchPublicRouteGeometry = useCallback(async (waypoints, travelMode) => {
+    if (!Array.isArray(waypoints) || waypoints.length < 2) return { coords: [], steps: [] };
+
+    const profile =
+      travelMode === 2
+        ? "walking"
+        : travelMode === 1
+          ? "cycling"
+          : "driving";
+
+    const coordsStr = waypoints.map((wp) => `${wp.lng},${wp.lat}`).join(";");
+    const url = `https://router.project-osrm.org/route/v1/${profile}/${coordsStr}?alternatives=false&overview=full&geometries=geojson&steps=true`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`OSRM error: ${res.status}`);
+    const data = await res.json();
+    const geometry = data?.routes?.[0]?.geometry?.coordinates || [];
+    const coords = geometry
+      .map((pt) => (Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null))
+      .filter(Boolean);
+    const steps = (data?.routes?.[0]?.legs || []).flatMap((leg) => leg.steps || []).map((step) => {
+      const loc = step?.maneuver?.location;
+      return {
+        mode: step?.mode || profile,
+        instruction: step?.maneuver?.instruction || "",
+        lat: Array.isArray(loc) ? loc[1] : null,
+        lng: Array.isArray(loc) ? loc[0] : null,
+      };
+    }).filter((s) => s.lat != null && s.lng != null);
+    return { coords, steps };
+  }, []);
+
+  const extractRouteCoords = useCallback((leg) => {
+    const encoded = leg?.best?.polyline || leg?.best?.overview_polyline;
+    if (Array.isArray(encoded) && encoded.length > 1) {
+      return encoded
+        .map((pt) =>
+          Array.isArray(pt) && pt.length >= 2 ? [pt[0], pt[1]] : null,
+        )
+        .filter(Boolean);
+    }
+
+    const geometry = leg?.best?.geometry || leg?.geometry;
+    if (Array.isArray(geometry?.coordinates)) {
+      return geometry.coordinates
+        .map((pt) =>
+          Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null,
+        )
+        .filter(Boolean);
+    }
+
+    if (Array.isArray(leg?.polyline)) {
+      return leg.polyline
+        .map((pt) =>
+          Array.isArray(pt) && pt.length >= 2 ? [pt[0], pt[1]] : null,
+        )
+        .filter(Boolean);
+    }
+
+    return null;
   }, []);
 
   const fetchPublicRouteGeometry = useCallback(async (waypoints, travelMode) => {
@@ -379,7 +444,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
     if (routeWaypoints.length < 2) return;
     setRouteBuilding(true);
     try {
-      const [data, publicRouteCoords] = await Promise.all([
+      const [data, publicRoute] = await Promise.all([
         fetchDirections(routeWaypoints, travelMode),
         fetchPublicRouteGeometry(routeWaypoints, travelMode),
       ]);
@@ -397,14 +462,31 @@ export default function MapView({ searchOpen, onSearchClose }) {
         };
       });
       setRouteResult({ legs });
-      if (publicRouteCoords.length > 1) {
+      if (publicRoute.coords.length > 1) {
         clearRouteLines();
-        const route = L.polyline(publicRouteCoords, {
+        const route = L.polyline(publicRoute.coords, {
           color: "#2a7de8",
           weight: 5,
           opacity: 0.88,
         }).addTo(mapInstance.current);
         routeLayers.current.push(route);
+        publicRoute.steps.forEach((step, idx) => {
+          const isWalk = step.mode === "walking";
+          const marker = L.circleMarker([step.lat, step.lng], {
+            radius: isWalk ? 4 : 3,
+            color: isWalk ? "#30d158" : "#0a84ff",
+            weight: 2,
+            fillColor: isWalk ? "#30d158" : "#0a84ff",
+            fillOpacity: 0.95,
+          })
+            .bindTooltip(
+              `${isWalk ? "🚶 Пішки" : "🧭 Крок"}${step.instruction ? `: ${step.instruction}` : ""}`,
+              { direction: "top", offset: [0, -8] },
+            )
+            .addTo(mapInstance.current);
+          if (idx % 2 === 0 || isWalk) routeStepLayers.current.push(marker);
+          else marker.remove();
+        });
         mapInstance.current.fitBounds(route.getBounds().pad(0.2));
       } else {
         drawRouteLegs(legs, data.legs);
