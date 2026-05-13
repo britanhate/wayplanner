@@ -16,6 +16,7 @@ export default function RoutePanel({
   building,
   onClose,
   pickMode,
+  showHeader = true,
 }) {
   const [travelMode, setTravelMode] = useState(3);
   const [minimized, setMinimized] = useState(false);
@@ -39,18 +40,20 @@ export default function RoutePanel({
   const fmtDist = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)} км` : `${m} м`);
 
   return (
-    <div className="route-panel">
-      <div className="route-panel-header">
-        <span className="rp-title">🗺️ Маршрут</span>
-        <div className="rp-header-actions">
-          <button className="rp-icon-btn" onClick={() => setMinimized((v) => !v)}>
-            {minimized ? "▲" : "▼"}
-          </button>
-          <button className="rp-icon-btn" onClick={onClose}>
-            ×
-          </button>
+    <div className="route-panel p-panel">
+      {showHeader && (
+        <div className="route-panel-header">
+          <span className="rp-title">🗺️ Маршрут</span>
+          <div className="rp-header-actions">
+            <button className="rp-icon-btn" onClick={() => setMinimized((v) => !v)}>
+              {minimized ? "▲" : "▼"}
+            </button>
+            <button className="rp-icon-btn" onClick={onClose}>
+              ×
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {!minimized && (
         <>
