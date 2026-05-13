@@ -133,12 +133,7 @@ export default function FinanceView() {
       {/* ── Хедер: бюджет ── */}
       <div className="finance-header">
         <div className="budget-block">
-          <span
-            className="field-label"
-            style={{ margin: 0, whiteSpace: "nowrap" }}
-          >
-            Бюджет
-          </span>
+          <span className="field-label budget-label-nowrap">Бюджет</span>
           <input
             className="budget-inp"
             type="number"
@@ -147,8 +142,7 @@ export default function FinanceView() {
             placeholder="0"
           />
           <select
-            className="field-sel"
-            style={{ width: 80 }}
+            className="field-sel field-sel-small"
             value={currentCurrency}
             onChange={(e) => setCurrency(e.target.value)}
           >
@@ -157,8 +151,7 @@ export default function FinanceView() {
             ))}
           </select>
           <button
-            className="btn-primary"
-            style={{ padding: "8px 14px", whiteSpace: "nowrap" }}
+            className="btn-primary btn-primary-small"
             onClick={handleBudgetSave}
           >
             Зберегти
@@ -196,11 +189,11 @@ export default function FinanceView() {
           </div>
           <div className="budget-progress-labels">
             <span className="text-small">
-              <span style={{ color: "#30d158" }}>
+              <span className="paid-amount">
                 ■ {totalPaid.toFixed(0)} {budgetCurrency}
               </span>
               {" · "}
-              <span style={{ color: "#9aa3b2" }}>
+              <span className="unpaid-amount">
                 ■ {totalUnpaid.toFixed(0)} {budgetCurrency}
               </span>
               {budget.amount > 0 && ` / ${budget.amount} ${budgetCurrency}`}
@@ -211,16 +204,7 @@ export default function FinanceView() {
 
         {/* Попередження про змішані валюти */}
         {expensesOther.length > 0 && (
-          <div
-            style={{
-              fontSize: 12,
-              color: "#ff9f0a",
-              padding: "6px 10px",
-              background: "rgba(255,159,10,0.08)",
-              borderRadius: 8,
-              border: "0.5px solid rgba(255,159,10,0.2)",
-            }}
-          >
+          <div className="currency-warning">
             ⚠️ {expensesOther.length} витрат в інших валютах не враховано в
             бюджеті
           </div>
@@ -260,7 +244,6 @@ export default function FinanceView() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder={`Сума (${budgetCurrency})`}
-                style={{ flex: 1 }}
               />
               <select
                 className="field-sel"
@@ -283,7 +266,7 @@ export default function FinanceView() {
           <div className="expenses-list">
             {!expenses.length ? (
               <div className="expenses-empty">
-                <div style={{ fontSize: 32, opacity: 0.3 }}>💸</div>
+                <div className="stat-icon-large">💸</div>
                 <div className="text-small">Витрат ще немає</div>
               </div>
             ) : (
@@ -319,7 +302,10 @@ export default function FinanceView() {
                     <div className="expense-info">
                       <div className="expense-name">{e.name}</div>
                       <div className="expense-meta">
-                        <span style={{ color: creator.color }}>
+                        <span
+                          className="expense-meta-creator"
+                          style={{ color: creator.color }}
+                        >
                           {creator.avatar} {creator.name}
                         </span>
                         <span> · {e.category}</span>
@@ -328,7 +314,7 @@ export default function FinanceView() {
                           · {new Date(e.created_at).toLocaleDateString("uk-UA")}
                         </span>
                         {isOtherCurrency && (
-                          <span style={{ color: "#ff9f0a" }}>
+                          <span className="expense-meta-warning">
                             {" "}
                             · ⚠️ {expCurrency}
                           </span>
@@ -357,9 +343,7 @@ export default function FinanceView() {
         {/* ── Статистика ── */}
         <aside className={`finance-right ${statsOpen ? "open" : ""}`}>
           <div className="finance-right-header">
-            <span className="section-title" style={{ margin: 0 }}>
-              Статистика
-            </span>
+            <span className="section-title">Статистика</span>
             <button className="btn-ghost" onClick={() => setStatsOpen(false)}>
               ✕
             </button>
@@ -382,10 +366,10 @@ export default function FinanceView() {
                 <div className="stat-currency">{budgetCurrency}</div>
               </div>
               <div className="stat-block">
-                <div className="stat-label" style={{ color: "#ff9f0a" }}>
+                <div className="stat-label stat-label-warning">
                   ◐ Заплановано
                 </div>
-                <div className="stat-value" style={{ color: "#ff9f0a" }}>
+                <div className="stat-value stat-value-warning">
                   {totalUnpaid.toFixed(0)}
                 </div>
                 <div className="stat-currency">{budgetCurrency}</div>
@@ -395,14 +379,8 @@ export default function FinanceView() {
 
           {/* Залишок бюджету */}
           {budget.amount > 0 && (
-            <div className="stat-card glass-panel" style={{ marginTop: 8 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
+            <div className="stat-card glass-panel">
+              <div className="stat-block-balanced">
                 <div>
                   <div className="stat-label">Залишок</div>
                   <div

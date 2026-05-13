@@ -54,8 +54,10 @@ export default function NotesView() {
     <div className="notes-view">
       <aside className={`notes-list-panel ${listOpen ? "open" : ""}`}>
         <div className="notes-list-header">
-          <span className="section-title" style={{ margin: 0 }}>Нотатки</span>
-          <button className="btn-ghost" onClick={handleNew}>+ Нова</button>
+          <span className="section-title">Нотатки</span>
+          <button className="btn-ghost" onClick={handleNew}>
+            + Нова
+          </button>
         </div>
         <div className="notes-list-scroll">
           {!notes.length ? (
@@ -67,7 +69,9 @@ export default function NotesView() {
                 className={`note-item ${n.id === activeId ? "active" : ""}`}
                 onClick={() => handleSelect(n)}
               >
-                <div className="note-item-title">{n.title || "Без заголовку"}</div>
+                <div className="note-item-title">
+                  {n.title || "Без заголовку"}
+                </div>
                 <div className="note-item-preview">{preview(n.body)}</div>
                 <div className="note-item-date">
                   {new Date(n.created_at).toLocaleDateString("uk-UA")}
@@ -90,8 +94,10 @@ export default function NotesView() {
         {!activeId ? (
           <div className="notes-placeholder">
             <div className="notes-placeholder-icon">📓</div>
-            <div className="notes-placeholder-text">Оберіть або створіть нотатку</div>
-            <button className="btn-primary" onClick={handleNew} style={{ marginTop: 16 }}>
+            <div className="notes-placeholder-text">
+              Оберіть або створіть нотатку
+            </div>
+            <button className="btn-primary btn-margin-top" onClick={handleNew}>
               + Нова нотатка
             </button>
           </div>
@@ -104,7 +110,9 @@ export default function NotesView() {
                 onChange={(e) => handleUpdate("title", e.target.value)}
                 placeholder="Заголовок..."
               />
-              <button className="note-del-btn" onClick={handleDelete}>🗑</button>
+              <button className="note-del-btn" onClick={handleDelete}>
+                🗑
+              </button>
             </div>
             <textarea
               className="note-body-inp"
