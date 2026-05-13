@@ -9,7 +9,7 @@ export default function PointsSidebar({
   onEdit,
   onToggleCompleted,
   routeMode,
-  routeFrom,
+
   onRouteToggle,
 }) {
   const { user } = useAuth();
@@ -63,13 +63,13 @@ export default function PointsSidebar({
   }, [points, selectedType, showCompleted, sortBy]);
 
   return (
-    <div className="points-sidebar">
-      <div className="sidebar-section-title">Точки на карті</div>
+    <aside className="sidebar p-panel">
+      <div className="section">
+        <div className="section-title">Точки на карті</div>
 
-      <div className="sidebar-controls">
-        <div className="filter-scroll">
+        <div className="flex gap-2 overflow-x-auto py-2 ">
           <button
-            className={`filter-chip ${selectedType === "all" ? "active" : ""}`}
+            className={`badge ${selectedType === "all" ? "badge-secondary" : "badge"}`}
             onClick={() => setSelectedType("all")}
           >
             Всі
@@ -78,32 +78,31 @@ export default function PointsSidebar({
           {Object.entries(POINT_TYPES).map(([key, type]) => (
             <button
               key={key}
-              className={`filter-chip ${selectedType === key ? "active" : ""}`}
+              className={`badge ${selectedType === key ? "badge-secondary" : "badge"}`}
               onClick={() => setSelectedType(key)}
             >
-              {type.emoji} {type.label}
+              <span className="mr-2">{type.emoji}</span>
+              <span className="hidden sm:inline">{type.label}</span>
             </button>
           ))}
         </div>
 
-        <div className="bottom-controls">
-          <div className="sort-row">
+        <div className="flex items-center justify-between mt-section">
+          <div className="flex gap-2">
             <button
-              className={`sort-chip ${sortBy === "name" ? "active" : ""}`}
+              className={`btn-ghost ${sortBy === "name" ? "text-white" : "text-white/60"}`}
               onClick={() => setSortBy("name")}
             >
               Назва
             </button>
-
             <button
-              className={`sort-chip ${sortBy === "date" ? "active" : ""}`}
+              className={`btn-ghost ${sortBy === "date" ? "text-white" : "text-white/60"}`}
               onClick={() => setSortBy("date")}
             >
               Дата
             </button>
-
             <button
-              className={`sort-chip ${sortBy === "cost" ? "active" : ""}`}
+              className={`btn-ghost ${sortBy === "cost" ? "text-white" : "text-white/60"}`}
               onClick={() => setSortBy("cost")}
             >
               Ціна
@@ -111,124 +110,101 @@ export default function PointsSidebar({
           </div>
 
           <button
-            className={`toggle-chip ${showCompleted ? "active" : ""}`}
+            className={`btn-ghost ${showCompleted ? "text-white" : "text-white/60"}`}
             onClick={() => setShowCompleted((prev) => !prev)}
             title={showCompleted ? "Приховати виконані" : "Показати виконані"}
           >
-            {showCompleted ? "☑" : "☐ "}
+            {showCompleted ? "☑" : "☐"}
           </button>
         </div>
       </div>
 
-      {!filteredPoints.length ? (
-        <div className="empty-hint">Немає точок для відображення</div>
-      ) : (
-        filteredPoints.map((p) => {
-          const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
-          const creator = getUserInfo(p.created_by);
-          const isRouteFrom = routeFrom?.id === p.id;
+      <div className="mt-section space-y-3">
+        {!filteredPoints.length ? (
+          <div className="text-small text-gray-400">
+            Немає точок для відображення
+          </div>
+        ) : (
+          filteredPoints.map((p) => {
+            const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
+            const creator = getUserInfo(p.created_by);
+            // const isRouteFrom = routeFrom?.id === p.id;
 
-          return (
-            <div
-              key={p.id}
-              className={`point-item ${
-                isRouteFrom ? "route-from" : ""
-              } ${routeMode ? "route-mode" : ""} ${
-                p.is_completed ? "completed" : ""
-              }`}
-              onClick={() => (routeMode ? onRouteToggle(p) : onFly(p))}
-            >
+            return (
               <div
-                className="point-badge"
-                style={{
-                  background: t.color + "22",
-                  textDecoration: p.is_completed ? "line-through" : "none",
-                  opacity: p.is_completed ? 0.5 : 1,
-                }}
-              >
-                {p.is_completed ? "✓" : t.emoji}
-              </div>
-
-              <div
-                className="point-info"
-                style={{
-                  opacity: p.is_completed ? 0.6 : 1,
-                }}
+                key={p.id}
+                className={`list-item flex items-center gap-3 ${p.is_completed ? "opacity-disabled" : ""}`}
+                onClick={() => (routeMode ? onRouteToggle(p) : onFly(p))}
               >
                 <div
-                  className="point-name"
-                  style={{
-                    textDecoration: p.is_completed ? "line-through" : "none",
-                  }}
+                  className="w-10 h-10 rounded-full flex-center"
+                  style={{ background: t.color + "22" }}
                 >
-                  {p.name}
-                </div>
-
-                <div className="point-meta">
-                  <span style={{ color: creator.color }}>
-                    {creator.avatar} {creator.name}
+                  <span className="text-lg">
+                    {p.is_completed ? "✓" : t.emoji}
                   </span>
+                </div>
 
-                  {p.estimated_cost && (
-                    <span className="point-cost">
-                      · {p.estimated_cost} {p.currency}
+                <div className="flex-1">
+                  <div className="font-medium">{p.name}</div>
+                  <div className="text-small text-gray-400 truncate-lines-2">
+                    <span style={{ color: creator.color }}>
+                      {creator.avatar} {creator.name}
                     </span>
-                  )}
-
-                  {p.point_date && (
-                    <span className="point-date">
-                      · 📅 {new Date(p.point_date).toLocaleDateString("uk-UA")}
-                    </span>
+                    {p.estimated_cost
+                      ? ` · ${p.estimated_cost} ${p.currency}`
+                      : ""}
+                    {p.point_date
+                      ? ` · 📅 ${new Date(p.point_date).toLocaleDateString("uk-UA")}`
+                      : ""}
+                  </div>
+                  {p.comment && (
+                    <div className="text-small text-gray-400">
+                      "{p.comment}"
+                    </div>
                   )}
                 </div>
 
-                {p.comment && (
-                  <div className="point-comment">"{p.comment}"</div>
+                {p.created_by === user?.id && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      className={`btn-ghost ${p.is_completed ? "text-white" : "text-white/60"}`}
+                      title={p.is_completed ? "Не виконано" : "Виконано"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleCompleted && onToggleCompleted(p);
+                      }}
+                    >
+                      ✓
+                    </button>
+
+                    <button
+                      className="btn-ghost"
+                      title="Редагувати"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(p);
+                      }}
+                    >
+                      ✏️
+                    </button>
+
+                    <button
+                      className="btn-ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(p.id);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
                 )}
               </div>
-
-              {p.created_by === user?.id && (
-                <div className="point-actions">
-                  <button
-                    className="point-check"
-                    title={p.is_completed ? "Не виконано" : "Виконано"}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleCompleted && onToggleCompleted(p);
-                    }}
-                    style={{
-                      opacity: p.is_completed ? 1 : 0.5,
-                    }}
-                  >
-                    ✓
-                  </button>
-
-                  <button
-                    className="point-edit"
-                    title="Редагувати"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(p);
-                    }}
-                  >
-                    ✏️
-                  </button>
-
-                  <button
-                    className="point-del"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(p.id);
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })
-      )}
-    </div>
+            );
+          })
+        )}
+      </div>
+    </aside>
   );
 }

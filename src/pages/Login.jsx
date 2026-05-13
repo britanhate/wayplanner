@@ -30,7 +30,7 @@ export default function Login() {
               key={u.id}
               className="quick-user-btn"
               onClick={() => quickLogin(u)}
-              style={{ borderColor: u.color }}
+              style={{ "--user-color": u.color }}
             >
               <span className="user-emoji">{u.avatar}</span>
               <span className="user-label">{u.name}</span>
