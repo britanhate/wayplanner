@@ -6,60 +6,54 @@ import FinanceView from "../components/Finance/FinanceView";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState(() => {
-    // При першому завантаженні читаємо з localStorage
-    const saved = localStorage.getItem("activeTab");
-    return saved || "map";
+    return localStorage.getItem("activeTab") || "map";
   });
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
-  // Зберігаємо активну вкладку при змісені
   useEffect(() => {
     localStorage.setItem("activeTab", activeTab);
   }, [activeTab]);
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    // Закриваємо пошук при переключенні вкладки
+    setSearchOpen(false);
+  };
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        background: "linear-gradient(180deg, #05060a, #0b1220)",
-        // iOS Safari fix
-        height: "100%",
-        WebkitOverflowScrolling: "touch",
-      }}
-    >
-      {/* Topbar floats on top — NO layout space consumed */}
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden",
+      background: "linear-gradient(180deg, #05060a, #0b1220)",
+      height: "100%",
+      WebkitOverflowScrolling: "touch",
+    }}>
       <Topbar
         activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+        onTabChange={handleTabChange}
+        searchOpen={searchOpen}
+        onSearchToggle={() => setSearchOpen((v) => !v)}
       />
 
-      {/* Content fills entire screen — topbar overlays it */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          overflow: "hidden",
-        }}
-      >
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        overflow: "hidden",
+      }}>
         {activeTab === "map" && (
-          <MapView onSidebarClose={() => setSidebarOpen(false)} />
+          <MapView
+            searchOpen={searchOpen}
+            onSearchClose={() => setSearchOpen(false)}
+          />
         )}
         {activeTab === "notes" && (
-          <NotesView
-            sidebarOpen={sidebarOpen}
-            onSidebarClose={() => setSidebarOpen(false)}
-          />
+          <NotesView />
         )}
         {activeTab === "finance" && (
-          <FinanceView
-            sidebarOpen={sidebarOpen}
-            onSidebarClose={() => setSidebarOpen(false)}
-          />
+          <FinanceView />
         )}
       </div>
     </div>

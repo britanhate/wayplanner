@@ -14,3 +14,19 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Code Cleanup & Optimization
+
+### Recent Refactoring (May 13, 2026)
+
+- Removed dead code and unused variables from MapView.jsx
+- Converted 150+ inline styles to CSS classes for better maintainability
+- Eliminated duplitcate popup-card styling in favor of ios-card
+- Improved CSS organization with 45+ new semantic classes
+- Cleaned up removed mobileRouteOpen state and related UI
+
+**Files optimized:**
+
+- `src/components/Map/MapView.jsx` - Dead code cleanup, style refactoring
+- `src/components/Finance/FinanceView.jsx` - Inline style to CSS conversion
+- `src/styles/global.css` - New CSS classes for improved organization
