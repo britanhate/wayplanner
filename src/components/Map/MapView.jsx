@@ -43,7 +43,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const [routePanelOpen,  setRoutePanelOpen]  = useState(false);
   const [routeWaypoints,  setRouteWaypoints]  = useState([]);
   const [routePickTarget, setRoutePickTarget] = useState(null);
-
   const [routeResult,     setRouteResult]     = useState(null);
   const [routeBuilding,   setRouteBuilding]   = useState(false);
 
@@ -299,7 +298,13 @@ export default function MapView({ searchOpen, onSearchClose }) {
     setRouteResult(null);
     clearRouteLines();
     setRoutePickTarget("start");
-    
+    setSnap("full");
+  };
+
+  const startWaypointPicking = () => {
+    if (!routeWaypoints.length) setRoutePickTarget("start");
+    else if (routeWaypoints.length === 1) setRoutePickTarget("finish");
+    else setRoutePickTarget("stop");
     setSnap("full");
   };
 
@@ -486,8 +491,8 @@ export default function MapView({ searchOpen, onSearchClose }) {
               routeMode
               routeFrom={null}
               onRouteToggle={handleRoutePointPick}
-
-            />) : (
+            />
+          ) : (
             <div style={{ margin: "0 12px 8px" }}>
               <RoutePanel
                 waypoints={routeWaypoints}
@@ -496,7 +501,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
                   setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
                 }
                 onBuild={handleBuildRoute}
-                onFitRoute={() => fitToWaypoints()}
                 result={routeResult}
                 building={routeBuilding}
                 pickMode={false}
@@ -520,10 +524,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
             routeFrom={null}
             onRouteToggle={handleRoutePointPick}
           />
-
         )}
-
-        
       </div>
 
       {/* ── Map ── */}
@@ -562,8 +563,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
           </button>
         </div>
 
-        
-
         <div className="sheet-scroll">
           {routePanelOpen ? (
             routePickTarget ? (
@@ -586,8 +585,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
                     setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
                   }
                   onBuild={handleBuildRoute}
-                  onFitRoute={() => fitToWaypoints()}
-                  result={routeResult}
+                    result={routeResult}
                   building={routeBuilding}
                   pickMode={false}
                   onClose={() => {
@@ -611,7 +609,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
               onRouteToggle={handleRoutePointPick}
             />
           )}
-
         </div>
       </div>
 
