@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../../lib/AuthContext";
+import { useAuth } from "../../lib/useAuth";
 import { useExpenses } from "../../hooks/useExpenses";
 import {
   EXPENSE_CATEGORIES,

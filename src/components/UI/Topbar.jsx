@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useAuth } from "../../lib/AuthContext";
+import { useAuth } from "../../lib/useAuth";
 
 const TABS = [
   { id: "map", label: "Карта", emoji: "🗺️" },

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { POINT_TYPES, USERS } from "../../lib/constants";
-import { useAuth } from "../../lib/AuthContext";
+import { useAuth } from "../../lib/useAuth";
 
 export default function PointsSidebar({
   points,
