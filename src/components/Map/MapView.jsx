@@ -236,16 +236,19 @@ export default function MapView({ searchOpen, onSearchClose }) {
   }, [clearRouteLines]);
 
   // ── Route logic ──
+  const fitToWaypoints = useCallback((wps = routeWaypoints) => {
+    if (!mapInstance.current || wps.length < 2) return;
+    const bounds = L.latLngBounds(wps.map((wp) => [wp.lat, wp.lng]));
+    mapInstance.current.fitBounds(bounds.pad(0.22));
+  }, [routeWaypoints]);
+
   const startRouteMode = () => {
-    if (points.length < 2) { alert("Додайте хоча б 2 точки!"); return; }
-    // Дефолт — перші дві точки
-    const defaults = points.slice(0, 2).map((p) => ({
-      id: p.id, name: p.name, lat: p.lat, lng: p.lng,
-    }));
-    setRouteWaypoints(defaults);
+    if (points.length < 2) { alert("Додайте хоча б 2 точки для маршруту"); return; }
+    setRouteWaypoints([]);
     setRoutePanelOpen(true);
     setRouteResult(null);
     clearRouteLines();
+    setRoutePickMode(true);
     setSnap("full");
   };
 
@@ -279,8 +282,12 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const handleRoutePointPick = (p) => {
     if (!routePickMode) { flyTo(p); return; }
     const wp = { id: p.id, name: p.name, lat: p.lat, lng: p.lng };
-    setRouteWaypoints((prev) => [...prev, wp]);
-    setRoutePickMode(false);
+    setRouteWaypoints((prev) => {
+      if (prev.some((item) => item.id === wp.id)) return prev;
+      const next = [...prev, wp];
+      if (next.length >= 2) setTimeout(() => fitToWaypoints(next), 0);
+      return next;
+    });
   };
 
   const handleSavePoint = async (data) => {
@@ -381,6 +388,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
                 setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
               }
               onBuild={handleBuildRoute}
+              onFitRoute={() => fitToWaypoints()}
               result={routeResult}
               building={routeBuilding}
               pickMode={routePickMode}
@@ -446,6 +454,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
                 setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
               }
               onBuild={handleBuildRoute}
+              onFitRoute={() => fitToWaypoints()}
               result={routeResult}
               building={routeBuilding}
               pickMode={routePickMode}
