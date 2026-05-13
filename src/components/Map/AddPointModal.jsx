@@ -11,49 +11,24 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
   const [pointDate, setPointDate] = useState("");
   const [isCompleted, setIsCompleted] = useState(false);
   const [attachments, setAttachments] = useState([]);
-  const [newAttachmentUrl, setNewAttachmentUrl] = useState("");
 
-  const handleAddAttachment = () => {
-    if (newAttachmentUrl.trim()) {
-      setAttachments([
-        ...attachments,
-        {
-          url: newAttachmentUrl.trim(),
-          name: newAttachmentUrl.split("/").pop(),
-        },
-      ]);
-      setNewAttachmentUrl("");
-    }
-  };
-
-  const handleFileSelect = async (e) => {
+  const handleFileSelect = (e) => {
     const files = e.target.files;
     if (!files) return;
 
     for (let file of files) {
-      // Only accept image files
-      if (!file.type.startsWith("image/")) {
-        alert("Будь ласка, виберіть тільки зображення");
-        continue;
-      }
+      if (!file.type.startsWith("image/")) continue;
 
-      // Convert to base64
       const reader = new FileReader();
       reader.onload = (event) => {
-        const base64 = event.target.result;
-        setAttachments([
-          ...attachments,
-          {
-            data: base64,
-            name: file.name,
-            type: file.type,
-          },
+        setAttachments((prev) => [
+          ...prev,
+          { data: event.target.result, name: file.name, type: file.type },
         ]);
       };
       reader.readAsDataURL(file);
     }
 
-    // Reset file input
     e.target.value = "";
   };
 
@@ -84,9 +59,7 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title">Нова точка</div>
-          <button className="modal-close" onClick={onClose}>
-            ×
-          </button>
+          <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
         <div className="modal-body">
@@ -171,127 +144,29 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
             rows={2}
           />
 
-          <label className="field-label" style={{ marginTop: "12px" }}>
-            � Фото
-          </label>
-          <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
+          <label className="field-label">Фото</label>
+          <label className="file-upload-btn">
+            📎 Вибрати фото
             <input
               type="file"
               accept="image/*"
               multiple
               onChange={handleFileSelect}
-              style={{
-                flex: 1,
-                padding: "8px",
-                border: "1px solid #ddd",
-                borderRadius: "6px",
-                fontSize: "13px",
-              }}
             />
-          </div>
-
-          <label className="field-label">📎 URL приложення (опційно)</label>
-          <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
-            <input
-              type="text"
-              className="field-inp"
-              value={newAttachmentUrl}
-              onChange={(e) => setNewAttachmentUrl(e.target.value)}
-              placeholder="https://example.com/file.pdf"
-              onKeyPress={(e) => e.key === "Enter" && handleAddAttachment()}
-              style={{ margin: 0 }}
-            />
-            <button
-              type="button"
-              onClick={handleAddAttachment}
-              style={{
-                padding: "8px 14px",
-                background: "#2a7de8",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: "500",
-              }}
-            >
-              +
-            </button>
-          </div>
+          </label>
 
           {attachments.length > 0 && (
-            <div style={{ marginBottom: "12px" }}>
-              <div
-                style={{ fontSize: "12px", color: "#666", marginBottom: "6px" }}
-              >
-                {attachments.length} файл/файлів додано
-              </div>
+            <div className="attachments-grid">
               {attachments.map((att, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px",
-                    background: "#f2f2f7",
-                    borderRadius: "6px",
-                    marginBottom: "6px",
-                    fontSize: "13px",
-                  }}
-                >
-                  {att.type && att.type.startsWith("image/") ? (
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        background: "white",
-                        borderRadius: "4px",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <img
-                        src={att.data || att.url}
-                        alt={att.name}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        background: "#ddd",
-                        borderRadius: "4px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "18px",
-                      }}
-                    >
-                      📄
-                    </div>
-                  )}
-                  <span style={{ flex: 1, wordBreak: "break-all" }}>
-                    {att.name}
-                  </span>
+                <div key={idx} className="attachment-thumb-wrap">
+                  <img
+                    className="attachment-thumb"
+                    src={att.data}
+                    alt={att.name}
+                  />
                   <button
-                    type="button"
+                    className="attachment-remove"
                     onClick={() => handleRemoveAttachment(idx)}
-                    style={{
-                      background: "#ff3b30",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      padding: "4px 8px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      fontWeight: "500",
-                    }}
                   >
                     ×
                   </button>
@@ -300,39 +175,20 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
             </div>
           )}
 
-          <div
-            style={{
-              marginTop: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
+          <div className="check-row" onClick={() => setIsCompleted((v) => !v)}>
             <input
               type="checkbox"
               id="isCompleted"
               checked={isCompleted}
               onChange={(e) => setIsCompleted(e.target.checked)}
-              style={{ cursor: "pointer", width: "18px", height: "18px" }}
+              onClick={(e) => e.stopPropagation()}
             />
-            <label
-              htmlFor="isCompleted"
-              style={{
-                cursor: "pointer",
-                margin: 0,
-                fontSize: "14px",
-                fontWeight: "500",
-              }}
-            >
-              ✓ Завдання виконано
-            </label>
+            <label htmlFor="isCompleted">✓ Завдання виконано</label>
           </div>
         </div>
 
         <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>
-            Скасувати
-          </button>
+          <button className="btn-secondary" onClick={onClose}>Скасувати</button>
           <button
             className="btn-primary"
             onClick={handleSave}
