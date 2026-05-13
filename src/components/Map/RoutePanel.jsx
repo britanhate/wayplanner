@@ -8,20 +8,20 @@ const TRAVEL_MODES = [
 ];
 
 export default function RoutePanel({
-  waypoints, // [{id, name, lat, lng}, ...]
-  onRemoveWaypoint, // (index) => void
-  onAddWaypoint, // () => void  — відкрити вибір точки
-  onBuild, // (travelMode) => void
-  result, // { legs: [{ from, to, totalDurFmt, totalDistFmt, via, steps[] }] }
+  waypoints,
+  onRemoveWaypoint,
+  onAddWaypoint,
+  onBuild,
+  onFitRoute,
+  result,
   building,
   onClose,
-  onPickPoint,
+  pickMode,
 }) {
   const [travelMode, setTravelMode] = useState(3);
   const [minimized, setMinimized] = useState(false);
-  const [openLeg, setOpenLeg] = useState(null); // index розгорнутого leg
+  const [openLeg, setOpenLeg] = useState(null);
 
-  // ── Загальний час і відстань по всіх legs ──
   const summary = result?.legs?.length
     ? result.legs.reduce(
         (acc, leg) => ({
@@ -41,14 +41,10 @@ export default function RoutePanel({
 
   return (
     <div className="route-panel">
-      {/* ── Header ── */}
       <div className="route-panel-header">
-        <span style={{ fontWeight: 600, fontSize: 14 }}>🗺️ Маршрут</span>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button
-            className="rp-icon-btn"
-            onClick={() => setMinimized((v) => !v)}
-          >
+        <span className="rp-title">🗺️ Маршрут</span>
+        <div className="rp-header-actions">
+          <button className="rp-icon-btn" onClick={() => setMinimized((v) => !v)}>
             {minimized ? "▲" : "▼"}
           </button>
           <button className="rp-icon-btn" onClick={onClose}>
@@ -59,7 +55,12 @@ export default function RoutePanel({
 
       {!minimized && (
         <>
-          {/* ── Travel mode tabs ── */}
+          <div className={`rp-pick-hint ${pickMode ? "active" : ""}`}>
+            {pickMode
+              ? "Оберіть точки у списку нижче або торкніться маркера на мапі."
+              : "Керуй послідовністю точок маршруту вручну."}
+          </div>
+
           <div className="rp-mode-tabs">
             {TRAVEL_MODES.map((m) => (
               <button
@@ -73,8 +74,10 @@ export default function RoutePanel({
             ))}
           </div>
 
-          {/* ── Waypoints list ── */}
           <div className="rp-waypoints">
+            {!waypoints.length && (
+              <div className="rp-empty">Поки немає точок. Натисни «+ Додати точку».</div>
+            )}
             {waypoints.map((wp, i) => (
               <div key={wp.id} className="rp-waypoint-row">
                 <div
@@ -89,65 +92,46 @@ export default function RoutePanel({
                   }}
                 />
                 <div className="rp-wp-name">{wp.name}</div>
-                {waypoints.length > 2 && (
-                  <button
-                    className="rp-icon-btn"
-                    style={{ opacity: 0.5, fontSize: 13 }}
-                    onClick={() => onRemoveWaypoint(i)}
-                  >
-                    ×
-                  </button>
-                )}
-                {/* Connector */}
-                {i < waypoints.length - 1 && (
-                  <div className="rp-wp-connector" />
-                )}
+                <button className="rp-icon-btn rp-remove-btn" onClick={() => onRemoveWaypoint(i)}>
+                  ×
+                </button>
+                {i < waypoints.length - 1 && <div className="rp-wp-connector" />}
               </div>
             ))}
 
-            {/* Додати проміжну точку */}
             {waypoints.length < 8 && (
-              <button className="rp-add-stop-btn" onClick={onAddWaypoint}>
-                + Вибрати точку на мапі
+              <button className={`rp-add-stop-btn ${pickMode ? "active" : ""}`} onClick={onAddWaypoint}>
+                {pickMode ? "✅ Режим вибору увімкнено" : "+ Додати точку до маршруту"}
               </button>
             )}
           </div>
 
-          {/* ── Build button ── */}
-          <button
-            className="rp-build-btn"
-            onClick={() => onBuild(travelMode)}
-            disabled={building || waypoints.length < 2}
-          >
-            {building ? "⏳ Будуємо..." : "🔍 Знайти маршрут"}
-          </button>
+          <div className="rp-actions-row">
+            <button className="rp-outline-btn" onClick={onFitRoute} disabled={waypoints.length < 2}>
+              🎯 Показати точки
+            </button>
+            <button
+              className="rp-build-btn"
+              onClick={() => onBuild(travelMode)}
+              disabled={building || waypoints.length < 2}
+            >
+              {building ? "⏳ Будуємо..." : "🔍 Знайти маршрут"}
+            </button>
+          </div>
 
-          {/* ── Results ── */}
           {result && (
             <div className="rp-results">
-              {/* Загальний summary */}
               {summary && (
                 <div className="rp-summary-bar">
                   <span className="rp-summary-dur">{fmtDur(summary.dur)}</span>
-                  <span className="rp-summary-dist">
-                    {fmtDist(summary.dist)}
-                  </span>
-                  {result.legs[0]?.via && (
-                    <span className="rp-summary-via">
-                      via {result.legs[0].via}
-                    </span>
-                  )}
+                  <span className="rp-summary-dist">{fmtDist(summary.dist)}</span>
+                  {result.legs[0]?.via && <span className="rp-summary-via">via {result.legs[0].via}</span>}
                 </div>
               )}
 
-              {/* Legs (між кожними двома точками) */}
               {result.legs.map((leg, li) => (
                 <div key={li} className="rp-leg">
-                  {/* Leg header — клікабельний для розгортання */}
-                  <div
-                    className="rp-leg-header"
-                    onClick={() => setOpenLeg(openLeg === li ? null : li)}
-                  >
+                  <div className="rp-leg-header" onClick={() => setOpenLeg(openLeg === li ? null : li)}>
                     <div className="rp-leg-route">
                       <span className="rp-leg-from">{leg.from.name}</span>
                       <span className="rp-leg-arrow">→</span>
@@ -155,71 +139,30 @@ export default function RoutePanel({
                     </div>
                     <div className="rp-leg-meta">
                       <span>{leg.totalDurFmt}</span>
-                      <span style={{ opacity: 0.5 }}>{leg.totalDistFmt}</span>
-                      <span style={{ opacity: 0.4, fontSize: 12 }}>
-                        {openLeg === li ? "▲" : "▼"}
-                      </span>
+                      <span className="rp-leg-dist">{leg.totalDistFmt}</span>
+                      <span className="rp-leg-expand">{openLeg === li ? "▲" : "▼"}</span>
                     </div>
                   </div>
 
-                  {/* Steps (розгорнуто) */}
                   {openLeg === li && (
                     <div className="rp-steps">
                       {leg.steps.map((step, si) => (
                         <div key={si} className="rp-step">
-                          {/* Вертикальна лінія */}
                           <div className="rp-step-line-wrap">
-                            <div
-                              className="rp-step-dot"
-                              style={{ background: step.color }}
-                            />
+                            <div className="rp-step-dot" style={{ background: step.color }} />
                             {si < leg.steps.length - 1 && (
-                              <div
-                                className="rp-step-line"
-                                style={{ background: step.color + "55" }}
-                              />
+                              <div className="rp-step-line" style={{ background: `${step.color}55` }} />
                             )}
                           </div>
-
-                          {/* Контент */}
                           <div className="rp-step-content">
                             <div className="rp-step-main">
                               <span className="rp-step-icon">{step.icon}</span>
                               <div>
-                                <div className="rp-step-title">
-                                  {step.lineName}
-                                </div>
-                                {step.operator && (
-                                  <div className="rp-step-op">
-                                    {step.operator}
-                                  </div>
-                                )}
+                                <div className="rp-step-title">{step.lineName}</div>
+                                {step.operator && <div className="rp-step-op">{step.operator}</div>}
                               </div>
                               <div className="rp-step-dur">{step.durFmt}</div>
                             </div>
-
-                            {/* Board / Alight */}
-                            {(step.boardAt || step.alightAt) && (
-                              <div className="rp-step-stops">
-                                {step.boardAt && (
-                                  <div className="rp-stop-row">
-                                    <span className="rp-stop-dot green" />
-                                    <span>{step.boardAt}</span>
-                                  </div>
-                                )}
-                                {step.stops > 0 && (
-                                  <div className="rp-stop-mid">
-                                    ↕ {step.stops} зупин. · {step.distFmt}
-                                  </div>
-                                )}
-                                {step.alightAt && (
-                                  <div className="rp-stop-row">
-                                    <span className="rp-stop-dot red" />
-                                    <span>{step.alightAt}</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
                           </div>
                         </div>
                       ))}
