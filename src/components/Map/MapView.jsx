@@ -40,20 +40,12 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const [showMetro, setShowMetro] = useState(true);
 
   // ── Route state (новий) ──
-<<<<<<< HEAD
-  const [routePanelOpen, setRoutePanelOpen] = useState(false);
-  const [routeWaypoints, setRouteWaypoints] = useState([]);
-  const [routePickMode, setRoutePickMode] = useState(false); // вибір точки для маршруту
-  const [routeResult, setRouteResult] = useState(null);
-  const [routeBuilding, setRouteBuilding] = useState(false);
-=======
   const [routePanelOpen,  setRoutePanelOpen]  = useState(false);
   const [routeWaypoints,  setRouteWaypoints]  = useState([]);
   const [routePickTarget, setRoutePickTarget] = useState(null);
   const [routeMinimized,  setRouteMinimized]  = useState(false);
   const [routeResult,     setRouteResult]     = useState(null);
   const [routeBuilding,   setRouteBuilding]   = useState(false);
->>>>>>> 32312152615f039acc6319ddd8a675038bc9ec9b
 
   // ── Swipe ──
   const onTouchStart = (e) => {
@@ -145,15 +137,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
     };
   }, []);
 
-<<<<<<< HEAD
-  // routePickMode ref для map click
-  const routePickModeRef = useRef(false);
-  useEffect(() => {
-    routePickModeRef.current = routePickMode;
-  }, [routePickMode]);
-
-=======
->>>>>>> 32312152615f039acc6319ddd8a675038bc9ec9b
   useEffect(() => {
     const handleResize = () => mapInstance.current?.invalidateSize();
     const t = setTimeout(handleResize, 350);
@@ -348,14 +331,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
 
   // Вибір точки зі списку для додавання в маршрут
   const handleRoutePointPick = (p) => {
-<<<<<<< HEAD
-    if (!routePickMode) {
-      flyTo(p);
-      return;
-    }
-=======
     if (!routePickTarget) { flyTo(p); return; }
->>>>>>> 32312152615f039acc6319ddd8a675038bc9ec9b
     const wp = { id: p.id, name: p.name, lat: p.lat, lng: p.lng };
     setRouteWaypoints((prev) => {
       let next = prev.filter((item) => item.id !== wp.id);
@@ -475,22 +451,9 @@ export default function MapView({ searchOpen, onSearchClose }) {
         <div className="sidebar-section" style={{ marginTop: 8 }}>
           <button
             className={`route-btn ${routePanelOpen ? "active" : ""}`}
-<<<<<<< HEAD
-            onClick={
-              routePanelOpen
-                ? () => {
-                    setRoutePanelOpen(false);
-                    setRouteResult(null);
-                    clearRouteLines();
-                    setRoutePickMode(false);
-                  }
-                : startRouteMode
-            }
-=======
             onClick={routePanelOpen
               ? () => { setRoutePanelOpen(false); setRouteResult(null); clearRouteLines(); setRoutePickTarget(null); }
               : startRouteMode}
->>>>>>> 32312152615f039acc6319ddd8a675038bc9ec9b
           >
             {routeBuilding
               ? "⏳ Будуємо..."
@@ -565,22 +528,9 @@ export default function MapView({ searchOpen, onSearchClose }) {
         <div className="sheet-actions">
           <button
             className={`sheet-action-btn ${routePanelOpen ? "active" : ""}`}
-<<<<<<< HEAD
-            onClick={
-              routePanelOpen
-                ? () => {
-                    setRoutePanelOpen(false);
-                    setRouteResult(null);
-                    clearRouteLines();
-                    setRoutePickMode(false);
-                  }
-                : startRouteMode
-            }
-=======
             onClick={routePanelOpen
               ? () => { setRoutePanelOpen(false); setRouteResult(null); clearRouteLines(); setRoutePickTarget(null); }
               : startRouteMode}
->>>>>>> 32312152615f039acc6319ddd8a675038bc9ec9b
           >
             {routeBuilding
               ? "⏳"
