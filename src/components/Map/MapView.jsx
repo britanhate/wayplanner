@@ -41,12 +41,11 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const [editingPoint, setEditingPoint] = useState(null);
   const [showMetro, setShowMetro] = useState(true);
 
-  // ── Route state (новий) ──
-  const [routePanelOpen,  setRoutePanelOpen]  = useState(false);
-  const [routeWaypoints,  setRouteWaypoints]  = useState([]);
+  const [routePanelOpen, setRoutePanelOpen] = useState(false);
+  const [routeWaypoints, setRouteWaypoints] = useState([]);
   const [routePickTarget, setRoutePickTarget] = useState(null);
-  const [routeResult,     setRouteResult]     = useState(null);
-  const [routeBuilding,   setRouteBuilding]   = useState(false);
+  const [routeResult, setRouteResult] = useState(null);
+  const [routeBuilding, setRouteBuilding] = useState(false);
 
   useEffect(() => {
     routePickTargetRef.current = routePickTarget;
@@ -263,38 +262,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
     routeStepLayers.current = [];
   }, []);
 
-  const fetchPublicRouteGeometry = useCallback(async (waypoints, travelMode) => {
-    if (!Array.isArray(waypoints) || waypoints.length < 2) return { coords: [], steps: [] };
-
-    const profile =
-      travelMode === 2
-        ? "walking"
-        : travelMode === 1
-          ? "cycling"
-          : "driving";
-
-    const coordsStr = waypoints.map((wp) => `${wp.lng},${wp.lat}`).join(";");
-    const url = `https://router.project-osrm.org/route/v1/${profile}/${coordsStr}?alternatives=false&overview=full&geometries=geojson&steps=true`;
-
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`OSRM error: ${res.status}`);
-    const data = await res.json();
-    const geometry = data?.routes?.[0]?.geometry?.coordinates || [];
-    const coords = geometry
-      .map((pt) => (Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null))
-      .filter(Boolean);
-    const steps = (data?.routes?.[0]?.legs || []).flatMap((leg) => leg.steps || []).map((step) => {
-      const loc = step?.maneuver?.location;
-      return {
-        mode: step?.mode || profile,
-        instruction: step?.maneuver?.instruction || "",
-        lat: Array.isArray(loc) ? loc[1] : null,
-        lng: Array.isArray(loc) ? loc[0] : null,
-      };
-    }).filter((s) => s.lat != null && s.lng != null);
-    return { coords, steps };
-  }, []);
-
   const extractRouteCoords = useCallback((leg) => {
     const encoded = leg?.best?.polyline || leg?.best?.overview_polyline;
     if (Array.isArray(encoded) && encoded.length > 1) {
@@ -304,7 +271,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
         )
         .filter(Boolean);
     }
-
     const geometry = leg?.best?.geometry || leg?.geometry;
     if (Array.isArray(geometry?.coordinates)) {
       return geometry.coordinates
@@ -313,7 +279,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
         )
         .filter(Boolean);
     }
-
     if (Array.isArray(leg?.polyline)) {
       return leg.polyline
         .map((pt) =>
@@ -321,62 +286,42 @@ export default function MapView({ searchOpen, onSearchClose }) {
         )
         .filter(Boolean);
     }
-
     return null;
   }, []);
 
-  const fetchPublicRouteGeometry = useCallback(async (waypoints, travelMode) => {
-    if (!Array.isArray(waypoints) || waypoints.length < 2) return [];
-
-    const profile =
-      travelMode === 2
-        ? "walking"
-        : travelMode === 1
-          ? "cycling"
-          : "driving";
-
-    const coords = waypoints.map((wp) => `${wp.lng},${wp.lat}`).join(";");
-    const url = `https://router.project-osrm.org/route/v1/${profile}/${coords}?alternatives=false&overview=full&geometries=geojson&steps=false`;
-
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`OSRM error: ${res.status}`);
-    const data = await res.json();
-    const geometry = data?.routes?.[0]?.geometry?.coordinates;
-    if (!Array.isArray(geometry)) return [];
-    return geometry
-      .map((pt) => (Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null))
-      .filter(Boolean);
-  }, []);
-
-  const extractRouteCoords = useCallback((leg) => {
-    const encoded = leg?.best?.polyline || leg?.best?.overview_polyline;
-    if (Array.isArray(encoded) && encoded.length > 1) {
-      return encoded
-        .map((pt) =>
-          Array.isArray(pt) && pt.length >= 2 ? [pt[0], pt[1]] : null,
-        )
-        .filter(Boolean);
-    }
-
-    const geometry = leg?.best?.geometry || leg?.geometry;
-    if (Array.isArray(geometry?.coordinates)) {
-      return geometry.coordinates
+  const fetchPublicRouteGeometry = useCallback(
+    async (waypoints, travelMode) => {
+      if (!Array.isArray(waypoints) || waypoints.length < 2)
+        return { coords: [], steps: [] };
+      const profile =
+        travelMode === 2 ? "walking" : travelMode === 1 ? "cycling" : "driving";
+      const coordsStr = waypoints.map((wp) => `${wp.lng},${wp.lat}`).join(";");
+      const url = `https://router.project-osrm.org/route/v1/${profile}/${coordsStr}?alternatives=false&overview=full&geometries=geojson&steps=true`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`OSRM error: ${res.status}`);
+      const data = await res.json();
+      const geometry = data?.routes?.[0]?.geometry?.coordinates || [];
+      const coords = geometry
         .map((pt) =>
           Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null,
         )
         .filter(Boolean);
-    }
-
-    if (Array.isArray(leg?.polyline)) {
-      return leg.polyline
-        .map((pt) =>
-          Array.isArray(pt) && pt.length >= 2 ? [pt[0], pt[1]] : null,
-        )
-        .filter(Boolean);
-    }
-
-    return null;
-  }, []);
+      const steps = (data?.routes?.[0]?.legs || [])
+        .flatMap((leg) => leg.steps || [])
+        .map((step) => {
+          const loc = step?.maneuver?.location;
+          return {
+            mode: step?.mode || profile,
+            instruction: step?.maneuver?.instruction || "",
+            lat: Array.isArray(loc) ? loc[1] : null,
+            lng: Array.isArray(loc) ? loc[0] : null,
+          };
+        })
+        .filter((s) => s.lat != null && s.lng != null);
+      return { coords, steps };
+    },
+    [],
+  );
 
   const drawRouteLegs = useCallback(
     (legs, rawLegs = []) => {
@@ -436,9 +381,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
     if (!routeWaypoints.length) setRoutePickTarget("start");
     else if (routeWaypoints.length === 1) setRoutePickTarget("finish");
     else setRoutePickTarget("stop");
-    setSnap("full");
   };
-
 
   const handleBuildRoute = async (travelMode) => {
     if (routeWaypoints.length < 2) return;
@@ -497,9 +440,11 @@ export default function MapView({ searchOpen, onSearchClose }) {
     setRouteBuilding(false);
   };
 
-  // Вибір точки зі списку для додавання в маршрут
   const handleRoutePointPick = (p) => {
-    if (!routePickTarget) { flyTo(p); return; }
+    if (!routePickTarget) {
+      flyTo(p);
+      return;
+    }
     const wp = { id: p.id, name: p.name, lat: p.lat, lng: p.lng };
     setRouteWaypoints((prev) => {
       let next = prev.filter((item) => item.id !== wp.id);
@@ -510,7 +455,8 @@ export default function MapView({ searchOpen, onSearchClose }) {
         const start = next.length ? next[0] : null;
         next = start && start.id !== wp.id ? [start, wp] : [...next, wp];
       } else {
-        if (next.length >= 2) next = [...next.slice(0, -1), wp, next[next.length - 1]];
+        if (next.length >= 2)
+          next = [...next.slice(0, -1), wp, next[next.length - 1]];
         else next = [...next, wp];
       }
       if (next.length >= 2) setTimeout(() => fitToWaypoints(next), 0);
@@ -591,11 +537,63 @@ export default function MapView({ searchOpen, onSearchClose }) {
   };
 
   const snapClass = snap === "full" ? "sheet-full" : "sheet-keep";
+
   const closeRouteMode = () => {
     setRoutePanelOpen(false);
     setRouteResult(null);
     clearRouteLines();
     setRoutePickTarget(null);
+  };
+
+  // ── Спільний контент для sidebar і sheet ──
+  // Одна функція — один рендер, без дублювання
+  const renderContent = () => {
+    // Режим вибору точки для маршруту — показуємо список точок
+    if (routePanelOpen && routePickTarget) {
+      return (
+        <PointsSidebar
+          points={points}
+          onFly={flyTo}
+          onDelete={deletePoint}
+          onEdit={(p) => setEditingPoint(p)}
+          onToggleCompleted={handleToggleCompleted}
+          routeMode={true}
+          routeFrom={null}
+          onRouteToggle={handleRoutePointPick}
+        />
+      );
+    }
+    // Режим маршруту без вибору точки — показуємо RoutePanel
+    if (routePanelOpen) {
+      return (
+        <RoutePanel
+          waypoints={routeWaypoints}
+          onAddWaypoint={startWaypointPicking}
+          onRemoveWaypoint={(i) =>
+            setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
+          }
+          onBuild={handleBuildRoute}
+          result={routeResult}
+          building={routeBuilding}
+          pickMode={false}
+          showHeader={false}
+          onClose={closeRouteMode}
+        />
+      );
+    }
+    // Звичайний режим — список точок
+    return (
+      <PointsSidebar
+        points={points}
+        onFly={flyTo}
+        onDelete={deletePoint}
+        onEdit={(p) => setEditingPoint(p)}
+        onToggleCompleted={handleToggleCompleted}
+        routeMode={false}
+        routeFrom={null}
+        onRouteToggle={handleRoutePointPick}
+      />
+    );
   };
 
   return (
@@ -622,81 +620,44 @@ export default function MapView({ searchOpen, onSearchClose }) {
           </div>
         )}
 
-        {!routePanelOpen && (
-          <div className="sidebar-section" style={{ marginTop: 8 }}>
-            <button className="route-btn" onClick={startRouteMode}>
-              🚌 Маршрут
-            </button>
-            <button
-              className={`route-btn ${showMetro ? "active" : ""}`}
-              onClick={() => setShowMetro((v) => !v)}
+        <div className="sidebar-section">
+          <button
+            className={`route-btn ${routePanelOpen ? "active" : ""}`}
+            onClick={routePanelOpen ? closeRouteMode : startRouteMode}
+          >
+            {routePanelOpen ? "✕ Закрити" : "🚌 Маршрут"}
+          </button>
+          <button
+            className={`route-btn ${showMetro ? "active" : ""}`}
+            onClick={() => setShowMetro((v) => !v)}
+          >
+            {showMetro ? "🚇 Метро (вкл)" : "🚇 Метро (викл)"}
+          </button>
+        </div>
+
+        {/* Підказка вибору точки маршруту */}
+        {routePanelOpen && routePickTarget && (
+          <div style={{ padding: "6px 14px 0" }}>
+            <div
+              className="rp-pick-hint active"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
             >
-              {showMetro ? "🚇 Метро (вкл)" : "🚇 Метро (викл)"}
-            </button>
+              <span>📍 Оберіть точку зі списку</span>
+              <button
+                className="rp-icon-btn"
+                onClick={() => setRoutePickTarget(null)}
+              >
+                ←
+              </button>
+            </div>
           </div>
         )}
 
-        {routePanelOpen ? (
-          <div style={{ padding: "8px 12px" }}>
-            <div className="route-panel-header" style={{ marginBottom: 8 }}>
-              <span className="rp-title">
-                {routePickTarget ? "📍 Вибір точки маршруту" : "🗺️ Конструктор маршруту"}
-              </span>
-              <div className="rp-header-actions">
-                {routePickTarget && (
-                  <button className="rp-icon-btn" onClick={() => setRoutePickTarget(null)}>
-                    ←
-                  </button>
-                )}
-                <button className="rp-icon-btn" onClick={closeRouteMode}>
-                  ×
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {routePanelOpen ? (
-          routePickTarget ? (
-            <PointsSidebar
-              points={points}
-              onFly={flyTo}
-              onDelete={deletePoint}
-              onEdit={(p) => setEditingPoint(p)}
-              onToggleCompleted={handleToggleCompleted}
-              routeMode
-              routeFrom={null}
-              onRouteToggle={handleRoutePointPick}
-            />
-          ) : (
-            <div style={{ margin: "0 12px 8px" }}>
-              <RoutePanel
-                waypoints={routeWaypoints}
-                onAddWaypoint={startWaypointPicking}
-                onRemoveWaypoint={(i) =>
-                  setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
-                }
-                onBuild={handleBuildRoute}
-                result={routeResult}
-                building={routeBuilding}
-                pickMode={false}
-                showHeader={false}
-                onClose={closeRouteMode}
-              />
-            </div>
-          )
-        ) : (
-          <PointsSidebar
-            points={points}
-            onFly={flyTo}
-            onDelete={deletePoint}
-            onEdit={(p) => setEditingPoint(p)}
-            onToggleCompleted={handleToggleCompleted}
-            routeMode={false}
-            routeFrom={null}
-            onRouteToggle={handleRoutePointPick}
-          />
-        )}
+        {renderContent()}
       </div>
 
       {/* ── Map ── */}
@@ -714,82 +675,44 @@ export default function MapView({ searchOpen, onSearchClose }) {
           <div className="sheet-handle" />
         </div>
 
-        {!routePanelOpen && (
-          <div className="sheet-actions">
-            <button className="sheet-action-btn" onClick={startRouteMode}>
-              🚌 Маршрут
-            </button>
-            <button
-              className={`sheet-action-btn ${showMetro ? "active" : ""}`}
-              onClick={() => setShowMetro((v) => !v)}
+        <div className="sheet-actions">
+          <button
+            className={`sheet-action-btn ${routePanelOpen ? "active" : ""}`}
+            onClick={routePanelOpen ? closeRouteMode : startRouteMode}
+          >
+            {routePanelOpen ? "✕ Маршрут" : "🚌 Маршрут"}
+          </button>
+          <button
+            className={`sheet-action-btn ${showMetro ? "active" : ""}`}
+            onClick={() => setShowMetro((v) => !v)}
+          >
+            🚇 Метро
+          </button>
+        </div>
+
+        {/* Підказка вибору точки маршруту */}
+        {routePanelOpen && routePickTarget && (
+          <div style={{ padding: "0 14px 6px" }}>
+            <div
+              className="rp-pick-hint active"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
             >
-              🚇 Метро
-            </button>
+              <span>📍 Оберіть точку зі списку</span>
+              <button
+                className="rp-icon-btn"
+                onClick={() => setRoutePickTarget(null)}
+              >
+                ←
+              </button>
+            </div>
           </div>
         )}
 
-        <div className="sheet-scroll">
-          {routePanelOpen ? (
-            <div style={{ padding: "0 12px 6px" }}>
-              <div className="route-panel-header" style={{ marginBottom: 8 }}>
-                <span className="rp-title">
-                  {routePickTarget ? "📍 Вибір точки маршруту" : "🗺️ Конструктор маршруту"}
-                </span>
-                <div className="rp-header-actions">
-                  {routePickTarget && (
-                    <button className="rp-icon-btn" onClick={() => setRoutePickTarget(null)}>
-                      ←
-                    </button>
-                  )}
-                  <button className="rp-icon-btn" onClick={closeRouteMode}>
-                    ×
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-          {routePanelOpen ? (
-            routePickTarget ? (
-              <PointsSidebar
-                points={points}
-                onFly={flyTo}
-                onDelete={deletePoint}
-                onEdit={(p) => setEditingPoint(p)}
-                onToggleCompleted={handleToggleCompleted}
-                routeMode
-                routeFrom={null}
-                onRouteToggle={handleRoutePointPick}
-              />
-            ) : (
-              <div style={{ padding: "0 12px 8px" }}>
-                <RoutePanel
-                  waypoints={routeWaypoints}
-                  onAddWaypoint={startWaypointPicking}
-                  onRemoveWaypoint={(i) =>
-                    setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
-                  }
-                  onBuild={handleBuildRoute}
-                    result={routeResult}
-                  building={routeBuilding}
-                  pickMode={false}
-                  showHeader={false}
-                  onClose={closeRouteMode}
-                />
-              </div>
-            )
-          ) : (
-            <PointsSidebar
-              points={points}
-              onFly={flyTo}
-              onDelete={deletePoint}
-              onEdit={(p) => setEditingPoint(p)}
-              onToggleCompleted={handleToggleCompleted}
-              routeMode={false}
-              routeFrom={null}
-              onRouteToggle={handleRoutePointPick}
-            />
-          )}
-        </div>
+        <div className="sheet-scroll">{renderContent()}</div>
       </div>
 
       {pendingPos && (
