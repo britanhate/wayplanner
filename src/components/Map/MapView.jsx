@@ -507,7 +507,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
       {/* ── Desktop sidebar ── */}
       <div className="map-sidebar">
         {searchOpen && (
-          <div style={{ padding: "12px 12px 0" }}>
+          <div className="map-search-desktop-wrap">
             <SearchBox onResult={handleGeocodeResult} />
           </div>
         )}
@@ -529,14 +529,9 @@ export default function MapView({ searchOpen, onSearchClose }) {
 
         {/* Підказка вибору точки маршруту */}
         {routePanelOpen && routePickTarget && (
-          <div style={{ padding: "6px 14px 0" }}>
+          <div className="route-pick-wrap-top">
             <div
-              className="rp-pick-hint active"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
+              className="rp-pick-hint active rp-pick-hint-row"
             >
               <span>📍 Оберіть точку зі списку</span>
               <button
@@ -584,14 +579,9 @@ export default function MapView({ searchOpen, onSearchClose }) {
 
         {/* Підказка вибору точки маршруту */}
         {routePanelOpen && routePickTarget && (
-          <div style={{ padding: "0 14px 6px" }}>
+          <div className="route-pick-wrap-bottom">
             <div
-              className="rp-pick-hint active"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
+              className="rp-pick-hint active rp-pick-hint-row"
             >
               <span>📍 Оберіть точку зі списку</span>
               <button

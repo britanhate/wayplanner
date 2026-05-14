@@ -2851,3 +2851,29 @@ header[style] {
     max-height: none;
   }
 }
+
+
+/* Refactor utilities */
+.pos-relative { position: relative; }
+.topbar-btn-active {
+  background: rgba(10, 132, 255, 0.15);
+  border-radius: 8px;
+  border: 0.5px solid var(--accent);
+  color: var(--accent);
+}
+.topbar-dropdown {
+  min-width: 185px;
+  background: rgba(10, 14, 25, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+  overflow: hidden;
+  z-index: 1400;
+  animation: topbar-dropdown-in 0.18s cubic-bezier(0.34,1.56,0.64,1);
+}
+.map-search-desktop-wrap { padding: 12px 12px 0; }
+.route-pick-wrap-top { padding: 6px 14px 0; }
+.route-pick-wrap-bottom { padding: 0 14px 6px; }
+.rp-pick-hint-row { display: flex; align-items: center; justify-content: space-between; }
