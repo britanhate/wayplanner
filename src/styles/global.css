@@ -276,7 +276,7 @@ button {
     height: calc(82px + env(safe-area-inset-bottom));
   }
   .map-sheet.sheet-full {
-    height: min(calc(100svh - 72px), 680px);
+    height: min(calc(80svh - 72px), 680px);
   }
 
   /* Sheet scrollable content */
