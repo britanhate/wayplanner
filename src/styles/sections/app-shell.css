@@ -1,0 +1,16 @@
+.app-shell {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: linear-gradient(180deg, #05060a, #0b1220);
+  height: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-content {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
