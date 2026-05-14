@@ -98,7 +98,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
           />
 
           <div className="field-row">
-            <div style={{ flex: 1 }}>
+            <div className="flex-1">
               <label className="field-label">Дата</label>
               <input
                 className="field-inp"
@@ -110,7 +110,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
           </div>
 
           <div className="field-row">
-            <div style={{ flex: 1 }}>
+            <div className="flex-1">
               <label className="field-label">Орієнтовна вартість</label>
               <input
                 className="field-inp"
