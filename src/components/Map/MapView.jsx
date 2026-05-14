@@ -16,7 +16,95 @@ import EditPointModal from "./EditPointModal";
 import { useBottomSheetSwipe } from "../../hooks/useBottomSheetSwipe";
 import { useMetroLayer } from "../../hooks/useMetroLayer";
 
-export default function MapView({ searchOpen, onSearchClose }) {
+const Icons = {
+  route: (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="6" cy="19" r="3" />
+      <circle cx="18" cy="5" r="3" />
+      <path d="M6 16V9a6 6 0 0 1 6-6h0a6 6 0 0 1 6 6v8" />
+    </svg>
+  ),
+  close: (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  metro: (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="13" rx="3" />
+      <path d="M3 10h18M8 16l-2 5M16 16l2 5M12 16v5" />
+    </svg>
+  ),
+  pin: (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  ),
+  arrowLeft: (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
+    </svg>
+  ),
+};
+
+const MAPBOX_TOKEN = import.meta.env.MAPBOX_TOKEN;
+
+const MAPBOX_STYLES = {
+  "streets-v12": "mapbox/streets-v12",
+  "outdoors-v12": "mapbox/outdoors-v12",
+  "light-v11": "mapbox/light-v11",
+  "dark-v11": "mapbox/dark-v11",
+  "satellite-streets-v12": "mapbox/satellite-streets-v12",
+  "navigation-day-v1": "mapbox/navigation-day-v1",
+  "navigation-night-v1": "mapbox/navigation-night-v1",
+};
+
+export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const { user } = useAuth();
   const { points, deletePoint, updatePoint } = usePoints();
   const { addExpense, updateExpense, deleteExpenseByPointId } = useExpenses();
@@ -27,6 +115,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const routeLayers = useRef([]);
   const routeStepLayers = useRef([]);
   const previewMarkerRef = useRef(null);
+  const tileLayerRef = useRef(null);
   const routePickTargetRef = useRef(null);
 
   const { snap, setSnap, onTouchStart, onTouchEnd } =
@@ -50,6 +139,32 @@ export default function MapView({ searchOpen, onSearchClose }) {
 
   useMetroLayer(mapInstance, showMetro);
 
+  // ── Створення шару плиток ──
+  const createTileLayer = useCallback((style) => {
+    if (style === "standard") {
+      return L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+      });
+    }
+    if (style === "dark") {
+      return L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        { attribution: "&copy; OpenStreetMap &copy; CartoDB" },
+      );
+    }
+    const styleId = MAPBOX_STYLES[style] ?? "mapbox/streets-v12";
+    return L.tileLayer(
+      `https://api.mapbox.com/styles/v1/${styleId}/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
+      {
+        tileSize: 512,
+        zoomOffset: -1,
+        attribution:
+          "© <a href='https://www.mapbox.com/'>Mapbox</a> © OpenStreetMap",
+      },
+    );
+  }, []);
+
+  // ── Ініціалізація карти ──
   useEffect(() => {
     if (mapInstance.current || !mapRef.current) return;
 
@@ -61,33 +176,36 @@ export default function MapView({ searchOpen, onSearchClose }) {
     });
 
     mapInstance.current = map;
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
-      map,
-    );
+    tileLayerRef.current = createTileLayer(mapStyle || "standard").addTo(map);
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-      },
+      (pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 15),
       async () => {
         try {
           const res = await fetch("https://ipapi.co/json/");
           const data = await res.json();
-
           map.setView([data.latitude, data.longitude], 11);
         } catch {
           map.setView([50.4501, 30.5234], 12);
         }
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-      },
+      { enableHighAccuracy: true, timeout: 5000 },
     );
 
     return () => map.remove();
   }, []);
+
+  // ── Зміна стилю карти ──
+  useEffect(() => {
+    if (!mapInstance.current) return;
+    if (tileLayerRef.current) {
+      mapInstance.current.removeLayer(tileLayerRef.current);
+    }
+    tileLayerRef.current = createTileLayer(mapStyle || "standard").addTo(
+      mapInstance.current,
+    );
+  }, [mapStyle, createTileLayer]);
+
   // ── Markers ──
   useEffect(() => {
     if (!mapInstance.current) return;
@@ -288,8 +406,9 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const fitToWaypoints = useCallback(
     (wps = routeWaypoints) => {
       if (!mapInstance.current || wps.length < 2) return;
-      const bounds = L.latLngBounds(wps.map((wp) => [wp.lat, wp.lng]));
-      mapInstance.current.fitBounds(bounds.pad(0.22));
+      mapInstance.current.fitBounds(
+        L.latLngBounds(wps.map((wp) => [wp.lat, wp.lng])).pad(0.22),
+      );
     },
     [routeWaypoints],
   );
@@ -466,8 +585,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
     }
   };
 
-  const snapClass = snap === "full" ? "sheet-full" : "sheet-keep";
-
   const closeRouteMode = () => {
     setRoutePanelOpen(false);
     setRouteResult(null);
@@ -475,10 +592,9 @@ export default function MapView({ searchOpen, onSearchClose }) {
     setRoutePickTarget(null);
   };
 
-  // ── Спільний контент для sidebar і sheet ──
-  // Одна функція — один рендер, без дублювання
+  const snapClass = snap === "full" ? "sheet-full" : "sheet-keep";
+
   const renderContent = () => {
-    // Режим вибору точки для маршруту — показуємо список точок
     if (routePanelOpen && routePickTarget) {
       return (
         <PointsSidebar
@@ -493,7 +609,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
         />
       );
     }
-    // Режим маршруту без вибору точки — показуємо RoutePanel
     if (routePanelOpen) {
       return (
         <RoutePanel
@@ -511,7 +626,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
         />
       );
     }
-    // Звичайний режим — список точок
     return (
       <PointsSidebar
         points={points}
@@ -528,7 +642,6 @@ export default function MapView({ searchOpen, onSearchClose }) {
 
   return (
     <div className="map-view">
-      {/* ── Floating search overlay (mobile) ── */}
       {searchOpen && (
         <div className="map-search-overlay">
           <SearchBox onResult={handleGeocodeResult} />
@@ -537,12 +650,11 @@ export default function MapView({ searchOpen, onSearchClose }) {
             onClick={onSearchClose}
             aria-label="Закрити пошук"
           >
-            ×
+            {Icons.close}
           </button>
         </div>
       )}
 
-      {/* ── Desktop sidebar ── */}
       <div className="map-sidebar">
         {searchOpen && (
           <div className="map-search-desktop-wrap">
@@ -555,26 +667,33 @@ export default function MapView({ searchOpen, onSearchClose }) {
             className={`route-btn ${routePanelOpen ? "active" : ""}`}
             onClick={routePanelOpen ? closeRouteMode : startRouteMode}
           >
-            {routePanelOpen ? "✕ Закрити" : "🚌 Маршрут"}
+            <span className="flex items-center gap-2">
+              {routePanelOpen ? Icons.close : Icons.route}
+              {routePanelOpen ? "Закрити" : "Маршрут"}
+            </span>
           </button>
           <button
             className={`route-btn ${showMetro ? "active" : ""}`}
             onClick={() => setShowMetro((v) => !v)}
           >
-            {showMetro ? "🚇 Метро (вкл)" : "🚇 Метро (викл)"}
+            <span className="flex items-center gap-2">
+              {Icons.metro}
+              {showMetro ? "Метро (вкл)" : "Метро (викл)"}
+            </span>
           </button>
         </div>
 
-        {/* Підказка вибору точки маршруту */}
         {routePanelOpen && routePickTarget && (
           <div className="route-pick-wrap-top">
             <div className="rp-pick-hint active rp-pick-hint-row">
-              <span>📍 Оберіть точку зі списку</span>
+              <span className="flex items-center gap-2">
+                {Icons.pin} Оберіть точку зі списку
+              </span>
               <button
                 className="rp-icon-btn"
                 onClick={() => setRoutePickTarget(null)}
               >
-                ←
+                {Icons.arrowLeft}
               </button>
             </div>
           </div>
@@ -583,12 +702,10 @@ export default function MapView({ searchOpen, onSearchClose }) {
         {renderContent()}
       </div>
 
-      {/* ── Map ── */}
       <div className="map-wrap">
         <div ref={mapRef} className="leaflet-map" />
       </div>
 
-      {/* ── Mobile bottom sheet ── */}
       <div className={`map-sheet ${snapClass}`}>
         <div
           className="sheet-handle-wrap"
@@ -603,26 +720,29 @@ export default function MapView({ searchOpen, onSearchClose }) {
             className={`sheet-action-btn ${routePanelOpen ? "active" : ""}`}
             onClick={routePanelOpen ? closeRouteMode : startRouteMode}
           >
-            {routePanelOpen ? "✕ Маршрут" : "🚌 Маршрут"}
+            <span className="flex items-center gap-2">
+              {routePanelOpen ? Icons.close : Icons.route} Маршрут
+            </span>
           </button>
           <button
             className={`sheet-action-btn ${showMetro ? "active" : ""}`}
             onClick={() => setShowMetro((v) => !v)}
           >
-            🚇 Метро
+            <span className="flex items-center gap-2">{Icons.metro} Метро</span>
           </button>
         </div>
 
-        {/* Підказка вибору точки маршруту */}
         {routePanelOpen && routePickTarget && (
           <div className="route-pick-wrap-bottom">
             <div className="rp-pick-hint active rp-pick-hint-row">
-              <span>📍 Оберіть точку зі списку</span>
+              <span className="flex items-center gap-2">
+                {Icons.pin} Оберіть точку зі списку
+              </span>
               <button
                 className="rp-icon-btn"
                 onClick={() => setRoutePickTarget(null)}
               >
-                ←
+                {Icons.arrowLeft}
               </button>
             </div>
           </div>

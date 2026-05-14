@@ -9,14 +9,20 @@ export default function App() {
     return localStorage.getItem("activeTab") || "map";
   });
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mapStyle, setMapStyle] = useState(() => {
+    return localStorage.getItem("mapStyle") || "standard";
+  });
 
   useEffect(() => {
     localStorage.setItem("activeTab", activeTab);
   }, [activeTab]);
 
+  useEffect(() => {
+    localStorage.setItem("mapStyle", mapStyle);
+  }, [mapStyle]);
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    // Закриваємо пошук при переключенні вкладки
     setSearchOpen(false);
   };
 
@@ -27,21 +33,19 @@ export default function App() {
         onTabChange={handleTabChange}
         searchOpen={searchOpen}
         onSearchToggle={() => setSearchOpen((v) => !v)}
+        mapStyle={mapStyle}
+        onMapStyleChange={setMapStyle}
       />
-
       <div className="app-content">
         {activeTab === "map" && (
           <MapView
             searchOpen={searchOpen}
             onSearchClose={() => setSearchOpen(false)}
+            mapStyle={mapStyle}
           />
         )}
-        {activeTab === "notes" && (
-          <NotesView />
-        )}
-        {activeTab === "finance" && (
-          <FinanceView />
-        )}
+        {activeTab === "notes" && <NotesView />}
+        {activeTab === "finance" && <FinanceView />}
       </div>
     </div>
   );
