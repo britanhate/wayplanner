@@ -21,16 +21,7 @@ export default function App() {
   };
 
   return (
-    <div style={{
-      position: "fixed",
-      inset: 0,
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden",
-      background: "linear-gradient(180deg, #05060a, #0b1220)",
-      height: "100%",
-      WebkitOverflowScrolling: "touch",
-    }}>
+    <div className="app-shell">
       <Topbar
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -38,11 +29,7 @@ export default function App() {
         onSearchToggle={() => setSearchOpen((v) => !v)}
       />
 
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        overflow: "hidden",
-      }}>
+      <div className="app-content">
         {activeTab === "map" && (
           <MapView
             searchOpen={searchOpen}
