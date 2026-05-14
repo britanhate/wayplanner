@@ -170,20 +170,58 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   }, []);
 
   // ── Ініціалізація карти ──
+  // ── Ініціалізація карти ──
   useEffect(() => {
     if (mapInstance.current || !mapRef.current) return;
 
     const map = L.map(mapRef.current, {
       center: [50.4501, 30.5234],
       zoom: 12,
-      zoomControl: false,
-      attributionControl: false,
+      zoomControl: false, // Це ви вже маєте
+      attributionControl: false, // Видаляє текст знизу справа
+      boxZoom: false, // Вимикає зайві рамки
+      doubleClickZoom: false,
+    });
+    if (map.attributionControl) {
+      map.attributionControl.setPrefix(false);
+    }
+    mapInstance.current = map;
+
+    // Клік по карті — ставимо прев'ю
+    map.on("click", (e) => {
+      const { lat, lng } = e.latlng;
+      setPreviewPos({ lat, lng });
+      setGeocoded({
+        name: "Обране місце",
+        addr: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      });
     });
 
-    mapInstance.current = map;
+    // ВАЖЛИВО: Видаляємо дані прев'ю, коли попап закривається (хрестиком або кліком мимо)
+    map.on("popupclose", (e) => {
+      // Перевіряємо, чи це саме прев'ю-маркер закрив свій попап
+      if (
+        previewMarkerRef.current &&
+        e.popup === previewMarkerRef.current.getPopup()
+      ) {
+        setPreviewPos(null);
+        setGeocoded(null);
+      }
+    });
+
+    // Закриття по Esc
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setPreviewPos(null);
+        setGeocoded(null);
+        map.closePopup();
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
 
     tileLayerRef.current = createTileLayer("standard").addTo(map);
 
+    // ... ваш код з геолокацією ...
     navigator.geolocation.getCurrentPosition(
       (pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 15),
       async () => {
@@ -198,7 +236,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       { enableHighAccuracy: true, timeout: 5000 },
     );
 
-    return () => map.remove();
+    return () => {
+      window.removeEventListener("keydown", handleEsc);
+      map.remove();
+      mapInstance.current = null;
+    };
   }, [createTileLayer]);
 
   // ── Зміна стилю карти ──
@@ -260,11 +302,18 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   }, [points, routeWaypoints]);
 
   // ── Preview marker ──
+  // ── Preview marker ──
   useEffect(() => {
-    previewMarkerRef.current?.remove();
-    previewMarkerRef.current = null;
+    // 1. Завжди чистимо старий маркер перед новим рендером
+    if (previewMarkerRef.current) {
+      previewMarkerRef.current.remove();
+      previewMarkerRef.current = null;
+    }
     delete window.__addPreviewPoint;
+
+    // 2. Якщо позиції немає — просто виходимо (маркер уже видалено вище)
     if (!previewPos || !mapInstance.current) return;
+
     const icon = L.divIcon({
       html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff">📍</div>`,
       className: "wp-marker-wrap",
@@ -272,26 +321,35 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       iconAnchor: [16, 16],
       popupAnchor: [0, -18],
     });
+
     const popup = `
-      <div class="ios-card">
-        <div class="ios-card-content">
-          <div class="ios-title">${geocoded?.name || "Знайдене місце"}</div>
-          ${geocoded?.addr ? `<div class="ios-popup-addr">📍 ${geocoded.addr}</div>` : ""}
-          <button onclick="window.__addPreviewPoint()" class="add-preview-btn">+ Додати точку</button>
-        </div>
-      </div>`;
+    <div class="ios-card">
+      <div class="ios-card-content">
+        <div class="ios-title">${geocoded?.name || "Знайдене місце"}</div>
+        ${geocoded?.addr ? `<div class="ios-popup-addr">📍 ${geocoded.addr}</div>` : ""}
+        <button onclick="window.__addPreviewPoint()" class="add-preview-btn">+ Додати точку</button>
+      </div>
+    </div>`;
+
     const marker = L.marker([previewPos.lat, previewPos.lng], { icon })
       .addTo(mapInstance.current)
-      .bindPopup(popup)
+      .bindPopup(popup, { autoClose: false }) // autoClose: false дозволяє нам контролювати процес
       .openPopup();
+
     previewMarkerRef.current = marker;
+
     window.__addPreviewPoint = () => {
       setPendingPos(previewPos);
+      // При кліку на "Додати" ми не обнуляємо previewPos відразу,
+      // щоб модалка бачила координати, але закриваємо попап.
       marker.closePopup();
     };
+
     return () => {
-      previewMarkerRef.current?.remove();
-      previewMarkerRef.current = null;
+      if (previewMarkerRef.current) {
+        previewMarkerRef.current.remove();
+        previewMarkerRef.current = null;
+      }
       delete window.__addPreviewPoint;
     };
   }, [previewPos, geocoded]);
