@@ -1,6 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
 import { suggestAddresses, findAddress } from '../../lib/arcgis'
 
+const Icons = {
+  search: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
+    </svg>
+  ),
+  close: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  ),
+}
+
 export default function SearchBox({ onResult }) {
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
@@ -48,11 +61,18 @@ export default function SearchBox({ onResult }) {
   return (
     <div className="search-wrap" ref={wrapRef}>
       <div className="search-input-wrap">
-        <input className="search-inp" placeholder="Пошук адреси або місця..."
-          value={query} onChange={e => handleInput(e.target.value)}
-          onKeyDown={e => e.key === 'Escape' && clear()} />
+        <span className="search-icon">{Icons.search}</span>
+        <input
+          className="search-inp"
+          placeholder="Пошук адреси або місця..."
+          value={query}
+          onChange={e => handleInput(e.target.value)}
+          onKeyDown={e => e.key === 'Escape' && clear()}
+        />
         {loading && <div className="search-spinner" />}
-        {query && !loading && <button className="search-clear" onClick={clear}>×</button>}
+        {query && !loading && (
+          <button className="search-clear" onClick={clear}>{Icons.close}</button>
+        )}
       </div>
       {open && suggestions.length > 0 && (
         <div className="search-results">
@@ -61,7 +81,9 @@ export default function SearchBox({ onResult }) {
             return (
               <div key={i} className="search-result-item" onClick={() => handleSelect(s)}>
                 <div className="sr-name">{parts[0]}</div>
-                {parts.length > 1 && <div className="sr-addr">{parts.slice(1).join(',').trim()}</div>}
+                {parts.length > 1 && (
+                  <div className="sr-addr">{parts.slice(1).join(',').trim()}</div>
+                )}
               </div>
             )
           })}
