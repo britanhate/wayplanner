@@ -29,7 +29,8 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const previewMarkerRef = useRef(null);
   const routePickTargetRef = useRef(null);
 
-  const { snap, setSnap, onTouchStart, onTouchEnd } = useBottomSheetSwipe("keep");
+  const { snap, setSnap, onTouchStart, onTouchEnd } =
+    useBottomSheetSwipe("keep");
 
   const [pendingPos, setPendingPos] = useState(null);
   const [geocoded, setGeocoded] = useState(null);
@@ -47,9 +48,43 @@ export default function MapView({ searchOpen, onSearchClose }) {
     routePickTargetRef.current = routePickTarget;
   }, [routePickTarget]);
 
-
   useMetroLayer(mapInstance, showMetro);
+  useEffect(() => {
+    if (mapInstance.current || !mapRef.current) return;
 
+    const map = L.map(mapRef.current, {
+      center: [50.4501, 30.5234],
+      zoom: 12,
+    });
+
+    mapInstance.current = map;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+      map,
+    );
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+      },
+      async () => {
+        try {
+          const res = await fetch("https://ipapi.co/json/");
+          const data = await res.json();
+
+          map.setView([data.latitude, data.longitude], 11);
+        } catch {
+          map.setView([50.4501, 30.5234], 12);
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+      },
+    );
+
+    return () => map.remove();
+  }, []);
   // ── Markers ──
   useEffect(() => {
     if (!mapInstance.current) return;
@@ -530,9 +565,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
         {/* Підказка вибору точки маршруту */}
         {routePanelOpen && routePickTarget && (
           <div className="route-pick-wrap-top">
-            <div
-              className="rp-pick-hint active rp-pick-hint-row"
-            >
+            <div className="rp-pick-hint active rp-pick-hint-row">
               <span>📍 Оберіть точку зі списку</span>
               <button
                 className="rp-icon-btn"
@@ -580,9 +613,7 @@ export default function MapView({ searchOpen, onSearchClose }) {
         {/* Підказка вибору точки маршруту */}
         {routePanelOpen && routePickTarget && (
           <div className="route-pick-wrap-bottom">
-            <div
-              className="rp-pick-hint active rp-pick-hint-row"
-            >
+            <div className="rp-pick-hint active rp-pick-hint-row">
               <span>📍 Оберіть точку зі списку</span>
               <button
                 className="rp-icon-btn"
