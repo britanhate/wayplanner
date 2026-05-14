@@ -13,7 +13,8 @@ import PointsSidebar from "./PointsSidebar";
 import RoutePanel from "./RoutePanel";
 import AddPointModal from "./AddPointModal";
 import EditPointModal from "./EditPointModal";
-import { getLineColor } from "../../lib/metroColors";
+import { useBottomSheetSwipe } from "../../hooks/useBottomSheetSwipe";
+import { useMetroLayer } from "../../hooks/useMetroLayer";
 
 export default function MapView({ searchOpen, onSearchClose }) {
   const { user } = useAuth();
@@ -25,16 +26,11 @@ export default function MapView({ searchOpen, onSearchClose }) {
   const markersRef = useRef({});
   const routeLayers = useRef([]);
   const routeStepLayers = useRef([]);
-  const metroLayersRef = useRef([]);
-  const metroDataRef = useRef(null);
   const previewMarkerRef = useRef(null);
   const routePickTargetRef = useRef(null);
 
-  const SWIPE_THRESHOLD = 60;
-  const dragStartY = useRef(null);
-  const [snap, setSnap] = useState("keep");
+  const { snap, setSnap, onTouchStart, onTouchEnd } = useBottomSheetSwipe("keep");
 
-  const [metroDataLoaded, setMetroDataLoaded] = useState(false);
   const [pendingPos, setPendingPos] = useState(null);
   const [geocoded, setGeocoded] = useState(null);
   const [previewPos, setPreviewPos] = useState(null);
@@ -51,112 +47,8 @@ export default function MapView({ searchOpen, onSearchClose }) {
     routePickTargetRef.current = routePickTarget;
   }, [routePickTarget]);
 
-  // ── Swipe ──
-  const onTouchStart = (e) => {
-    dragStartY.current = e.touches[0].clientY;
-  };
-  const onTouchEnd = (e) => {
-    if (dragStartY.current === null) return;
-    const dy = dragStartY.current - e.changedTouches[0].clientY;
-    if (dy > SWIPE_THRESHOLD) setSnap("full");
-    if (dy < -SWIPE_THRESHOLD) setSnap("keep");
-    dragStartY.current = null;
-  };
 
-  // ── Metro data ──
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/metro_paris.geojson");
-        const text = await res.text();
-        metroDataRef.current = text
-          .trim()
-          .split("\n")
-          .map((l) => {
-            try {
-              return JSON.parse(l);
-            } catch {
-              return null;
-            }
-          })
-          .filter(Boolean);
-        setMetroDataLoaded(true);
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-  }, []);
-
-  const clearMetro = useCallback(() => {
-    metroLayersRef.current.forEach((l) => l.remove());
-    metroLayersRef.current = [];
-  }, []);
-
-  const renderMetro = useCallback(() => {
-    if (!mapInstance.current || !metroDataRef.current) return;
-    clearMetro();
-    metroDataRef.current
-      .filter((f) => f.geometry?.type === "LineString")
-      .forEach((feature) => {
-        try {
-          const coords = feature.geometry.coordinates.map((c) => [c[1], c[0]]);
-          if (coords.length < 2) return;
-          const color = getLineColor(feature);
-          const pl = L.polyline(coords, {
-            color,
-            weight: 3.5,
-            opacity: 0.85,
-          }).addTo(mapInstance.current);
-          metroLayersRef.current.push(pl);
-        } catch (e) {
-          console.error(e);
-        }
-      });
-  }, [clearMetro]);
-
-  // ── Init map ──
-  useEffect(() => {
-    if (mapInstance.current) return;
-    mapInstance.current = L.map(mapRef.current, {
-      zoomControl: false,
-      tap: false,
-    }).setView([48.8566, 2.3522], 12);
-    L.tileLayer(
-      "https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=53DOD0o2wMmfZs5C4sZP",
-      {
-        tileSize: 512,
-        zoomOffset: -1,
-        attribution: "© OpenStreetMap contributors",
-      },
-    ).addTo(mapInstance.current);
-    mapInstance.current.on("click", (e) => {
-      if (routePickTargetRef.current) return;
-      setPreviewPos(null);
-      setGeocoded(null);
-      setPendingPos({ lat: e.latlng.lat, lng: e.latlng.lng });
-    });
-    return () => {
-      mapInstance.current?.remove();
-      mapInstance.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => mapInstance.current?.invalidateSize();
-    const t = setTimeout(handleResize, 350);
-    window.addEventListener("resize", handleResize);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mapInstance.current || !metroDataLoaded) return;
-    if (showMetro) renderMetro();
-    else clearMetro();
-    return () => clearMetro();
-  }, [showMetro, metroDataLoaded, renderMetro, clearMetro]);
+  useMetroLayer(mapInstance, showMetro);
 
   // ── Markers ──
   useEffect(() => {
