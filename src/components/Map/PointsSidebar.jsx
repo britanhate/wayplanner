@@ -144,12 +144,12 @@ export default function PointsSidebar({
             return (
               <div
                 key={p.id}
-                className={`list-item flex items-center gap-3 ${p.is_completed ? "opacity-disabled" : ""}`}
+                className={` flex items-center gap-3 ${p.is_completed ? "opacity-disabled" : ""}`}
                 onClick={() => (routeMode ? onRouteToggle(p) : onFly(p))}
               >
                 {/* Іконка типу */}
                 <div
-                  className="w-10 h-10 rounded-full flex-center flex-shrink-0"
+                  className="w-10 h-10 rounded-full flex-center shrink-0"
                   style={{ background: t.color + "22" }}
                 >
                   <span
@@ -188,7 +188,7 @@ export default function PointsSidebar({
 
                 {/* Дії (тільки для свого) */}
                 {p.created_by === user?.id && (
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       className={`btn-ghost p-1.5 rounded-lg transition-colors ${
                         p.is_completed

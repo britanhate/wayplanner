@@ -146,13 +146,18 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         attribution: "&copy; OpenStreetMap contributors",
       });
     }
+
     if (style === "dark") {
       return L.tileLayer(
         "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        { attribution: "&copy; OpenStreetMap &copy; CartoDB" },
+        {
+          attribution: "&copy; OpenStreetMap &copy; CartoDB",
+        },
       );
     }
+
     const styleId = MAPBOX_STYLES[style] ?? "mapbox/streets-v12";
+
     return L.tileLayer(
       `https://api.mapbox.com/styles/v1/${styleId}/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
       {
@@ -176,7 +181,8 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     });
 
     mapInstance.current = map;
-    tileLayerRef.current = createTileLayer(mapStyle || "standard").addTo(map);
+
+    tileLayerRef.current = createTileLayer("standard").addTo(map);
 
     navigator.geolocation.getCurrentPosition(
       (pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 15),
@@ -193,14 +199,16 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     );
 
     return () => map.remove();
-  }, []);
+  }, [createTileLayer]);
 
   // ── Зміна стилю карти ──
   useEffect(() => {
     if (!mapInstance.current) return;
+
     if (tileLayerRef.current) {
       mapInstance.current.removeLayer(tileLayerRef.current);
     }
+
     tileLayerRef.current = createTileLayer(mapStyle || "standard").addTo(
       mapInstance.current,
     );
