@@ -49,12 +49,15 @@ export default function MapView({ searchOpen, onSearchClose }) {
   }, [routePickTarget]);
 
   useMetroLayer(mapInstance, showMetro);
+
   useEffect(() => {
     if (mapInstance.current || !mapRef.current) return;
 
     const map = L.map(mapRef.current, {
       center: [50.4501, 30.5234],
       zoom: 12,
+      zoomControl: false,
+      attributionControl: false,
     });
 
     mapInstance.current = map;
