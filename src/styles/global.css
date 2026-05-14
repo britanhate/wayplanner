@@ -21,7 +21,7 @@
 html,
 body,
 #root {
-  height: 100dvh;
+  height: 100vh;
   width: 100%;
   overflow: hidden;
 }
@@ -2266,18 +2266,20 @@ button {
 
 /* ── Map fills entire screen (topbar overlays) ── */
 .map-view {
+  display: flex;
   position: fixed !important;
   inset: 0 !important;
   /* override any old margin/padding */
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden;
+  height: 100vh;
 }
 
 /* Desktop sidebar: starts below topbar so content isn't hidden */
 .map-sidebar {
   /* topbar height + safe-area */
-  padding-top: calc(52px + env(safe-area-inset-top, 0px));
+  padding-top: calc(0px + env(safe-area-inset-top, 0px));
 }
 
 /* Search overlay on map: starts below topbar */
@@ -2390,7 +2392,7 @@ header[style] {
 /* ── Sidebar: починається рівно під topbar ── */
 @media (min-width: 768px) {
   .map-sidebar {
-    padding-top: 56px !important;
+    /* padding-top: 56px !important; */
     /* Sidebar fixed height = full screen */
     position: relative;
     height: 100%;
