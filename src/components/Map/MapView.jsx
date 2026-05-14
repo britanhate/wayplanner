@@ -711,13 +711,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       {searchOpen && (
         <div className="map-search-overlay">
           <SearchBox onResult={handleGeocodeResult} />
-          <button
-            className="search-close-btn"
-            onClick={onSearchClose}
-            aria-label="Закрити пошук"
-          >
-            {Icons.close}
-          </button>
+          
         </div>
       )}
 

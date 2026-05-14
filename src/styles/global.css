@@ -3,21 +3,14 @@
 
 :root {
   color-scheme: dark;
-
   --bg-900: #05060a;
   --bg-800: #0b1220;
   --panel: rgba(255, 255, 255, 0.04);
-  --panel-2: rgba(255, 255, 255, 0.06);
   --glass-border: rgba(255, 255, 255, 0.06);
   --muted: #9aa3b2;
   --accent: #0a84ff;
-  --success: #30d158;
-  --danger: #ff453a;
-  --radius-sm: 10px;
-  --radius-md: 14px;
+  --ios-bg: rgba(12, 16, 28, 0.97);
   --radius-lg: 18px;
-  --shadow-soft: 0 6px 20px rgba(2, 6, 23, 0.6);
-  --shadow-md: 0 8px 30px rgba(2, 6, 23, 0.7);
 }
 
 * {
@@ -28,24 +21,16 @@
 html,
 body,
 #root {
-  height: 100%;
   height: 100dvh;
   width: 100%;
-
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   overflow: hidden;
 }
 body {
   font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue",
-    Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
   background: linear-gradient(180deg, var(--bg-900), var(--bg-800));
   color: #fff;
+  -webkit-font-smoothing: antialiased;
 }
 a {
   color: inherit;
@@ -167,13 +152,9 @@ button {
    MAP VIEW
    ============================================================ */
 .map-view {
-  display: flex;
-  flex: 1;
-  min-height: 0;
   position: relative;
+  height: 100dvh;
   width: 100%;
-  height: 100vh;
-  overflow: hidden;
 }
 
 .map-wrap {
@@ -356,36 +337,34 @@ button {
    SEARCH BOX — floating card style
    ============================================================ */
 .search-wrap {
-  position: relative;
+  position: absolute;
   top: calc(env(safe-area-inset-top, 0px) + 12px);
-
   left: 12px;
   right: 12px;
-
-  z-index: 1100;
+  z-index: 1200; /* Вище за карту та панелі */
+}
+/* На десктопі зміщуємо пошук, якщо є сайдбар */
+@media (min-width: 768px) {
+  .search-wrap {
+    left: 332px;
+    max-width: 420px;
+  }
 }
 .search-icon {
   display: flex;
-  align-items: center;
-  color: #8e8e93;
-  margin-right: 8px;
+  color: var(--muted);
+  margin-right: 10px;
   flex-shrink: 0;
 }
 .search-inp {
   flex: 1;
-  width: 100%;
-  padding: 13px 42px 13px 18px;
-  background: rgba(12, 16, 28, 0.97);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 0.5px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  color: #e6eef8;
-  font-size: 15px;
-  font-family: inherit;
+  background: transparent;
+  border: none;
   outline: none;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
-  transition: border-color 0.15s;
+  padding: 13px 0;
+  color: #e6eef8;
+  font-size: 16px; /* Запобігає зуму на iOS */
+  font-family: inherit;
 }
 .search-inp:focus {
   border-color: rgba(10, 132, 255, 0.5);
@@ -394,45 +373,45 @@ button {
   color: rgba(154, 163, 178, 0.6);
 }
 .search-spinner {
-  position: absolute;
-  right: 14px;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.08);
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
+  margin-left: 8px;
 }
 .search-clear {
-  position: absolute;
-  right: 12px;
   background: none;
   border: none;
   color: var(--muted);
-  font-size: 20px;
   cursor: pointer;
-  line-height: 1;
-  padding: 4px;
+  padding: 8px;
+  margin-right: -4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+.search-clear:hover {
+  color: #fff;
 }
 .search-results {
   position: absolute;
-  top: calc(100% + 2px);
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: rgba(12, 16, 28, 0.98);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(15, 20, 32, 0.98);
+  backdrop-filter: blur(25px);
   border: 0.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   overflow: hidden;
-  z-index: 40;
+  z-index: 1300;
 }
 .search-result-item {
   padding: 12px 16px;
-  cursor: pointer;
   border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.12s;
+  cursor: pointer;
 }
 .search-result-item:last-child {
   border-bottom: none;
@@ -662,9 +641,13 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  border: 2.5px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 16px rgba(2, 6, 23, 0.7);
+  border: 2.5px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .wp-marker-from {
   border-color: rgba(232, 99, 54, 1);
@@ -2348,14 +2331,7 @@ body {
 }
 /* Dark map attribution */
 .leaflet-control-attribution {
-  background: rgba(5, 6, 10, 0.55) !important;
-  color: rgba(255, 255, 255, 0.35) !important;
-  border-radius: 8px 0 0 0 !important;
-  padding: 2px 6px !important;
-  font-size: 10px !important;
-  border: none !important;
-  box-shadow: none !important;
-  display: none !important;
+  display: none !important; /* Ховаємо копірайт */
 }
 .leaflet-control-attribution a {
   color: rgba(255, 255, 255, 0.45) !important;
@@ -2965,13 +2941,19 @@ header[style] {
 
 /* Виправляємо відступи для SearchBox, щоб іконки не наповзали */
 .search-input-wrap {
-  position: relative;
   display: flex;
   align-items: center;
-  background: var(--ios-bg); /* Ваша змінна фону */
-  border-radius: 12px;
+  background: var(--ios-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
   padding: 0 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.15s ease;
+}
+.search-input-wrap:focus-within {
+  border-color: rgba(10, 132, 255, 0.5);
 }
 /* Гарантуємо, що інтерфейс завжди над картою */
 .map-search-overlay,
@@ -2984,4 +2966,5 @@ header[style] {
 /* Прибираємо "фантомні" білі рамки Leaflet */
 .leaflet-container {
   outline: 0;
+  background: var(--bg-900) !important;
 }
