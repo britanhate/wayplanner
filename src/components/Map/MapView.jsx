@@ -92,7 +92,7 @@ const Icons = {
   ),
 };
 
-const MAPBOX_TOKEN = import.meta.env.MAPBOX_TOKEN;
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const MAPBOX_STYLES = {
   "streets-v12": "mapbox/streets-v12",
