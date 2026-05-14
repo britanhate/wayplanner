@@ -255,6 +255,7 @@ export default function Topbar({
   return (
     <header className="topbar-ios">
       <div className="topbar-left">
+        {/* NAV MENU (tabs) */}
         <div className="pos-relative" ref={menuRef}>
           <button
             className="topbar-btn"
@@ -292,6 +293,7 @@ export default function Topbar({
                     {tab.icon}
                   </span>
                   <span style={{ flex: 1 }}>{tab.label}</span>
+
                   {activeTab === tab.id && (
                     <span
                       style={{
@@ -316,94 +318,100 @@ export default function Topbar({
       </div>
 
       <div className="topbar-right">
-        {/* Стилі карти */}
-        <div className="pos-relative" ref={styleRef}>
-          <button
-            className={`topbar-btn ${styleOpen ? "topbar-btn-active" : ""}`}
-            onClick={() => {
-              setStyleOpen((v) => !v);
-              setMenuOpen(false);
-            }}
-            aria-label="Стиль карти"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-          </button>
-
-          {styleOpen && (
-            <div
-              className="topbar-dropdown"
-              style={{ ...dropdownStyle, left: "auto", right: 0 }}
-            >
-              {MAP_STYLES.map((s, i) => (
-                <button
-                  key={s.id}
-                  onClick={() => {
-                    onMapStyleChange?.(s.id);
-                    setStyleOpen(false);
-                  }}
-                  style={getItemStyle(
-                    mapStyle === s.id,
-                    i === MAP_STYLES.length - 1,
-                  )}
+        {/* MAP CONTROLS (only for map tab) */}
+        {activeTab === "map" && (
+          <>
+            {/* MAP STYLE SELECTOR */}
+            <div className="pos-relative" ref={styleRef}>
+              <button
+                className={`topbar-btn ${styleOpen ? "topbar-btn-active" : ""}`}
+                onClick={() => {
+                  setStyleOpen((v) => !v);
+                  setMenuOpen(false);
+                }}
+                aria-label="Стиль карти"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <span style={{ display: "flex", alignItems: "center" }}>
-                    {s.icon}
-                  </span>
-                  <span style={{ flex: 1 }}>{s.label}</span>
-                  {mapStyle === s.id && (
-                    <span
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: "50%",
-                        background: "#0a84ff",
-                        flexShrink: 0,
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+              </button>
+
+              {styleOpen && (
+                <div
+                  className="topbar-dropdown"
+                  style={{ ...dropdownStyle, left: "auto", right: 0 }}
+                >
+                  {MAP_STYLES.map((s, i) => (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        onMapStyleChange?.(s.id);
+                        setStyleOpen(false);
                       }}
-                    />
-                  )}
-                </button>
-              ))}
+                      style={getItemStyle(
+                        mapStyle === s.id,
+                        i === MAP_STYLES.length - 1,
+                      )}
+                    >
+                      <span style={{ display: "flex", alignItems: "center" }}>
+                        {s.icon}
+                      </span>
+                      <span style={{ flex: 1 }}>{s.label}</span>
+
+                      {mapStyle === s.id && (
+                        <span
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            background: "#0a84ff",
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Пошук */}
-        <button
-          className={`topbar-btn ${searchOpen ? "topbar-btn-active" : ""}`}
-          onClick={onSearchToggle}
-          aria-label="Пошук"
-        >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-            <circle
-              cx="11"
-              cy="11"
-              r="7"
-              stroke="currentColor"
-              strokeWidth="1.7"
-            />
-            <path
-              d="M16.5 16.5L21 21"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
+            {/* SEARCH (map-only UX) */}
+            <button
+              className={`topbar-btn ${searchOpen ? "topbar-btn-active" : ""}`}
+              onClick={onSearchToggle}
+              aria-label="Пошук"
+            >
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="7"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                />
+                <path
+                  d="M16.5 16.5L21 21"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </>
+        )}
 
-        {/* Вихід */}
+        {/* GLOBAL ACTIONS */}
         <button className="topbar-btn" onClick={logout} aria-label="Вийти">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
             <path
@@ -418,11 +426,11 @@ export default function Topbar({
       </div>
 
       <style>{`
-        @keyframes topbar-dropdown-in {
-          from { opacity: 0; transform: scale(0.93) translateY(-8px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-      `}</style>
+      @keyframes topbar-dropdown-in {
+        from { opacity: 0; transform: scale(0.93) translateY(-8px); }
+        to   { opacity: 1; transform: scale(1) translateY(0); }
+      }
+    `}</style>
     </header>
   );
 }
