@@ -1,11 +1,5 @@
 import { useState } from "react";
-
-const TRAVEL_MODES = [
-  { id: 3, icon: "🚌", label: "Транзит" },
-  { id: 0, icon: "🚗", label: "Авто" },
-  { id: 2, icon: "🚶", label: "Пішки" },
-  { id: 1, icon: "🚲", label: "Вело" },
-];
+import { TRAVEL_MODES, summarizeRoute, formatDuration, formatDistance } from "./routePanelUtils";
 
 export default function RoutePanel({
   waypoints,
@@ -22,22 +16,7 @@ export default function RoutePanel({
   const [minimized, setMinimized] = useState(false);
   const [openLeg, setOpenLeg] = useState(null);
 
-  const summary = result?.legs?.length
-    ? result.legs.reduce(
-        (acc, leg) => ({
-          dur: acc.dur + (leg.totalDurSec || 0),
-          dist: acc.dist + (leg.totalDistM || 0),
-        }),
-        { dur: 0, dist: 0 },
-      )
-    : null;
-
-  const fmtDur = (sec) => {
-    const h = Math.floor(sec / 3600);
-    const m = Math.round((sec % 3600) / 60);
-    return h > 0 ? `${h} год ${m} хв` : `${m} хв`;
-  };
-  const fmtDist = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)} км` : `${m} м`);
+  const summary = summarizeRoute(result);
 
   return (
     <div className="route-panel p-panel">
@@ -122,8 +101,8 @@ export default function RoutePanel({
             <div className="rp-results">
               {summary && (
                 <div className="rp-summary-bar">
-                  <span className="rp-summary-dur">{fmtDur(summary.dur)}</span>
-                  <span className="rp-summary-dist">{fmtDist(summary.dist)}</span>
+                  <span className="rp-summary-dur">{formatDuration(summary.dur)}</span>
+                  <span className="rp-summary-dist">{formatDistance(summary.dist)}</span>
                   {result.legs[0]?.via && <span className="rp-summary-via">via {result.legs[0].via}</span>}
                 </div>
               )}

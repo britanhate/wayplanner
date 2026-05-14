@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { POINT_TYPES, USERS } from "../../lib/constants";
+import { POINT_TYPES } from "../../lib/constants";
+import { filterAndSortPoints, getUserInfo } from "./pointsSidebarUtils";
 import { useAuth } from "../../lib/AuthContext";
 
 export default function PointsSidebar({
@@ -18,49 +19,10 @@ export default function PointsSidebar({
   const [showCompleted, setShowCompleted] = useState(true);
   const [sortBy, setSortBy] = useState("name");
 
-  const getUserInfo = (userId) =>
-    USERS.find((u) => u.id === userId) || {
-      name: userId,
-      color: "#8888aa",
-      avatar: "👤",
-    };
-
-  const filteredPoints = useMemo(() => {
-    let result = [...points];
-
-    // Фільтр по категорії
-    if (selectedType !== "all") {
-      result = result.filter((p) => p.type === selectedType);
-    }
-
-    // Показ / приховування виконаних
-    if (!showCompleted) {
-      result = result.filter((p) => !p.is_completed);
-    }
-
-    // Сортування
-    result.sort((a, b) => {
-      switch (sortBy) {
-        case "date":
-          return new Date(a.point_date || 0) - new Date(b.point_date || 0);
-
-        case "cost":
-          return (a.estimated_cost || 0) - (b.estimated_cost || 0);
-
-        case "creator":
-          return getUserInfo(a.created_by).name.localeCompare(
-            getUserInfo(b.created_by).name,
-            "uk",
-          );
-
-        case "name":
-        default:
-          return a.name.localeCompare(b.name, "uk");
-      }
-    });
-
-    return result;
-  }, [points, selectedType, showCompleted, sortBy]);
+  const filteredPoints = useMemo(
+    () => filterAndSortPoints(points, selectedType, showCompleted, sortBy),
+    [points, selectedType, showCompleted, sortBy],
+  );
 
   return (
     <aside className="sidebar p-panel">
