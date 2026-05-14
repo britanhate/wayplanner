@@ -40,7 +40,7 @@ export default function Topbar({
   return (
     <header className="topbar-ios">
       <div className="topbar-left">
-        <div style={{ position: "relative" }} ref={menuRef}>
+        <div className="pos-relative" ref={menuRef}>
           <button
             className="topbar-btn"
             onClick={() => setMenuOpen((v) => !v)}
@@ -58,6 +58,7 @@ export default function Topbar({
 
           {menuOpen && (
             <div
+              className="topbar-dropdown"
               style={{
                 position: "absolute",
                 top: "calc(100% + 10px)",
@@ -138,19 +139,9 @@ export default function Topbar({
 
       <div className="topbar-right">
         <button
-          className="topbar-btn"
+          className={`topbar-btn ${searchOpen ? "topbar-btn-active" : ""}`}
           onClick={onSearchToggle}
           aria-label="Пошук"
-          style={
-            searchOpen
-              ? {
-                  background: "rgba(10,132,255,0.15)",
-                  borderRadius: 8,
-                  border: "0.5px solid #0a84ff",
-                  color: "#0a84ff",
-                }
-              : {}
-          }
         >
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
             <circle
