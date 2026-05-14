@@ -5,13 +5,15 @@ export default function EditPointModal({ point, onSave, onClose }) {
   const [name, setName] = useState(point.name || "");
   const [type, setType] = useState(point.type || "sight");
   const [description, setDescription] = useState(point.description || "");
-  const [estimatedCost, setEstimatedCost] = useState(point.estimated_cost || "");
+  const [estimatedCost, setEstimatedCost] = useState(
+    point.estimated_cost || "",
+  );
   const [currency, setCurrency] = useState(point.currency || "EUR");
   const [comment, setComment] = useState(point.comment || "");
   const [pointDate, setPointDate] = useState(point.point_date || "");
   const [isCompleted, setIsCompleted] = useState(point.is_completed || false);
   const [attachments, setAttachments] = useState(
-    (point.attachments || []).filter((a) => a.data || a.url)
+    (point.attachments || []).filter((a) => a.data || a.url),
   );
 
   const handleFileSelect = (e) => {
@@ -54,11 +56,17 @@ export default function EditPointModal({ point, onSave, onClose }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 3000 }}>
+      <div
+        className="modal-box"
+        onClick={(e) => e.stopPropagation()}
+        style={{ position: "relative", zIndex: 3001 }}
+      >
         <div className="modal-header">
           <div className="modal-title">Редагувати точку</div>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" onClick={onClose}>
+            ×
+          </button>
         </div>
 
         <div className="modal-body">
@@ -71,9 +79,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
             autoFocus
           />
 
-          {point.addr && (
-            <div className="field-addr">📍 {point.addr}</div>
-          )}
+          {point.addr && <div className="field-addr">📍 {point.addr}</div>}
 
           <label className="field-label">Тип</label>
           <div className="type-row">
@@ -187,7 +193,9 @@ export default function EditPointModal({ point, onSave, onClose }) {
         </div>
 
         <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Скасувати</button>
+          <button className="btn-secondary" onClick={onClose}>
+            Скасувати
+          </button>
           <button
             className="btn-primary"
             onClick={handleSave}
