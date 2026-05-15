@@ -147,7 +147,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const [metroPanelOpen, setMetroPanelOpen] = useState(false);
 
   const [routePanelOpen, setRoutePanelOpen] = useState(false);
-  const [routeWaypoints, setRouteWaypoints] = useState([]);
+  const [routeSelection, setRouteSelection] = useState({ start: null, destination: null });
   const [routePickTarget, setRoutePickTarget] = useState(null);
   const [routeBuilding, setRouteBuilding] = useState(false);
   const [locationMessage, setLocationMessage] = useState("");
@@ -294,7 +294,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     });
 
     points.forEach((p) => {
-      const isWaypoint = routeWaypoints.some((w) => w.id === p.id);
+      const isWaypoint = routeSelection.start?.id === p.id || routeSelection.destination?.id === p.id;
       const icon = getMarkerIcon(p.type, isWaypoint);
       const popup = pointPopupMap.get(p.id);
       const existing = markersRef.current[p.id];
@@ -311,7 +311,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         existing.setPopupContent(popup);
       }
     });
-  }, [points, pointsLoading, routeWaypoints, pointPopupMap, getMarkerIcon]);
+  }, [points, pointsLoading, routeSelection, pointPopupMap, getMarkerIcon]);
 
   // ── Preview marker ──
   // ── Preview marker ──
@@ -461,38 +461,27 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     routeLayers.current = [];
   }, []);
   // ── Route logic ──
-  const fitToWaypoints = useCallback(
-    (wps = routeWaypoints) => {
-      if (!mapInstance.current || wps.length < 2) return;
-      mapInstance.current.fitBounds(
-        L.latLngBounds(wps.map((wp) => [wp.lat, wp.lng])).pad(0.22),
-      );
-    },
-    [routeWaypoints],
-  );
+  const fitToWaypoints = useCallback((selection = routeSelection) => {
+    if (!mapInstance.current || !selection.start || !selection.destination) return;
+    mapInstance.current.fitBounds(L.latLngBounds([[selection.start.lat, selection.start.lng], [selection.destination.lat, selection.destination.lng]]).pad(0.22));
+  }, [routeSelection]);
 
   const startRouteMode = () => {
     if (points.length < 2) {
       setUiMessage("Додайте щонайменше 2 точки, щоб побудувати маршрут.");
       return;
     }
-    setRouteWaypoints([]);
+    setRouteSelection({ start: null, destination: null });
     setRoutePanelOpen(true);
     clearRouteLines();
     setRoutePickTarget("start");
     setSnap("expanded");
   };
 
-  const startWaypointPicking = () => {
-    if (!routeWaypoints.length) setRoutePickTarget("start");
-    else if (routeWaypoints.length === 1) setRoutePickTarget("finish");
-    else setRoutePickTarget("stop");
-  };
 
   const handleBuildRoute = async () => {
-    if (routeWaypoints.length < 2) return;
-    const start = routeWaypoints[0];
-    const destination = routeWaypoints[routeWaypoints.length - 1];
+    const { start, destination } = routeSelection;
+    if (!start || !destination) return;
     if (!start || !destination) return;
 
     setRouteBuilding(true);
@@ -512,20 +501,9 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       return;
     }
     const wp = { id: p.id, name: p.name, lat: p.lat, lng: p.lng };
-    setRouteWaypoints((prev) => {
-      let next = prev.filter((item) => item.id !== wp.id);
-      if (routePickTarget === "start") {
-        const finish = next.length ? next[next.length - 1] : null;
-        next = finish && finish.id !== wp.id ? [wp, finish] : [wp];
-      } else if (routePickTarget === "finish") {
-        const start = next.length ? next[0] : null;
-        next = start && start.id !== wp.id ? [start, wp] : [...next, wp];
-      } else {
-        if (next.length >= 2)
-          next = [...next.slice(0, -1), wp, next[next.length - 1]];
-        else next = [...next, wp];
-      }
-      if (next.length >= 2) setTimeout(() => fitToWaypoints(next), 0);
+    setRouteSelection((prev) => {
+      const next = routePickTarget === "start" ? { ...prev, start: wp } : { ...prev, destination: wp };
+      if (next.start && next.destination) setTimeout(() => fitToWaypoints(next), 0);
       return next;
     });
     setRoutePickTarget(null);
@@ -647,16 +625,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   };
 
   const handleSwapRoutePoints = () => {
-    setRouteWaypoints((prev) => {
-      if (prev.length < 2) return prev;
-      const start = prev[0];
-      const destination = prev[prev.length - 1];
-      return [destination, start];
-    });
+    setRouteSelection((prev) => ({ start: prev.destination, destination: prev.start }));
   };
 
   const handleClearRoutePoints = () => {
-    setRouteWaypoints([]);
+    setRouteSelection({ start: null, destination: null });
     setRoutePickTarget("start");
   };
 
@@ -726,11 +699,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       return (
         <Suspense fallback={<div className="p-panel fade-in">Завантаження маршруту...</div>}>
           <RoutePanel
-          waypoints={routeWaypoints}
-          onAddWaypoint={startWaypointPicking}
-          onRemoveWaypoint={(i) =>
-            setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
-          }
+          start={routeSelection.start}
+          destination={routeSelection.destination}
+          onPickStart={() => setRoutePickTarget("start")}
+          onPickDestination={() => setRoutePickTarget("finish")}
           onBuild={handleBuildRoute}
           building={routeBuilding}
           pickMode={Boolean(routePickTarget)}
@@ -787,7 +759,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           <div className="route-pick-wrap-top fade-in">
             <div className="rp-pick-hint active rp-pick-hint-row">
               <span className="flex items-center gap-2">
-                {Icons.pin} Оберіть точку зі списку
+                {Icons.pin} {routePickTarget === "start" ? "Selecting start" : "Selecting destination"}
               </span>
               <button
                 className="rp-icon-btn"
@@ -846,7 +818,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           <div className="route-pick-wrap-bottom fade-in">
             <div className="rp-pick-hint active rp-pick-hint-row">
               <span className="flex items-center gap-2">
-                {Icons.pin} Оберіть точку зі списку
+                {Icons.pin} {routePickTarget === "start" ? "Selecting start" : "Selecting destination"}
               </span>
               <button
                 className="rp-icon-btn"
