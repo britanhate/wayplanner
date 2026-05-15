@@ -18,6 +18,9 @@ export default function FinanceView() {
     deleteExpense,
     updateExpense,
     saveBudget,
+    loading,
+    hasMore,
+    loadMore,
   } = useExpenses();
 
   const [name, setName] = useState("");
@@ -213,7 +216,9 @@ export default function FinanceView() {
       </div>
 
       <div className="finance-body">
-        {/* ── Список + форма ── */}
+        {loading && <div className="notes-empty-hint">Завантаження витрат...</div>}
+
+      {/* ── Список + форма ── */}
         <div className="finance-left">
           <button
             className="stats-toggle-btn"
