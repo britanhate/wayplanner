@@ -47,3 +47,25 @@ export async function reverseGeocode(lat, lng) {
     addr: data.address?.Match_addr || `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
   };
 }
+
+
+const BASE_PLACES = "https://places-api.arcgis.com/arcgis/rest/services/places-service/v1";
+
+export async function searchNearbyPlaces({ lat, lng, radius = 500, category }) {
+  requireApiKey();
+  const params = new URLSearchParams({
+    x: String(lng),
+    y: String(lat),
+    radius: String(radius),
+    f: "json",
+    pageSize: "15",
+  });
+  if (category) params.set("categoriesIds", category);
+  const res = await fetch(`${BASE_PLACES}/places/near-point?${params.toString()}`, {
+    credentials: "omit",
+    headers: { Authorization: `Bearer ${ARCGIS_KEY}` },
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || "Places API error");
+  return data.results || data.places || [];
+}
