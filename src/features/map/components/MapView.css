@@ -583,7 +583,8 @@
 
 .map-toast {
   position: absolute;
-  /* left: 50%; */
+  right: 50%;
+  top:33%;
   transform: translateX(-50%);
   bottom: calc(30px + env(safe-area-inset-bottom, 0px) + 24px);
   background: rgba(8, 11, 18, 0.93);
@@ -604,7 +605,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   max-height: 3em;
-  
+
 }
 .map-toast-secondary { bottom: calc(env(safe-area-inset-bottom, 0px) + 68px); }
 .map-toast-warning {
