@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../../lib/AuthContext";
 import { useExpenses } from "../hooks/useExpenses";
 import {
@@ -8,6 +8,7 @@ import {
   EXCHANGE_RATES,
 } from "../../../lib/constants";
 import "./FinanceView.css";
+import { markPerf, measurePerf } from "../../../shared/lib/perf";
 
 export default function FinanceView() {
   const { user } = useAuth();
@@ -31,6 +32,13 @@ export default function FinanceView() {
   // ── Бюджет ──
   const [budgetInput, setBudgetInput] = useState(null);
   const [currency, setCurrency] = useState(null);
+  useEffect(() => {
+    if (!loading) {
+      markPerf("finance_loaded");
+      measurePerf("startup_to_finance_loaded", "app_start", "finance_loaded");
+    }
+  }, [loading]);
+
 
   const currentBudgetInput =
     budgetInput !== null

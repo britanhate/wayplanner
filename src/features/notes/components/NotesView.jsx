@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../../lib/AuthContext";
 import { useNotes } from "../hooks/useNotes";
 import "./NotesView.css";
+import { markPerf, measurePerf } from "../../../shared/lib/perf";
 
 export default function NotesView() {
   const { user } = useAuth();
@@ -10,6 +11,13 @@ export default function NotesView() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [listOpen, setListOpen] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      markPerf("notes_loaded");
+      measurePerf("startup_to_notes_loaded", "app_start", "notes_loaded");
+    }
+  }, [loading]);
+
 
   const handleNew = async () => {
     const n = await addNote({ title: "", body: "", userId: user.id });
