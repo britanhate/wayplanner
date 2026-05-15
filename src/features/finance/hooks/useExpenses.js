@@ -1,46 +1,78 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../../lib/supabase";
-import { fetchExpenses, fetchBudget, insertExpense, deleteExpenseById, updateExpenseById, deleteExpenseByPoint, upsertBudget } from "../api";
+import {
+  fetchExpenses,
+  fetchBudget,
+  insertExpense,
+  deleteExpenseById,
+  updateExpenseById,
+  deleteExpenseByPoint,
+  upsertBudget,
+} from "../api";
 
-export function useExpenses() {
+const PAGE_SIZE = 50;
+
+export function useExpenses({ enabled = true } = {}) {
   const [expenses, setExpenses] = useState([]);
   const [budget, setBudgetState] = useState({ amount: 0, currency: "UAH" });
+  const [loading, setLoading] = useState(enabled);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+
+  const loadExpensesPage = useCallback(async (pageToLoad = 0, append = false) => {
+    const from = pageToLoad * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data } = await fetchExpenses({ from, to });
+    const nextData = data || [];
+    setHasMore(nextData.length === PAGE_SIZE);
+    setExpenses((prev) => (append ? [...prev, ...nextData] : nextData));
+  }, []);
+
+  const loadMore = useCallback(async () => {
+    const nextPage = page + 1;
+    await loadExpensesPage(nextPage, true);
+    setPage(nextPage);
+  }, [loadExpensesPage, page]);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setPage(0);
+    await loadExpensesPage(0, false);
+    setLoading(false);
+  }, [loadExpensesPage]);
 
   useEffect(() => {
-    fetchExpenses()
-      .then(({ data }) => setExpenses(data || []));
+    if (!enabled) return;
 
-    fetchBudget()
-      .then(({ data }) => {
-        if (data)
-          setBudgetState({ amount: data.budget, currency: data.currency });
-      });
+    let alive = true;
+
+    const bootstrap = async () => {
+      setLoading(true);
+      await Promise.all([
+        loadExpensesPage(0, false),
+        fetchBudget().then(({ data }) => {
+          if (alive && data) {
+            setBudgetState({ amount: data.budget, currency: data.currency });
+          }
+        }),
+      ]);
+      if (alive) setLoading(false);
+    };
+
+    bootstrap();
 
     const channel = supabase
       .channel("expenses-changes")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "expenses" },
-        (payload) => setExpenses((prev) => [payload.new, ...prev]),
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "expenses" },
-        (payload) =>
-          setExpenses((prev) => prev.filter((e) => e.id !== payload.old.id)),
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "expenses" },
-        (payload) =>
-          setExpenses((prev) =>
-            prev.map((e) => (e.id === payload.new.id ? payload.new : e)),
-          ),
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => {
+        refresh();
+      })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
-  }, []);
+    return () => {
+      alive = false;
+      supabase.removeChannel(channel);
+    };
+  }, [enabled, loadExpensesPage, refresh]);
 
   const addExpense = async (expense) => {
     const { error } = await insertExpense(expense);
@@ -70,6 +102,10 @@ export function useExpenses() {
   return {
     expenses,
     budget,
+    loading,
+    hasMore,
+    loadMore,
+    refresh,
     addExpense,
     deleteExpense,
     updateExpense,

@@ -5,7 +5,7 @@ import "./NotesView.css";
 
 export default function NotesView() {
   const { user } = useAuth();
-  const { notes, addNote, updateNote, deleteNote } = useNotes(user?.id);
+  const { notes, loading, hasMore, loadMore, addNote, updateNote, deleteNote } = useNotes(user?.id);
   const [activeId, setActiveId] = useState(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -61,7 +61,9 @@ export default function NotesView() {
           </button>
         </div>
         <div className="notes-list-scroll">
-          {!notes.length ? (
+          {loading ? (
+            <div className="notes-empty-hint">Завантаження...</div>
+          ) : !notes.length ? (
             <div className="notes-empty-hint">Натисніть «+ Нова»</div>
           ) : (
             notes.map((n) => (
@@ -79,6 +81,11 @@ export default function NotesView() {
                 </div>
               </div>
             ))
+          )}
+          {hasMore && (
+            <button className="btn-ghost" onClick={loadMore}>
+              Завантажити ще
+            </button>
           )}
         </div>
       </aside>
