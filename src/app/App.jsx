@@ -4,7 +4,6 @@ import PwaStatus from "../components/UI/PwaStatus";
 import MapView from "../features/map/components/MapView";
 import "./App.css";
 
-const NotesView = lazy(() => import("../features/notes/components/NotesView"));
 const FinanceView = lazy(() => import("../features/finance/components/FinanceView"));
 
 export default function App() {
@@ -48,11 +47,6 @@ export default function App() {
               onSearchClose={() => setSearchOpen(false)}
               mapStyle={mapStyle}
             />
-          )}
-          {activeTab === "notes" && (
-            <Suspense fallback={<div className="p-panel fade-in">Завантаження нотаток...</div>}>
-              <NotesView />
-            </Suspense>
           )}
           {activeTab === "finance" && (
             <Suspense fallback={<div className="p-panel fade-in">Завантаження фінансів...</div>}>

@@ -224,7 +224,7 @@ export default function FinanceView() {
       </div>
 
       <div className="finance-body">
-        {loading && <div className="notes-empty-hint">Завантаження витрат...</div>}
+        {loading && <div className="finance-loading-hint">Завантаження витрат...</div>}
 
       {/* ── Список + форма ── */}
         <div className="finance-left">
