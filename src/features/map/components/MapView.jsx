@@ -16,6 +16,7 @@ import EditPointModal from "../../points/components/EditPointModal";
 import { useBottomSheetSwipe } from "../../../shared/hooks/useBottomSheetSwipe";
 import "./MapView.css";
 import { logSlowInteraction, markPerf, measurePerf } from "../../../shared/lib/perf";
+import CalciteIcon from "../../../shared/ui/CalciteIcon";
 
 const RoutePanel = lazy(() => import("../../routes/components/RoutePanel"));
 const MetroPanel = lazy(() => import("../../metro/components/MetroPanel"));
@@ -37,7 +38,12 @@ const Icons = {
       <path d="M6 16V9a6 6 0 0 1 6-6h0a6 6 0 0 1 6 6v8" />
     </svg>
   ),
-  close: (
+  close: (<CalciteIcon name="close" size={15} />),
+  metro: (<CalciteIcon name="train" size={16} />),
+  pin: (<CalciteIcon name="locate" size={14} />),
+  myLocation: (<CalciteIcon name="locate" size={18} />),
+  arrowLeft: (<CalciteIcon name="arrowLeft" size={15} />),
+  _legacy_close_svg: (
     <svg
       width="15"
       height="15"
@@ -443,6 +449,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       (error) => {
         if (error.code === error.PERMISSION_DENIED) {
           setLocationMessage("Location permission denied");
+          return;
+        }
+        if (error.code === error.TIMEOUT) {
+          setLocationMessage("Location request timed out");
+          return;
+        }
+        if (error.code === error.POSITION_UNAVAILABLE) {
+          setLocationMessage("Location unavailable right now");
           return;
         }
         setLocationMessage("Unable to get current location");

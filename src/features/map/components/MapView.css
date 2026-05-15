@@ -473,13 +473,19 @@
   overflow: hidden;
 }
 .metro-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 12px 14px;
   border-bottom: 0.5px solid rgba(255,255,255,0.12);
+  background: rgba(8, 11, 18, 0.97);
 }
-.metro-modal-title { font-size: 16px; font-weight: 700; color: #f0f6ff; }
+.metro-modal-header-left{display:flex;align-items:center;gap:10px;min-width:0;}
+.metro-modal-title { font-size: 16px; font-weight: 700; color: #f0f6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 .metro-modal-close {
   border: none;
   background: rgba(255,255,255,0.1);
@@ -492,8 +498,6 @@
 .metro-modal-controls {
   display: flex;
   gap: 8px;
-  padding: 10px 14px;
-  border-bottom: 0.5px solid rgba(255,255,255,0.12);
 }
 .metro-modal-controls button {
   min-height: 44px;
@@ -513,6 +517,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
+  touch-action: pan-x pan-y;
 }
 .metro-modal-image {
   max-width: 100%;
