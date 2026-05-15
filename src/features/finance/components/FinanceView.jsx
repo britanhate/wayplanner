@@ -22,8 +22,6 @@ export default function FinanceView() {
     updateExpense,
     saveBudget,
     loading,
-    hasMore,
-    loadMore,
     syncAllPointExpenses,
   } = useExpenses();
 
@@ -163,7 +161,10 @@ export default function FinanceView() {
   useEffect(() => {
     if (hasAutoSyncedPointCosts) return;
     hasAutoSyncedPointCosts = true;
-    handleSyncPointCosts({ silent: true });
+    const timer = window.setTimeout(() => {
+      handleSyncPointCosts({ silent: true });
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (
@@ -319,7 +320,8 @@ export default function FinanceView() {
             {!expenses.length ? (
               <div className="expenses-empty">
                 <div className="stat-icon-large">💸</div>
-                <div className="text-small">Витрат ще немає</div>
+                <div className="empty-state-title">Ще немає витрат</div>
+                <div className="text-small">Додайте першу витрату вище, щоб бачити бюджет і статистику по поїздці.</div>
               </div>
             ) : (
               expenses.map((e) => {

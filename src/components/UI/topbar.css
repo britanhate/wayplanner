@@ -84,8 +84,8 @@ header[style] {
 }
 
 .topbar-btn {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.04);
@@ -93,12 +93,13 @@ header[style] {
   align-items: center;
   justify-content: center;
   color: white;
-  transition: 0.18s;
+  transition: background var(--duration-base), border-color var(--duration-base), color var(--duration-base), transform var(--duration-fast);
 }
+.topbar-btn:hover { background: rgba(255, 255, 255, 0.08); }
 .topbar-btn:active { transform: scale(0.96); }
 
 .topbar-btn-active {
-  background: rgba(10, 132, 255, 0.15);
+  background: rgba(10, 132, 255, 0.2);
   border-radius: 8px;
   border: 0.5px solid var(--accent);
   color: var(--accent);

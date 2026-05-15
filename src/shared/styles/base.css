@@ -34,6 +34,10 @@
   --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.35);
   --shadow-md:   0 8px 32px rgba(0, 0, 0, 0.5);
   --shadow-lg:   0 18px 60px rgba(0, 0, 0, 0.6);
+  --tap-size: 44px;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 160ms;
+  --duration-base: 200ms;
 }
 
 /* ── Reset ── */
@@ -73,6 +77,23 @@ body {
 
 a { color: inherit; }
 button { font-family: inherit; }
+button { min-height: var(--tap-size); }
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(10, 132, 255, 0.8);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* ── Scrollbars ── */
 ::-webkit-scrollbar        { width: 4px; height: 4px; }

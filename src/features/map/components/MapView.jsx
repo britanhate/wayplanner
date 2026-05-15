@@ -151,6 +151,9 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const [routePickTarget, setRoutePickTarget] = useState(null);
   const [routeBuilding, setRouteBuilding] = useState(false);
   const [locationMessage, setLocationMessage] = useState("");
+  const [uiMessage, setUiMessage] = useState("");
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [selectedPointId, setSelectedPointId] = useState(null);
 
   useEffect(() => {
     routePickTargetRef.current = routePickTarget;
@@ -242,7 +245,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     tileLayerRef.current = createTileLayer(mapStyle || "standard").addTo(
       mapInstance.current,
     );
-  }, [mapStyle]);
+  }, [mapStyle, pointsLoading]);
 
   const getMarkerIcon = useCallback((type, isWaypoint) => {
     const key = `${type}:${isWaypoint ? "1" : "0"}`;
@@ -365,6 +368,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
   // ── Helpers ──
   const flyTo = (p) => {
+    setSelectedPointId(p.id);
     mapInstance.current?.flyTo([p.lat, p.lng], 15, { duration: 0.8 });
     markersRef.current[p.id]?.openPopup();
   };
@@ -384,6 +388,21 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     const timeoutId = window.setTimeout(() => setLocationMessage(""), 2600);
     return () => window.clearTimeout(timeoutId);
   }, [locationMessage]);
+  useEffect(() => {
+    if (!uiMessage) return undefined;
+    const timeoutId = window.setTimeout(() => setUiMessage(""), 2400);
+    return () => window.clearTimeout(timeoutId);
+  }, [uiMessage]);
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const handleLocateUser = useCallback(() => {
     if (!mapInstance.current) return;
@@ -454,7 +473,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
   const startRouteMode = () => {
     if (points.length < 2) {
-      alert("Додайте хоча б 2 точки для маршруту");
+      setUiMessage("Додайте щонайменше 2 точки, щоб побудувати маршрут.");
       return;
     }
     setRouteWaypoints([]);
@@ -561,9 +580,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     try {
       await deleteExpenseByPointId(pointId);
       await deletePoint(pointId);
+      setUiMessage("Точку видалено.");
     } catch (e) {
       console.error(e);
-      alert("Помилка при видаленні");
+      setUiMessage("Не вдалося видалити точку.");
     }
   };
 
@@ -584,9 +604,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       setPendingPos(null);
       setGeocoded(null);
       setPreviewPos(null);
+      setUiMessage("Точку збережено.");
     } catch (e) {
       console.error(e);
-      alert("Помилка при збереженні");
+      setUiMessage("Помилка збереження точки.");
     }
   };
 
@@ -601,9 +622,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         currency: data.currency,
       });
       setEditingPoint(null);
+      setUiMessage("Зміни точки збережено.");
     } catch (e) {
       console.error(e);
-      alert("Помилка при редагуванні");
+      setUiMessage("Не вдалося зберегти зміни.");
     }
   };
 
@@ -666,9 +688,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         routeMode={false}
         routeFrom={null}
         onRouteToggle={handleRoutePointPick}
+        selectedPointId={selectedPointId}
       />
     ),
-    [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points],
+    [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points, selectedPointId],
   );
 
   const routePickSidebar = useMemo(
@@ -682,9 +705,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         routeMode={true}
         routeFrom={null}
         onRouteToggle={handleRoutePointPick}
+        selectedPointId={selectedPointId}
       />
     ),
-    [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points, routePickTarget],
+    [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points, routePickTarget, selectedPointId],
   );
 
   const renderContent = () => {
@@ -790,6 +814,8 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           {Icons.myLocation}
         </button>
         {locationMessage && <div className="map-toast">{locationMessage}</div>}
+        {uiMessage && <div className="map-toast map-toast-secondary">{uiMessage}</div>}
+        {isOffline && <div className="map-toast map-toast-warning">Офлайн режим: частина дій синхронізується після підключення.</div>}
       </div>
 
       <div ref={sheetRef} className={`map-sheet ${snapClass} slide-up`} style={sheetStyle}>
