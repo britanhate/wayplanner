@@ -7,9 +7,9 @@ import { usePoints } from "../../points/hooks/usePoints";
 import { useExpenses } from "../../finance/hooks/useExpenses";
 import { supabase } from "../../../lib/supabase";
 import { POINT_TYPES } from "../../../lib/constants";
-import { createTileLayer, getPointImageSrc, getRouteSegmentStyle } from "../lib/mapUtils";
+import { createTileLayer, getPointImageSrc } from "../lib/mapUtils";
 import SearchBox from "./SearchBox";
-import { reverseGeocode, buildMultiStopRoute } from "../../../lib/arcgis";
+import { reverseGeocode } from "../../../lib/arcgis";
 import PointsSidebar from "../../points/components/PointsSidebar";
 import AddPointModal from "../../points/components/AddPointModal";
 import EditPointModal from "../../points/components/EditPointModal";
@@ -122,8 +122,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const mapInstance = useRef(null);
   const markersRef = useRef({});
   const routeLayers = useRef([]);
-  const routeStepLayers = useRef([]);
-  const segmentLayerMap = useRef(new Map());
   const previewMarkerRef = useRef(null);
   const tileLayerRef = useRef(null);
   const routePickTargetRef = useRef(null);
@@ -151,9 +149,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const [routePanelOpen, setRoutePanelOpen] = useState(false);
   const [routeWaypoints, setRouteWaypoints] = useState([]);
   const [routePickTarget, setRoutePickTarget] = useState(null);
-  const [routeResult, setRouteResult] = useState(null);
   const [routeBuilding, setRouteBuilding] = useState(false);
-  const [activeSegmentId, setActiveSegmentId] = useState(null);
   const [locationMessage, setLocationMessage] = useState("");
 
   useEffect(() => {
@@ -444,51 +440,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const clearRouteLines = useCallback(() => {
     routeLayers.current.forEach((l) => l.remove());
     routeLayers.current = [];
-    routeStepLayers.current.forEach((l) => l.remove());
-    routeStepLayers.current = [];
-    segmentLayerMap.current.clear();
-  }, []);
-
-  const extractRouteCoords = useCallback((leg) => {
-    const encoded = leg?.best?.polyline || leg?.best?.overview_polyline;
-    if (Array.isArray(encoded) && encoded.length > 1) {
-      return encoded
-        .map((pt) =>
-          Array.isArray(pt) && pt.length >= 2 ? [pt[0], pt[1]] : null,
-        )
-        .filter(Boolean);
-    }
-    const geometry = leg?.best?.geometry || leg?.geometry;
-    if (Array.isArray(geometry?.coordinates)) {
-      return geometry.coordinates
-        .map((pt) =>
-          Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null,
-        )
-        .filter(Boolean);
-    }
-    if (Array.isArray(leg?.polyline)) {
-      return leg.polyline
-        .map((pt) =>
-          Array.isArray(pt) && pt.length >= 2 ? [pt[0], pt[1]] : null,
-        )
-        .filter(Boolean);
-    }
-    return null;
-  }, []);
-
-
-  const handleSegmentSelect = useCallback((segment) => {
-    if (!segment) return;
-    setActiveSegmentId(segment.id);
-    segmentLayerMap.current.forEach((layer, id) => {
-      if (!layer) return;
-      layer.setStyle(getRouteSegmentStyle(layer.__segmentType, id === segment.id));
-    });
-    const layer = segmentLayerMap.current.get(segment.id);
-    if (layer) {
-      mapInstance.current?.fitBounds(layer.getBounds().pad(0.35));
-      layer.bindPopup(segment.instruction || segment.lineName || "Крок маршруту").openPopup();
-    }
   }, []);
   // ── Route logic ──
   const fitToWaypoints = useCallback(
@@ -508,7 +459,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     }
     setRouteWaypoints([]);
     setRoutePanelOpen(true);
-    setRouteResult(null);
     clearRouteLines();
     setRoutePickTarget("start");
     setSnap("full");
@@ -520,53 +470,21 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     else setRoutePickTarget("stop");
   };
 
-  const handleBuildRoute = async (travelMode) => {
+  const handleBuildRoute = async () => {
     if (routeWaypoints.length < 2) return;
+    const start = routeWaypoints[0];
+    const destination = routeWaypoints[routeWaypoints.length - 1];
+    if (!start || !destination) return;
+
     setRouteBuilding(true);
     try {
-      const selectedMode = travelMode === 2 ? "walk" : "transit";
-      const route = await buildMultiStopRoute(routeWaypoints, selectedMode);
-      const coords = (route.paths || []).flatMap((path) =>
-        Array.isArray(path)
-          ? path.map((pt) =>
-              Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null,
-            ).filter(Boolean)
-          : [],
-      );
-
-      const legs = [
-        {
-          from: routeWaypoints[0],
-          to: routeWaypoints[routeWaypoints.length - 1],
-          totalDurFmt: route.totalMin ? `${route.totalMin} хв` : "—",
-          totalDistFmt: route.totalKm ? `${route.totalKm.toFixed(1)} км` : "—",
-          totalDurSec: (route.totalMin || 0) * 60,
-          totalDistM: (route.totalKm || 0) * 1000,
-          segments: route.segments || [],
-          steps: route.segments || [],
-        },
-      ];
-      setRouteResult({ legs, segments: route.segments || [], transfers: route.transfers || 0 });
-
-      clearRouteLines();
-      if (coords.length > 1) {
-        const pl = L.polyline(coords, getRouteSegmentStyle(selectedMode === "walk" ? "walk" : "transit", false)).addTo(mapInstance.current);
-        pl.__segmentType = selectedMode === "walk" ? "walk" : "transit";
-        routeLayers.current.push(pl);
-        segmentLayerMap.current.set("arcgis-main-route", pl);
-      }
-
-      (route.segments || []).forEach((segment) => {
-        segmentLayerMap.current.set(segment.id, routeLayers.current[0] || null);
-      });
-
-      if (routeLayers.current.length) {
-        mapInstance.current.fitBounds(L.featureGroup(routeLayers.current).getBounds().pad(0.2));
-      }
-    } catch (e) {
-      alert("Помилка маршруту: " + e.message);
+      const origin = `${start.lat},${start.lng}`;
+      const target = `${destination.lat},${destination.lng}`;
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(target)}&travelmode=transit`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    } finally {
+      setRouteBuilding(false);
     }
-    setRouteBuilding(false);
   };
 
   const handleRoutePointPick = (p) => {
@@ -702,7 +620,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
   const closeRouteMode = () => {
     setRoutePanelOpen(false);
-    setRouteResult(null);
     clearRouteLines();
     setRoutePickTarget(null);
   };
@@ -777,13 +694,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             setRouteWaypoints((prev) => prev.filter((_, idx) => idx !== i))
           }
           onBuild={handleBuildRoute}
-          result={routeResult}
           building={routeBuilding}
           pickMode={false}
           showHeader={false}
           onClose={closeRouteMode}
-          onSegmentSelect={handleSegmentSelect}
-          activeSegmentId={activeSegmentId}
           />
         </Suspense>
       );
