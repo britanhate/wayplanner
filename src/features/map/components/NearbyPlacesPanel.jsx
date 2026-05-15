@@ -14,18 +14,22 @@ export default function NearbyPlacesPanel({
 }) {
   return (
     <section className="nearby-panel p-panel fade-in">
-      <div className="route-panel-header">
-        <span className="rp-title">Що поруч?</span>
+      <div className="route-panel-header nearby-header-row">
+        <div>
+          <div className="rp-title">Що поруч?</div>
+          <div className="nearby-subtitle">Оберіть категорію</div>
+        </div>
         <button className="rp-icon-btn" onClick={onClose} aria-label="Закрити nearby places">
           <CalciteIcon name="close" size={14} />
         </button>
       </div>
-      <div className="nearby-chips">
+
+      <div className="nearby-chips" role="tablist" aria-label="Nearby categories">
         {categories.map((item) => (
           <button
             key={item.id}
             type="button"
-            className={`badge pressable ${category === item.id ? "badge-secondary" : "badge"}`}
+            className={`nearby-chip ${category === item.id ? "nearby-chip-active" : ""}`}
             onClick={() => onCategoryChange(item.id)}
           >
             {item.label}
@@ -38,15 +42,13 @@ export default function NearbyPlacesPanel({
 
       {!loading && selectedPlace && (
         <article className="nearby-card nearby-card-selected">
-          <div className="nearby-title">{selectedPlace.name}</div>
+          <div className="nearby-title nearby-title-lg">{selectedPlace.name}</div>
           <div className="nearby-meta">{selectedPlace.category} • {selectedPlace.distanceText}</div>
           {selectedPlace.address && <div className="nearby-addr">{selectedPlace.address}</div>}
           {selectedPlace.openingHours && <div className="nearby-addr">{selectedPlace.openingHours}</div>}
           {selectedPlace.rating ? <div className="nearby-addr">★ {selectedPlace.rating}</div> : null}
           <div className="nearby-actions-row">
-            <button type="button" className="rp-icon-btn" onClick={onBackToList} aria-label="Назад до списку">
-              <CalciteIcon name="arrowLeft" size={14} />
-            </button>
+            <button type="button" className="btn-ghost" onClick={onBackToList}>Назад</button>
             <button type="button" className="metro-open-btn" onClick={() => onAdd(selectedPlace)}>
               Додати в точки
             </button>
@@ -61,7 +63,7 @@ export default function NearbyPlacesPanel({
               <div className="nearby-title">{place.name}</div>
               <div className="nearby-meta">{place.category} • {place.distanceText}</div>
               {place.address && <div className="nearby-addr">{place.address}</div>}
-              <button type="button" className="metro-open-btn" onClick={() => onSelectPlace(place)}>
+              <button type="button" className="nearby-details-btn" onClick={() => onSelectPlace(place)}>
                 Деталі
               </button>
             </article>

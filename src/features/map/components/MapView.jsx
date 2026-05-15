@@ -23,12 +23,25 @@ import CalciteIcon from "../../../shared/ui/CalciteIcon";
 const NEARBY_CATEGORIES = [
   { id: "restaurants", label: "Ресторани", arcgis: "13065", pointType: "food" },
   { id: "cafes", label: "Кафе", arcgis: "13032", pointType: "food" },
-  { id: "bars", label: "Бари", arcgis: "13003", pointType: "food" },
+  { id: "bars", label: "Бари / Паби", arcgis: "13003", pointType: "food" },
   { id: "museums", label: "Музеї", arcgis: "10027", pointType: "museum" },
   { id: "landmarks", label: "Памʼятки", arcgis: "16000", pointType: "sight" },
-  { id: "hotels", label: "Готелі", arcgis: "10001", pointType: "hotel" },
-  { id: "shops", label: "Магазини", arcgis: "11000", pointType: "shop" },
 ];
+
+
+const NEARBY_EXCLUDE_TERMS = [
+  "dentist", "dental", "стоматолог", "clinic", "клініка", "hospital", "аптека", "pharmacy", "hair", "salon", "beauty", "apartment", "condo", "real estate", "school", "bank", "atm", "insurance", "repair", "service",
+];
+const NEARBY_INCLUDE_TERMS = [
+  "restaurant", "cafe", "coffee", "bar", "pub", "museum", "attraction", "landmark", "historic", "monument", "art", "gallery", "park", "viewpoint",
+];
+const NEARBY_PRIORITY_TERMS = ["museum", "landmark", "attraction", "historic", "monument", "restaurant", "cafe", "bar", "pub"];
+
+const matchesAnyTerm = (text, terms) => terms.some((term) => text.includes(term));
+const getNearbyPriority = (text) => {
+  const idx = NEARBY_PRIORITY_TERMS.findIndex((term) => text.includes(term));
+  return idx === -1 ? NEARBY_PRIORITY_TERMS.length : idx;
+};
 
 const RoutePanel = lazy(() => import("../../routes/components/RoutePanel"));
 const MetroPanel = lazy(() => import("../../metro/components/MetroPanel"));
@@ -418,11 +431,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       previewMarkerRef.current?.closePopup();
     };
 
-    window.__openNearbyFromPreview = () => {
-      openNearbyForPoint({ lat: previewPos.lat, lng: previewPos.lng });
-      marker.closePopup();
-    };
-
     return () => {
       delete window.__addPreviewPoint;
       delete window.__openNearbyFromPreview;
@@ -727,7 +735,20 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         rating: item.rating,
         openingHours: item.openingHours?.text,
         pointType: category.pointType,
-      })).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+      }))
+        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+        .filter((p) => {
+          const searchable = `${p.name} ${p.category} ${p.address || ""}`.toLowerCase();
+          if (matchesAnyTerm(searchable, NEARBY_EXCLUDE_TERMS)) return false;
+          return matchesAnyTerm(searchable, NEARBY_INCLUDE_TERMS);
+        })
+        .sort((a, b) => {
+          const textA = `${a.name} ${a.category}`.toLowerCase();
+          const textB = `${b.name} ${b.category}`.toLowerCase();
+          const priorityDiff = getNearbyPriority(textA) - getNearbyPriority(textB);
+          if (priorityDiff !== 0) return priorityDiff;
+          return a.distance - b.distance;
+        });
 
       setNearbyPlaces(normalized);
       clearNearbyMarkers();
