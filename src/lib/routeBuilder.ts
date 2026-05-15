@@ -1,3 +1,4 @@
+import type { RouteStep } from '../shared/types/domain';
 /**
  * Build route legs from real ArcGIS directions data.
  * Falls back to synthetic legs if directions are empty.
@@ -23,7 +24,7 @@ const MANEUVER_MAP = {
 };
 
 // Keywords in direction text → transit icon
-function guessTransitIcon(text) {
+function guessTransitIcon(text: string) {
   const t = (text || "").toLowerCase();
   if (t.includes("metro") || t.includes("métro") || t.includes("м."))
     return { icon: "🚇", color: "#0a84ff" };
@@ -46,7 +47,7 @@ function guessTransitIcon(text) {
  * @param {Object} from      - { name }
  * @param {Object} to        - { name }
  */
-function legsFromDirections(directions, from, to) {
+function legsFromDirections(directions: Array<{ attributes?: Record<string, unknown> }> | undefined, from: { name: string }, to: { name: string }): RouteStep[] | null {
   if (!directions || directions.length === 0) return null;
 
   // Filter out degenerate steps (0 distance AND 0 time AND generic text)
@@ -90,9 +91,9 @@ const METRO_LINES = ["M1","M2","M3","M4","M5","M6","M7","M8","M9","M10","M11","M
 const BUS_LINES   = ["21","29","38","42","63","69","72","73","80","85","91","95","96"];
 const RER_LINES   = ["RER A","RER B","RER C","RER D","RER E"];
 
-function pickLine(seed, arr) { return arr[Math.abs(seed) % arr.length]; }
+function pickLine(seed: number, arr: string[]) { return arr[Math.abs(seed) % arr.length]; }
 
-function nameHash(str) {
+function nameHash(str: string) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
   return Math.abs(h);
@@ -104,9 +105,9 @@ const PARIS_STOPS = [
   "Belleville","Oberkampf","Voltaire","Père Lachaise","Gambetta",
   "Porte de Vincennes","Bercy","Bibliothèque F.Mitterrand","Austerlitz","Daumesnil",
 ];
-function synStop(seed) { return PARIS_STOPS[Math.abs(seed) % PARIS_STOPS.length]; }
+function synStop(seed: number) { return PARIS_STOPS[Math.abs(seed) % PARIS_STOPS.length]; }
 
-function _direction(line, seed) {
+function _direction(line: string, seed: number) {
   const dirs = {
     M1: ["La Défense","Château de Vincennes"],
     M2: ["Porte Dauphine","Nation"],
@@ -117,7 +118,7 @@ function _direction(line, seed) {
   return (dirs[line] || ["terminus A","terminus B"])[seed % 2];
 }
 
-function syntheticLegs(from, to, totalMin, totalKm) {
+function syntheticLegs(from: { name: string }, to: { name: string }, totalMin: number, totalKm: string): RouteStep[] {
   const dist = parseFloat(totalKm);
   const seed = nameHash(from.name + to.name);
   const legs = [];
@@ -168,7 +169,7 @@ function syntheticLegs(from, to, totalMin, totalKm) {
  * @param {string} totalKm
  * @param {Array}  directions  - pass res.directions from buildRoute
  */
-export function buildLegs(from, to, totalMin, totalKm, directions) {
+export function buildLegs(from: { name: string }, to: { name: string }, totalMin: number, totalKm: string, directions: Array<{ attributes?: Record<string, unknown> }> | undefined): RouteStep[] {
   const real = legsFromDirections(directions, from, to);
   if (real && real.length > 0) return real;
   return syntheticLegs(from, to, totalMin, totalKm);
