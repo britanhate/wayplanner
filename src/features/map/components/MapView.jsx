@@ -418,6 +418,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       previewMarkerRef.current?.closePopup();
     };
 
+    window.__openNearbyFromPreview = () => {
+      openNearbyForPoint({ lat: previewPos.lat, lng: previewPos.lng });
+      marker.closePopup();
+    };
+
     return () => {
       delete window.__addPreviewPoint;
       delete window.__openNearbyFromPreview;
