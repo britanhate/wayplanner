@@ -613,14 +613,11 @@
 
 @media (max-width: 767px) {
   .map-toast {
-    top: calc(104px + env(safe-area-inset-top, 0px));
-    left: 50%;
-    transform: translateX(-50%);
+    top: calc(118px + env(safe-area-inset-top, 0px));
     bottom: auto;
-    max-width: calc(100vw - 48px);
+    max-width: calc(100vw - 40px);
     padding: 7px 11px;
     font-size: 12px;
-    border-radius: 999px;
     z-index: 1250;
   }
 
