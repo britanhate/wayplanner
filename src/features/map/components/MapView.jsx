@@ -99,7 +99,7 @@ const Icons = {
 export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const { user } = useAuth();
   const { points, loading: pointsLoading, deletePoint, updatePoint } = usePoints();
-  const { addExpense, updateExpense, deleteExpenseByPointId } = useExpenses({ enabled: false });
+  const { addExpense, deleteExpense, updateExpense, deleteExpenseByPointId } = useExpenses({ enabled: false });
 
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -599,6 +599,61 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setRoutePickTarget(null);
   };
 
+  const syncPointExpense = async ({ pointId, pointName, estimatedCost, currency }) => {
+    const normalizedAmount = Number(estimatedCost);
+    const hasCost = Number.isFinite(normalizedAmount) && normalizedAmount > 0;
+
+    const { data: pointExpenses, error: loadExpenseError } = await supabase
+      .from("expenses")
+      .select("id")
+      .eq("point_id", pointId)
+      .order("created_at", { ascending: true });
+
+    if (loadExpenseError) throw loadExpenseError;
+
+    const expensesForPoint = pointExpenses || [];
+
+    if (!hasCost) {
+      if (expensesForPoint.length) {
+        await deleteExpenseByPointId(pointId);
+      }
+      return;
+    }
+
+    const payload = {
+      name: `🏷️ ${pointName}`,
+      amount: normalizedAmount,
+      currency,
+      category: "Місце",
+    };
+
+    if (!expensesForPoint.length) {
+      await addExpense({
+        ...payload,
+        created_by: user.id,
+        point_id: pointId,
+      });
+      return;
+    }
+
+    const [firstExpense, ...duplicates] = expensesForPoint;
+    await updateExpense(firstExpense.id, payload);
+
+    if (duplicates.length) {
+      await Promise.all(duplicates.map((expense) => deleteExpense(expense.id)));
+    }
+  };
+
+  const handleDeletePoint = async (pointId) => {
+    try {
+      await deleteExpenseByPointId(pointId);
+      await deletePoint(pointId);
+    } catch (e) {
+      console.error(e);
+      alert("Помилка при видаленні");
+    }
+  };
+
   const handleSavePoint = async (data) => {
     try {
       const { data: inserted, error } = await supabase
@@ -607,16 +662,12 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         .select()
         .single();
       if (error) throw error;
-      if (data.estimated_cost > 0) {
-        await addExpense({
-          name: `🏷️ ${data.name}`,
-          amount: data.estimated_cost,
-          category: "Місце",
-          currency: data.currency,
-          created_by: user.id,
-          point_id: inserted.id,
-        });
-      }
+      await syncPointExpense({
+        pointId: inserted.id,
+        pointName: data.name,
+        estimatedCost: data.estimated_cost,
+        currency: data.currency,
+      });
       setPendingPos(null);
       setGeocoded(null);
       setPreviewPos(null);
@@ -630,31 +681,12 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     try {
       const pointId = editingPoint.id;
       await updatePoint(pointId, data);
-      if (data.estimated_cost > 0) {
-        const { data: ex } = await supabase
-          .from("expenses")
-          .select("id")
-          .eq("point_id", pointId)
-          .single();
-        if (ex) {
-          await updateExpense(ex.id, {
-            name: `🏷️ ${data.name}`,
-            amount: data.estimated_cost,
-            currency: data.currency,
-          });
-        } else {
-          await addExpense({
-            name: `🏷️ ${data.name}`,
-            amount: data.estimated_cost,
-            category: "Місце",
-            currency: data.currency,
-            created_by: user.id,
-            point_id: pointId,
-          });
-        }
-      } else if (editingPoint.estimated_cost && !data.estimated_cost) {
-        await deleteExpenseByPointId(pointId);
-      }
+      await syncPointExpense({
+        pointId,
+        pointName: data.name,
+        estimatedCost: data.estimated_cost,
+        currency: data.currency,
+      });
       setEditingPoint(null);
     } catch (e) {
       console.error(e);
@@ -705,7 +737,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         <PointsSidebar
           points={points}
           onFly={flyTo}
-          onDelete={deletePoint}
+          onDelete={handleDeletePoint}
           onEdit={(p) => setEditingPoint(p)}
           onToggleCompleted={handleToggleCompleted}
           routeMode={true}
@@ -739,7 +771,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       <PointsSidebar
         points={points}
         onFly={flyTo}
-        onDelete={deletePoint}
+        onDelete={handleDeletePoint}
         onEdit={(p) => setEditingPoint(p)}
         onToggleCompleted={handleToggleCompleted}
         routeMode={false}

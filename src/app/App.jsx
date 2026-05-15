@@ -1,5 +1,6 @@
 import { Suspense, lazy, useState, useEffect } from "react";
 import Topbar from "../components/UI/Topbar";
+import PwaStatus from "../components/UI/PwaStatus";
 import MapView from "../features/map/components/MapView";
 import "./App.css";
 
@@ -38,6 +39,7 @@ export default function App() {
         mapStyle={mapStyle}
         onMapStyleChange={setMapStyle}
       />
+      <PwaStatus />
       <div className="app-content">
         <div key={activeTab} className="tab-view fade-in">
           {activeTab === "map" && (
