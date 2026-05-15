@@ -79,6 +79,7 @@ export default function MetroPanel() {
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           onResetZoom={() => setScale(1)}
+          onScaleChange={setScale}
           onClose={closeModal}
         />
       )}
