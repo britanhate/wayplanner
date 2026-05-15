@@ -133,6 +133,7 @@ function PointsSidebar({
   routeMode,
   onRouteToggle,
   selectedPointId = null,
+  onNearby,
 }) {
   const { user } = useAuth();
 
@@ -257,6 +258,16 @@ function PointsSidebar({
                       "{p.comment}"
                     </div>
                   )}
+                  <button
+                    type="button"
+                    className="btn-ghost p-1.5 rounded-lg text-white/60 hover:text-white transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNearby?.(p);
+                    }}
+                  >
+                    Що поруч?
+                  </button>
                 </div>
 
                 {/* Дії (тільки для свого) */}
