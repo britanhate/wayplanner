@@ -132,6 +132,7 @@ function PointsSidebar({
   onToggleCompleted,
   routeMode,
   onRouteToggle,
+  selectedPointId = null,
 }) {
   const { user } = useAuth();
 
@@ -200,8 +201,11 @@ function PointsSidebar({
       {/* Список точок */}
       <div className="mt-section space-y-3">
         {!filteredPoints.length ? (
-          <div className="text-small text-gray-400">
-            Немає точок для відображення
+          <div className="empty-state-card">
+            <div className="empty-state-title">Ще немає точок</div>
+            <div className="text-small text-gray-400">
+              Додайте першу точку на мапі: натисніть на карту та оберіть “Додати точку”.
+            </div>
           </div>
         ) : (
           filteredPoints.map((p) => {
@@ -213,7 +217,7 @@ function PointsSidebar({
                 key={p.id}
                 className={`flex list-item interactive-card fade-in items-center gap-3 ${
                   p.is_completed ? "opacity-disabled" : ""
-                }`}
+                } ${selectedPointId === p.id ? "point-selected" : ""}`}
                 onClick={() => (routeMode ? onRouteToggle(p) : onFly(p))}
               >
                 {/* Іконка типу */}

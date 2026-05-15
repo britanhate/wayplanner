@@ -25,7 +25,11 @@ export default function RoutePanel({
       <div className="rp-point-head">
         <span className="rp-point-label">{label}</span>
         {point && (
-          <button className="rp-icon-btn" onClick={() => onRemoveWaypoint(isStart ? 0 : waypoints.length - 1)}>
+          <button
+            className="rp-icon-btn"
+            aria-label={`Видалити ${label.toLowerCase()}`}
+            onClick={() => onRemoveWaypoint(isStart ? 0 : waypoints.length - 1)}
+          >
             ✕
           </button>
         )}
@@ -47,23 +51,28 @@ export default function RoutePanel({
         {isPickingDestination && "Оберіть точку призначення зі списку."}
         {!pickMode && "Вкажіть старт і пункт призначення, щоб відкрити маршрут у Google Maps."}
       </div>
+      <ol className="rp-steps-flow">
+        <li className={start ? "done" : ""}>Оберіть старт</li>
+        <li className={destination ? "done" : ""}>Оберіть пункт призначення</li>
+        <li className={canOpenRoute ? "done" : ""}>Відкрийте маршрут у Google Maps</li>
+      </ol>
 
       <div className="rp-waypoints">
         {renderPointCard("Старт", start, true)}
         {renderPointCard("Пункт призначення", destination, false)}
 
         <div className="rp-actions-row">
-          <button className={`rp-add-stop-btn ${pickMode ? "active" : ""}`} onClick={onAddWaypoint}>
+          <button className={`rp-add-stop-btn ${pickMode ? "active" : ""}`} aria-label="Обрати точки маршруту" onClick={onAddWaypoint}>
             {pickMode ? "Вибір точки..." : "Обрати точки"}
           </button>
-          <button className="rp-outline-btn" onClick={onSwap} disabled={!canSwap}>Поміняти місцями</button>
-          <button className="rp-outline-btn" onClick={onClear} disabled={!canClear}>Очистити</button>
+          <button className="rp-outline-btn" aria-label="Поміняти точки місцями" onClick={onSwap} disabled={!canSwap}>Поміняти місцями</button>
+          <button className="rp-outline-btn" aria-label="Очистити точки маршруту" onClick={onClear} disabled={!canClear}>Очистити</button>
         </div>
       </div>
 
       {!canOpenRoute && (
         <div className="rp-empty">
-          Оберіть старт і фініш у списку точок.
+          Спочатку оберіть дві точки: старт і пункт призначення.
         </div>
       )}
 
