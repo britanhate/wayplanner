@@ -8,13 +8,13 @@ export function useExpenses() {
   useEffect(() => {
     supabase
       .from("expenses")
-      .select("*")
+      .select("id, point_id, amount, category, note, currency, created_at")
       .order("created_at", { ascending: false })
       .then(({ data }) => setExpenses(data || []));
 
     supabase
       .from("trip_settings")
-      .select("*")
+      .select("budget, currency")
       .eq("id", 1)
       .single()
       .then(({ data }) => {

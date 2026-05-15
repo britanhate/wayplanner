@@ -8,6 +8,7 @@ import { useExpenses } from "../../hooks/useExpenses";
 import { supabase } from "../../lib/supabase";
 import { fetchDirections, parseLeg } from "../../lib/serpapi";
 import { POINT_TYPES } from "../../lib/constants";
+import { createTileLayer, getPointImageSrc, getRouteSegmentStyle } from "../../lib/mapUtils";
 import SearchBox from "./SearchBox";
 import PointsSidebar from "./PointsSidebar";
 import RoutePanel from "./RoutePanel";
@@ -93,17 +94,6 @@ const Icons = {
   ),
 };
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-
-const MAPBOX_STYLES = {
-  "streets-v12": "mapbox/streets-v12",
-  "outdoors-v12": "mapbox/outdoors-v12",
-  "light-v11": "mapbox/light-v11",
-  "dark-v11": "mapbox/dark-v11",
-  "satellite-streets-v12": "mapbox/satellite-streets-v12",
-  "navigation-day-v1": "mapbox/navigation-day-v1",
-  "navigation-night-v1": "mapbox/navigation-night-v1",
-};
 
 export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const { user } = useAuth();
@@ -122,6 +112,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
   const {
     snap,
+    setSnap,
     sheetRef,
     scrollRef,
     onDragAreaPointerDown,
@@ -145,37 +136,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   useEffect(() => {
     routePickTargetRef.current = routePickTarget;
   }, [routePickTarget]);
-
-
-  // ── Створення шару плиток ──
-  const createTileLayer = useCallback((style) => {
-    if (style === "standard") {
-      return L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors",
-      });
-    }
-
-    if (style === "dark") {
-      return L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        {
-          attribution: "&copy; OpenStreetMap &copy; CartoDB",
-        },
-      );
-    }
-
-    const styleId = MAPBOX_STYLES[style] ?? "mapbox/streets-v12";
-
-    return L.tileLayer(
-      `https://api.mapbox.com/styles/v1/${styleId}/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
-      {
-        tileSize: 512,
-        zoomOffset: -1,
-        attribution:
-          "© <a href='https://www.mapbox.com/'>Mapbox</a> © OpenStreetMap",
-      },
-    );
-  }, []);
 
   // ── Ініціалізація карти ──
   // ── Ініціалізація карти ──
@@ -249,7 +209,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       map.remove();
       mapInstance.current = null;
     };
-  }, [createTileLayer]);
+  }, []);
 
   // ── Зміна стилю карти ──
   useEffect(() => {
@@ -262,7 +222,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     tileLayerRef.current = createTileLayer(mapStyle || "standard").addTo(
       mapInstance.current,
     );
-  }, [mapStyle, createTileLayer]);
+  }, [mapStyle]);
 
   // ── Markers ──
   useEffect(() => {
@@ -279,15 +239,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         iconAnchor: [16, 16],
         popupAnchor: [0, -18],
       });
-      const img = Array.isArray(p.attachments)
-        ? p.attachments.find(
-            (x) =>
-              (typeof x === "string" &&
-                (x.startsWith("http") || x.startsWith("data:"))) ||
-              (typeof x === "object" && x.data),
-          )
-        : null;
-      const imgSrc = img ? (typeof img === "string" ? img : img.data) : null;
+      const imgSrc = getPointImageSrc(p.attachments);
       const popup = `
         <div class="ios-card">
           ${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}
@@ -446,55 +398,12 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     [],
   );
 
-  const drawRouteLegs = useCallback(
-    (legs, rawLegs = []) => {
-      clearRouteLines();
-      legs.forEach((leg, idx) => {
-        const coords = extractRouteCoords(rawLegs[idx]);
-        const hasRealGeometry = Array.isArray(coords) && coords.length > 1;
-        const l = L.polyline(
-          hasRealGeometry
-            ? coords
-            : [
-                [leg.from.lat, leg.from.lng],
-                [leg.to.lat, leg.to.lng],
-              ],
-          {
-            color: "#2a7de8",
-            weight: 4,
-            opacity: 0.8,
-            dashArray: hasRealGeometry ? null : "8 6",
-          },
-        ).addTo(mapInstance.current);
-        routeLayers.current.push(l);
-      });
-      if (routeLayers.current.length) {
-        mapInstance.current.fitBounds(
-          L.featureGroup(routeLayers.current).getBounds().pad(0.2),
-        );
-      }
-    },
-    [clearRouteLines, extractRouteCoords],
-  );
-
-
-  const styleForType = (type, active = false) => {
-    const base = { weight: 5, opacity: active ? 1 : 0.78, dashArray: null };
-    if (type === "walk") return { ...base, color: "#8e8e93", dashArray: "6 8", weight: active ? 6 : 4 };
-    if (type === "metro" || type === "subway") return { ...base, color: "#0a84ff", weight: active ? 9 : 7 };
-    if (type === "bus") return { ...base, color: "#ff8a00" };
-    if (type === "train") return { ...base, color: "#9b59b6", weight: active ? 7 : 6 };
-    if (type === "tram") return { ...base, color: "#2abf6e" };
-    if (type === "car") return { ...base, color: "#4b5563" };
-    return { ...base, color: "#6366f1" };
-  };
-
   const handleSegmentSelect = useCallback((segment) => {
     if (!segment) return;
     setActiveSegmentId(segment.id);
     segmentLayerMap.current.forEach((layer, id) => {
       if (!layer) return;
-      layer.setStyle(styleForType(layer.__segmentType, id === segment.id));
+      layer.setStyle(getRouteSegmentStyle(layer.__segmentType, id === segment.id));
     });
     const layer = segmentLayerMap.current.get(segment.id);
     if (layer) {
@@ -578,7 +487,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         const legSegments = leg.segments || [];
         if (!legSegments.length) {
           const fallbackId = `leg-${legIdx}-fallback`;
-          const pl = L.polyline(legCoords, styleForType("unknown", false)).addTo(mapInstance.current);
+          const pl = L.polyline(legCoords, getRouteSegmentStyle("unknown", false)).addTo(mapInstance.current);
           pl.__segmentType = "unknown";
           routeLayers.current.push(pl);
           segmentLayerMap.current.set(fallbackId, pl);
@@ -608,7 +517,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           }
 
           if (coords.length < 2) return;
-          const pl = L.polyline(coords, styleForType(segment.type, false)).addTo(mapInstance.current);
+          const pl = L.polyline(coords, getRouteSegmentStyle(segment.type, false)).addTo(mapInstance.current);
           pl.__segmentType = segment.type;
           routeLayers.current.push(pl);
           segmentLayerMap.current.set(segment.id, pl);
