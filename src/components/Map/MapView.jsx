@@ -115,6 +115,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const markersRef = useRef({});
   const routeLayers = useRef([]);
   const routeStepLayers = useRef([]);
+  const segmentLayerMap = useRef(new Map());
   const previewMarkerRef = useRef(null);
   const tileLayerRef = useRef(null);
   const routePickTargetRef = useRef(null);
@@ -139,6 +140,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const [routePickTarget, setRoutePickTarget] = useState(null);
   const [routeResult, setRouteResult] = useState(null);
   const [routeBuilding, setRouteBuilding] = useState(false);
+  const [activeSegmentId, setActiveSegmentId] = useState(null);
 
   useEffect(() => {
     routePickTargetRef.current = routePickTarget;
@@ -381,6 +383,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     routeLayers.current = [];
     routeStepLayers.current.forEach((l) => l.remove());
     routeStepLayers.current = [];
+    segmentLayerMap.current.clear();
   }, []);
 
   const extractRouteCoords = useCallback((leg) => {
@@ -475,6 +478,31 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     [clearRouteLines, extractRouteCoords],
   );
 
+
+  const styleForType = (type, active = false) => {
+    const base = { weight: 5, opacity: active ? 1 : 0.78, dashArray: null };
+    if (type === "walk") return { ...base, color: "#8e8e93", dashArray: "6 8", weight: active ? 6 : 4 };
+    if (type === "metro" || type === "subway") return { ...base, color: "#0a84ff", weight: active ? 9 : 7 };
+    if (type === "bus") return { ...base, color: "#ff8a00" };
+    if (type === "train") return { ...base, color: "#9b59b6", weight: active ? 7 : 6 };
+    if (type === "tram") return { ...base, color: "#2abf6e" };
+    if (type === "car") return { ...base, color: "#4b5563" };
+    return { ...base, color: "#6366f1" };
+  };
+
+  const handleSegmentSelect = useCallback((segment) => {
+    if (!segment) return;
+    setActiveSegmentId(segment.id);
+    segmentLayerMap.current.forEach((layer, id) => {
+      if (!layer) return;
+      layer.setStyle(styleForType(layer.__segmentType, id === segment.id));
+    });
+    const layer = segmentLayerMap.current.get(segment.id);
+    if (layer) {
+      mapInstance.current?.fitBounds(layer.getBounds().pad(0.35));
+      layer.bindPopup(segment.instruction || segment.lineName || "Крок маршруту").openPopup();
+    }
+  }, []);
   // ── Route logic ──
   const fitToWaypoints = useCallback(
     (wps = routeWaypoints) => {
@@ -523,38 +551,73 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           totalDurSec: parsed?.totalDurSec || 0,
           totalDistM: parsed?.totalDistM || 0,
           via: parsed?.via || "",
+          segments: parsed?.segments || [],
           steps: parsed?.steps || [],
         };
       });
-      setRouteResult({ legs });
-      if (publicRoute.coords.length > 1) {
-        clearRouteLines();
-        const route = L.polyline(publicRoute.coords, {
-          color: "#2a7de8",
-          weight: 5,
-          opacity: 0.88,
-        }).addTo(mapInstance.current);
-        routeLayers.current.push(route);
-        publicRoute.steps.forEach((step, idx) => {
-          const isWalk = step.mode === "walking";
-          const marker = L.circleMarker([step.lat, step.lng], {
-            radius: isWalk ? 4 : 3,
-            color: isWalk ? "#30d158" : "#0a84ff",
-            weight: 2,
-            fillColor: isWalk ? "#30d158" : "#0a84ff",
-            fillOpacity: 0.95,
-          })
-            .bindTooltip(
-              `${isWalk ? "🚶 Пішки" : "🧭 Крок"}${step.instruction ? `: ${step.instruction}` : ""}`,
-              { direction: "top", offset: [0, -8] },
-            )
-            .addTo(mapInstance.current);
-          if (idx % 2 === 0 || isWalk) routeStepLayers.current.push(marker);
-          else marker.remove();
+      const segments = legs.flatMap((l) => l.segments || []);
+      const transfers = Math.max(0, segments.filter((s) => s.type !== "walk").length - 1);
+      setRouteResult({ legs, segments, transfers });
+
+      clearRouteLines();
+
+      const legCoordsList = data.legs.map((leg) => extractRouteCoords(leg)).map((coords, legIdx) => {
+        if (Array.isArray(coords) && coords.length > 1) return coords;
+        if (publicRoute.coords.length > 1) {
+          const a = routeWaypoints[legIdx];
+          const b = routeWaypoints[legIdx + 1];
+          return publicRoute.coords.filter((pt) => Array.isArray(pt) && pt.length === 2) || (a && b ? [[a.lat, a.lng], [b.lat, b.lng]] : []);
+        }
+        const a = routeWaypoints[legIdx];
+        const b = routeWaypoints[legIdx + 1];
+        return a && b ? [[a.lat, a.lng], [b.lat, b.lng]] : [];
+      });
+
+      legs.forEach((leg, legIdx) => {
+        const legCoords = legCoordsList[legIdx] || [];
+        if (legCoords.length < 2) return;
+        const legSegments = leg.segments || [];
+        if (!legSegments.length) {
+          const fallbackId = `leg-${legIdx}-fallback`;
+          const pl = L.polyline(legCoords, styleForType("unknown", false)).addTo(mapInstance.current);
+          pl.__segmentType = "unknown";
+          routeLayers.current.push(pl);
+          segmentLayerMap.current.set(fallbackId, pl);
+          return;
+        }
+
+        legSegments.forEach((segment, segIdx) => {
+          let coords = [];
+          if (Array.isArray(segment.polyline) && segment.polyline.length > 1) {
+            const first = segment.polyline[0];
+            coords = segment.polyline
+              .map((pt) =>
+                Array.isArray(pt) && pt.length >= 2
+                  ? Math.abs(first[0]) <= 90
+                    ? [pt[0], pt[1]]
+                    : [pt[1], pt[0]]
+                  : null,
+              )
+              .filter(Boolean);
+          }
+
+          if (coords.length < 2) {
+            const total = legSegments.length;
+            const start = Math.floor((segIdx / total) * (legCoords.length - 1));
+            const end = Math.max(start + 1, Math.floor(((segIdx + 1) / total) * (legCoords.length - 1)));
+            coords = legCoords.slice(start, end + 1);
+          }
+
+          if (coords.length < 2) return;
+          const pl = L.polyline(coords, styleForType(segment.type, false)).addTo(mapInstance.current);
+          pl.__segmentType = segment.type;
+          routeLayers.current.push(pl);
+          segmentLayerMap.current.set(segment.id, pl);
         });
-        mapInstance.current.fitBounds(route.getBounds().pad(0.2));
-      } else {
-        drawRouteLegs(legs, data.legs);
+      });
+
+      if (routeLayers.current.length) {
+        mapInstance.current.fitBounds(L.featureGroup(routeLayers.current).getBounds().pad(0.2));
       }
     } catch (e) {
       alert("Помилка маршруту: " + e.message);
@@ -696,6 +759,8 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           pickMode={false}
           showHeader={false}
           onClose={closeRouteMode}
+          onSegmentSelect={handleSegmentSelect}
+          activeSegmentId={activeSegmentId}
         />
       );
     }
