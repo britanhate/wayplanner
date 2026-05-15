@@ -14,7 +14,6 @@ const TYPE_ICON = {
   subway: "🚇",
   train: "🚆",
   tram: "🚃",
-  car: "🚗",
   transit: "🧭",
   unknown: "📍",
 };

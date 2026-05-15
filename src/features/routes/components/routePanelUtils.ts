@@ -5,10 +5,6 @@ const transitIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
   <path d="M3 10h18M8 16l-2 5M16 16l2 5M12 16v5"/>
 </svg>`;
 
-const carIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-  <path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l2-4h10l2 4h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/>
-  <circle cx="7.5" cy="17" r="2.5"/><circle cx="16.5" cy="17" r="2.5"/>
-</svg>`;
 
 const walkIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
   <circle cx="13" cy="4" r="2"/>
@@ -17,17 +13,18 @@ const walkIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" st
   <path d="M7 13.5l2-1.5 3 1 2-1.5"/>
 </svg>`;
 
-const bikeIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-  <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/>
-  <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5L9 3"/>
-  <path d="M6 17.5l3.5-7 2.5 4H18l-3-7.5"/>
+const walkTransitIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <circle cx="7" cy="6" r="2"/>
+  <path d="M5.5 12L7 8l2.5 1.5"/>
+  <path d="M8 12l2 3"/>
+  <rect x="13" y="5" width="8" height="7" rx="1.5"/>
+  <path d="M13 9h8"/>
 </svg>`;
 
 export const TRAVEL_MODES = [
   { id: 3, icon: transitIcon, label: "Транзит" },
-  { id: 0, icon: carIcon, label: "Авто" },
   { id: 2, icon: walkIcon, label: "Пішки" },
-  { id: 1, icon: bikeIcon, label: "Вело" },
+  { id: 4, icon: walkTransitIcon, label: "Пішки + транзит" },
 ];
 
 export function summarizeRoute(result: { legs?: RouteLeg[] } | null) {
