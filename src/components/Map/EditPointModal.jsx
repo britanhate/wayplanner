@@ -56,15 +56,15 @@ export default function EditPointModal({ point, onSave, onClose }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 3000 }}>
+    <div className="modal-overlay fade-in" onClick={onClose} style={{ zIndex: 3000 }}>
       <div
-        className="modal-box"
+        className="modal-box scale-in"
         onClick={(e) => e.stopPropagation()}
         style={{ position: "relative", zIndex: 3001 }}
       >
         <div className="modal-header">
           <div className="modal-title">Редагувати точку</div>
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close pressable" onClick={onClose}>
             ×
           </button>
         </div>
@@ -193,11 +193,11 @@ export default function EditPointModal({ point, onSave, onClose }) {
         </div>
 
         <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>
+          <button className="btn-secondary pressable" onClick={onClose}>
             Скасувати
           </button>
           <button
-            className="btn-primary"
+            className="btn-primary pressable"
             onClick={handleSave}
             disabled={!name.trim()}
           >

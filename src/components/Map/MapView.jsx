@@ -716,7 +716,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         </div>
       )}
 
-      <div className="map-sidebar">
+      <div className="map-sidebar slide-left">
         {searchOpen && (
           <div className="map-search-desktop-wrap">
             <SearchBox onResult={handleGeocodeResult} />
@@ -745,7 +745,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         </div>
 
         {routePanelOpen && routePickTarget && (
-          <div className="route-pick-wrap-top">
+          <div className="route-pick-wrap-top fade-in">
             <div className="rp-pick-hint active rp-pick-hint-row">
               <span className="flex items-center gap-2">
                 {Icons.pin} Оберіть точку зі списку
@@ -767,7 +767,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         <div ref={mapRef} className="leaflet-map" />
       </div>
 
-      <div className={`map-sheet ${snapClass}`}>
+      <div className={`map-sheet ${snapClass} slide-up`}>
         <div
           className="sheet-handle-wrap"
           onTouchStart={onTouchStart}
@@ -794,7 +794,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         </div>
 
         {routePanelOpen && routePickTarget && (
-          <div className="route-pick-wrap-bottom">
+          <div className="route-pick-wrap-bottom fade-in">
             <div className="rp-pick-hint active rp-pick-hint-row">
               <span className="flex items-center gap-2">
                 {Icons.pin} Оберіть точку зі списку
@@ -809,7 +809,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           </div>
         )}
 
-        <div className="sheet-scroll">{renderContent()}</div>
+        <div className="sheet-scroll fade-in">{renderContent()}</div>
       </div>
 
       {pendingPos && (

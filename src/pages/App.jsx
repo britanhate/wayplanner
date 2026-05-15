@@ -38,15 +38,17 @@ export default function App() {
         onMapStyleChange={setMapStyle}
       />
       <div className="app-content">
-        {activeTab === "map" && (
-          <MapView
-            searchOpen={searchOpen}
-            onSearchClose={() => setSearchOpen(false)}
-            mapStyle={mapStyle}
-          />
-        )}
-        {activeTab === "notes" && <NotesView />}
-        {activeTab === "finance" && <FinanceView />}
+        <div key={activeTab} className="tab-view fade-in">
+          {activeTab === "map" && (
+            <MapView
+              searchOpen={searchOpen}
+              onSearchClose={() => setSearchOpen(false)}
+              mapStyle={mapStyle}
+            />
+          )}
+          {activeTab === "notes" && <NotesView />}
+          {activeTab === "finance" && <FinanceView />}
+        </div>
       </div>
     </div>
   );
