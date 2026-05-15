@@ -9,7 +9,7 @@ export function usePoints() {
     // Initial fetch
     supabase
       .from('points')
-      .select('*')
+      .select('id, name, addr, lat, lng, type, description, comment, estimated_cost, currency, point_date, is_completed, created_by, attachments, created_at')
       .order('created_at', { ascending: true })
       .then(({ data }) => {
         setPoints(data || [])
