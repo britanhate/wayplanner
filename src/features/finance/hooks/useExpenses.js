@@ -4,11 +4,14 @@ import {
   fetchExpenses,
   fetchBudget,
   insertExpense,
+  insertExpenses,
   deleteExpenseById,
   updateExpenseById,
   deleteExpenseByPoint,
   upsertBudget,
+  fetchPointExpenses,
 } from "../api";
+import { fetchPoints } from "../../points/api";
 
 const PAGE_SIZE = 50;
 
@@ -94,6 +97,108 @@ export function useExpenses({ enabled = true } = {}) {
     if (error) throw error;
   };
 
+  const syncAllPointExpenses = async () => {
+    const [{ data: points, error: pointsError }, { data: pointExpenses, error: expensesError }] = await Promise.all([
+      fetchPoints(),
+      fetchPointExpenses(),
+    ]);
+
+    if (pointsError) throw pointsError;
+    if (expensesError) throw expensesError;
+
+    const expensesByPointId = new Map();
+    const duplicates = [];
+
+    (pointExpenses || []).forEach((expense) => {
+      if (!expense.point_id) return;
+      const key = expense.point_id;
+      const existing = expensesByPointId.get(key);
+      if (!existing) {
+        expensesByPointId.set(key, expense);
+        return;
+      }
+
+      existing.paid = Boolean(existing.paid || expense.paid);
+      duplicates.push(expense.id);
+    });
+
+    const toCreate = [];
+    const toDelete = [...duplicates];
+    const toUpdate = [];
+
+    (points || []).forEach((point) => {
+      const normalizedAmount = Number(point.estimated_cost ?? point.estimatedCost);
+      const hasCost = Number.isFinite(normalizedAmount) && normalizedAmount > 0;
+      const existingExpense = expensesByPointId.get(point.id);
+
+      if (!hasCost) {
+        if (existingExpense) toDelete.push(existingExpense.id);
+        return;
+      }
+
+      const nextName = `🏷️ ${point.name}`;
+      const nextCurrency = point.currency || "EUR";
+
+      if (!existingExpense) {
+        toCreate.push({
+          name: nextName,
+          amount: normalizedAmount,
+          currency: nextCurrency,
+          category: "Місце",
+          point_id: point.id,
+          created_by: point.created_by,
+          created_at: point.point_date || point.created_at,
+          paid: false,
+        });
+        return;
+      }
+
+      const payload = {
+        name: nextName,
+        amount: normalizedAmount,
+        currency: nextCurrency,
+        category: "Місце",
+        point_id: point.id,
+        created_by: point.created_by,
+      };
+
+      const shouldUpdate =
+        existingExpense.name !== payload.name ||
+        Number(existingExpense.amount) !== payload.amount ||
+        existingExpense.currency !== payload.currency ||
+        existingExpense.category !== payload.category ||
+        existingExpense.point_id !== payload.point_id ||
+        existingExpense.created_by !== payload.created_by;
+
+      if (shouldUpdate) {
+        toUpdate.push({ id: existingExpense.id, payload });
+      }
+    });
+
+    if (toDelete.length) {
+      const { error } = await supabase.from("expenses").delete().in("id", toDelete);
+      if (error) throw error;
+    }
+
+    if (toCreate.length) {
+      const { error } = await insertExpenses(toCreate);
+      if (error) throw error;
+    }
+
+    if (toUpdate.length) {
+      await Promise.all(
+        toUpdate.map(async ({ id, payload }) => {
+          const { error } = await updateExpenseById(id, payload);
+          if (error) throw error;
+        }),
+      );
+    }
+
+    if (enabled) {
+      await refresh();
+    }
+  };
+
   const saveBudget = async ({ amount, currency }) => {
     setBudgetState({ amount, currency });
     await upsertBudget({ id: 1, budget: amount, currency });
@@ -110,6 +215,7 @@ export function useExpenses({ enabled = true } = {}) {
     deleteExpense,
     updateExpense,
     deleteExpenseByPointId,
+    syncAllPointExpenses,
     saveBudget,
   };
 }
