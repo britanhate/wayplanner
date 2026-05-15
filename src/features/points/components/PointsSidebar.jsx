@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { POINT_TYPES } from "../../../lib/constants";
 import { filterAndSortPoints, getUserInfo } from "./pointsSidebarUtils";
 import { useAuth } from "../../../lib/AuthContext";
@@ -124,7 +124,7 @@ const Icons = {
   ),
 };
 
-export default function PointsSidebar({
+function PointsSidebar({
   points,
   onFly,
   onDelete,
@@ -304,3 +304,5 @@ export default function PointsSidebar({
     </aside>
   );
 }
+
+export default memo(PointsSidebar);

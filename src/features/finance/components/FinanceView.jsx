@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../lib/AuthContext";
 import { useExpenses } from "../hooks/useExpenses";
 import {
@@ -57,32 +57,33 @@ export default function FinanceView() {
   // ── Рахуємо тільки витрати у валюті бюджету ──
   const budgetCurrency = currentCurrency;
 
-  const expensesInBudgetCurrency = expenses.filter(
-    (e) => (e.currency || budgetCurrency) === budgetCurrency,
+  const expensesInBudgetCurrency = useMemo(
+    () => expenses.filter((e) => (e.currency || budgetCurrency) === budgetCurrency),
+    [budgetCurrency, expenses],
   );
-  const expensesOther = expenses.filter(
-    (e) => (e.currency || budgetCurrency) !== budgetCurrency,
+  const expensesOther = useMemo(
+    () => expenses.filter((e) => (e.currency || budgetCurrency) !== budgetCurrency),
+    [budgetCurrency, expenses],
   );
 
-  const total = expensesInBudgetCurrency.reduce(
-    (s, e) => s + (e.amount || 0),
-    0,
-  );
-  const totalPaid = expensesInBudgetCurrency.reduce(
-    (s, e) => s + (e.paid ? e.amount || 0 : 0),
-    0,
-  );
-  const totalUnpaid = total - totalPaid;
-  const pct =
-    budget.amount > 0
-      ? Math.min(100, Math.round((total / budget.amount) * 100))
-      : 0;
-
-  // Категорії — тільки по валюті бюджету
-  const catTotals = {};
-  expensesInBudgetCurrency.forEach((e) => {
-    catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
-  });
+  const { total, totalPaid, totalUnpaid, pct, catTotals } = useMemo(() => {
+    const nextCatTotals = {};
+    let nextTotal = 0;
+    let nextPaid = 0;
+    expensesInBudgetCurrency.forEach((e) => {
+      const amountValue = e.amount || 0;
+      nextTotal += amountValue;
+      if (e.paid) nextPaid += amountValue;
+      nextCatTotals[e.category] = (nextCatTotals[e.category] || 0) + amountValue;
+    });
+    return {
+      total: nextTotal,
+      totalPaid: nextPaid,
+      totalUnpaid: nextTotal - nextPaid,
+      pct: budget.amount > 0 ? Math.min(100, Math.round((nextTotal / budget.amount) * 100)) : 0,
+      catTotals: nextCatTotals,
+    };
+  }, [budget.amount, expensesInBudgetCurrency]);
 
   const getUserInfo = (id) =>
     USERS.find((u) => u.id === id) || {
@@ -328,63 +329,17 @@ export default function FinanceView() {
                 const isOtherCurrency = expCurrency !== budgetCurrency;
 
                 return (
-                  <div
+                  <ExpenseItem
                     key={e.id}
-                    className={`expense-item ${e.paid ? "paid" : ""}`}
-                    style={
-                      isOtherCurrency
-                        ? {
-                            borderColor: "rgba(255,159,10,0.2)",
-                            background: "rgba(255,159,10,0.04)",
-                          }
-                        : {}
-                    }
-                  >
-                    <input
-                      type="checkbox"
-                      className="expense-checkbox"
-                      checked={e.paid || false}
-                      onChange={() => togglePaid(e)}
-                    />
-                    <div
-                      className="expense-cat-dot"
-                      style={{ background: col }}
-                    />
-                    <div className="expense-info">
-                      <div className="expense-name">{e.name}</div>
-                      <div className="expense-meta">
-                        <span
-                          className="expense-meta-creator"
-                          style={{ color: creator.color }}
-                        >
-                          {creator.avatar} {creator.name}
-                        </span>
-                        <span> · {e.category}</span>
-                        <span>
-                          {" "}
-                          · {new Date(e.created_at).toLocaleDateString("uk-UA")}
-                        </span>
-                        {isOtherCurrency && (
-                          <span className="expense-meta-warning">
-                            {" "}
-                            · ⚠️ {expCurrency}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="expense-amount">
-                      {e.amount?.toFixed(0)}{" "}
-                      <span className="text-small">{expCurrency}</span>
-                    </div>
-                    {e.created_by === user.id && (
-                      <button
-                        className="expense-del"
-                        onClick={() => deleteExpense(e.id)}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
+                    expense={e}
+                    creator={creator}
+                    categoryColor={col}
+                    expCurrency={expCurrency}
+                    isOtherCurrency={isOtherCurrency}
+                    isOwner={e.created_by === user.id}
+                    onTogglePaid={togglePaid}
+                    onDelete={deleteExpense}
+                  />
                 );
               })
             )}
@@ -504,3 +459,50 @@ export default function FinanceView() {
     </div>
   );
 }
+
+const ExpenseItem = memo(function ExpenseItem({
+  expense,
+  creator,
+  categoryColor,
+  expCurrency,
+  isOtherCurrency,
+  isOwner,
+  onTogglePaid,
+  onDelete,
+}) {
+  return (
+    <div
+      className={`expense-item ${expense.paid ? "paid" : ""}`}
+      style={
+        isOtherCurrency
+          ? {
+              borderColor: "rgba(255,159,10,0.2)",
+              background: "rgba(255,159,10,0.04)",
+            }
+          : {}
+      }
+    >
+      <input type="checkbox" className="expense-checkbox" checked={expense.paid || false} onChange={() => onTogglePaid(expense)} />
+      <div className="expense-cat-dot" style={{ background: categoryColor }} />
+      <div className="expense-info">
+        <div className="expense-name">{expense.name}</div>
+        <div className="expense-meta">
+          <span className="expense-meta-creator" style={{ color: creator.color }}>
+            {creator.avatar} {creator.name}
+          </span>
+          <span> · {expense.category}</span>
+          <span> · {new Date(expense.created_at).toLocaleDateString("uk-UA")}</span>
+          {isOtherCurrency && <span className="expense-meta-warning"> · ⚠️ {expCurrency}</span>}
+        </div>
+      </div>
+      <div className="expense-amount">
+        {expense.amount?.toFixed(0)} <span className="text-small">{expCurrency}</span>
+      </div>
+      {isOwner && (
+        <button className="expense-del" onClick={() => onDelete(expense.id)}>
+          ×
+        </button>
+      )}
+    </div>
+  );
+});

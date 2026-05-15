@@ -7,16 +7,39 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 export function useBottomSheetSwipe(initialSnap = "collapsed") {
   const [snap, setSnap] = useState(initialSnap);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragTranslateY, setDragTranslateY] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [snapPoints, setSnapPoints] = useState({ expanded: 0, collapsed: 0, min: 0, max: 0 });
+  const [sheetStyle, setSheetStyle] = useState({
+    transform: "translateY(0px)",
+    transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+  });
 
   const sheetRef = useRef(null);
   const scrollRef = useRef(null);
+  const isDraggingRef = useRef(false);
   const dragStartYRef = useRef(0);
   const dragStartTranslateRef = useRef(0);
   const activePointerIdRef = useRef(null);
+  const liveTranslateYRef = useRef(0);
+  const rafIdRef = useRef(null);
+
+  const flushTransform = useCallback((transition) => {
+    if (!sheetRef.current) return;
+    sheetRef.current.style.transition = transition;
+    sheetRef.current.style.transform = `translateY(${liveTranslateYRef.current}px)`;
+    setSheetStyle({
+      transform: `translateY(${liveTranslateYRef.current}px)`,
+      transition,
+    });
+  }, []);
+
+  const scheduleTransform = useCallback((transition = "none") => {
+    if (rafIdRef.current) return;
+    rafIdRef.current = window.requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      flushTransform(transition);
+    });
+  }, [flushTransform]);
 
   const recalcSnapPoints = useCallback(() => {
     const height = sheetRef.current?.getBoundingClientRect().height ?? 0;
@@ -25,7 +48,11 @@ export function useBottomSheetSwipe(initialSnap = "collapsed") {
   }, []);
 
   const currentSnapTranslate = snapPoints[snap] ?? snapPoints.collapsed;
-  const translateY = dragTranslateY ?? currentSnapTranslate;
+
+  useEffect(() => {
+    liveTranslateYRef.current = currentSnapTranslate;
+    scheduleTransform("transform 220ms cubic-bezier(0.22, 1, 0.36, 1)");
+  }, [currentSnapTranslate, scheduleTransform]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -58,10 +85,10 @@ export function useBottomSheetSwipe(initialSnap = "collapsed") {
       if (!isMobile) return;
       activePointerIdRef.current = pointerId;
       dragStartYRef.current = clientY;
-      dragStartTranslateRef.current = translateY;
-      setIsDragging(true);
+      dragStartTranslateRef.current = liveTranslateYRef.current;
+      isDraggingRef.current = true;
     },
-    [isMobile, translateY],
+    [isMobile],
   );
 
   const onDragAreaPointerDown = useCallback((e) => {
@@ -75,29 +102,28 @@ export function useBottomSheetSwipe(initialSnap = "collapsed") {
   }, [isMobile, startDrag]);
 
   const onPointerMove = useCallback((e) => {
-    if (!isDragging || activePointerIdRef.current !== e.pointerId || !isMobile) return;
+    if (!isDraggingRef.current || activePointerIdRef.current !== e.pointerId || !isMobile) return;
     e.preventDefault();
     const dy = e.clientY - dragStartYRef.current;
     const { min, max } = snapPoints;
-    setDragTranslateY(clamp(dragStartTranslateRef.current + dy, min, max));
-  }, [isDragging, isMobile, snapPoints]);
+    liveTranslateYRef.current = clamp(dragStartTranslateRef.current + dy, min, max);
+    scheduleTransform("none");
+  }, [isMobile, scheduleTransform, snapPoints]);
 
   const onPointerUp = useCallback((e) => {
     if (activePointerIdRef.current !== e.pointerId || !isMobile) return;
-    const finalY = dragTranslateY ?? currentSnapTranslate;
+    const finalY = liveTranslateYRef.current;
     const midpoint = (snapPoints.collapsed + snapPoints.expanded) / 2;
     const dy = e.clientY - dragStartYRef.current;
 
     const nextSnap = dy < -8 || finalY < midpoint ? "expanded" : "collapsed";
 
     setSnap(nextSnap);
-    setDragTranslateY(null);
-    setIsDragging(false);
+    isDraggingRef.current = false;
     activePointerIdRef.current = null;
-  }, [currentSnapTranslate, dragTranslateY, isMobile, snapPoints]);
+  }, [isMobile, snapPoints]);
 
   useEffect(() => {
-    if (!isDragging) return;
     window.addEventListener("pointermove", onPointerMove, { passive: false });
     window.addEventListener("pointerup", onPointerUp);
     window.addEventListener("pointercancel", onPointerUp);
@@ -105,8 +131,11 @@ export function useBottomSheetSwipe(initialSnap = "collapsed") {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("pointercancel", onPointerUp);
+      if (rafIdRef.current) {
+        window.cancelAnimationFrame(rafIdRef.current);
+      }
     };
-  }, [isDragging, onPointerMove, onPointerUp]);
+  }, [onPointerMove, onPointerUp]);
 
   return {
     snap,
@@ -115,9 +144,6 @@ export function useBottomSheetSwipe(initialSnap = "collapsed") {
     scrollRef,
     onDragAreaPointerDown,
     onScrollPointerDown,
-    sheetStyle: {
-      transform: `translateY(${translateY}px)`,
-      transition: isDragging ? "none" : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
-    },
+    sheetStyle,
   };
 }
