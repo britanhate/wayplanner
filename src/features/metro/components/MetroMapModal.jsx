@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import CalciteIcon from "../../../shared/ui/CalciteIcon";
 
 const ZOOM_LEVELS = [1, 1.25, 1.5, 2, 3];
 
@@ -100,16 +101,17 @@ export default function MetroMapModal({
         aria-label={`${city.name} metro map viewer`}
       >
         <div className="metro-modal-header">
-          <div className="metro-modal-title">{city.name}</div>
-          <button className="metro-modal-close" onClick={onClose} aria-label="Close metro map">
-            ✕
-          </button>
-        </div>
-
-        <div className="metro-modal-controls">
-          <button onClick={onZoomOut} disabled={scale === minScale}>−</button>
-          <button onClick={onZoomIn} disabled={scale === maxScale}>+</button>
-          <button onClick={onResetZoom} disabled={scale === 1}>Reset</button>
+          <div className="metro-modal-header-left">
+            <button className="metro-modal-close" onClick={onClose} aria-label="Close metro map">
+              <CalciteIcon name="close" size={17} />
+            </button>
+            <div className="metro-modal-title">{city.name} Metro</div>
+          </div>
+          <div className="metro-modal-controls">
+            <button onClick={onZoomIn} disabled={scale === maxScale} aria-label="Zoom in"><CalciteIcon name="add" /></button>
+            <button onClick={onZoomOut} disabled={scale === minScale} aria-label="Zoom out"><CalciteIcon name="minus" /></button>
+            <button onClick={onResetZoom} disabled={scale === 1} aria-label="Reset zoom"><CalciteIcon name="reset" /></button>
+          </div>
         </div>
 
         <div ref={imageWrapRef} className="metro-modal-image-wrap">
