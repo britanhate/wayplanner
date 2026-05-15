@@ -1,3 +1,5 @@
+import type { RouteLeg } from "../../../shared/types/domain";
+
 const transitIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
   <rect x="3" y="3" width="18" height="13" rx="3"/>
   <path d="M3 10h18M8 16l-2 5M16 16l2 5M12 16v5"/>
@@ -23,30 +25,28 @@ const bikeIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" st
 
 export const TRAVEL_MODES = [
   { id: 3, icon: transitIcon, label: "Транзит" },
-  { id: 0, icon: carIcon,     label: "Авто"   },
-  { id: 2, icon: walkIcon,    label: "Пішки"  },
-  { id: 1, icon: bikeIcon,    label: "Вело"   },
+  { id: 0, icon: carIcon, label: "Авто" },
+  { id: 2, icon: walkIcon, label: "Пішки" },
+  { id: 1, icon: bikeIcon, label: "Вело" },
 ];
 
-export function summarizeRoute(result) {
+export function summarizeRoute(result: { legs?: RouteLeg[] } | null) {
   if (!result?.legs?.length) return null;
   return result.legs.reduce(
     (acc, leg) => ({
-      dur:  acc.dur  + (leg.totalDurSec || 0),
-      dist: acc.dist + (leg.totalDistM  || 0),
+      dur: acc.dur + (leg.totalDurSec || 0),
+      dist: acc.dist + (leg.totalDistM || 0),
     }),
     { dur: 0, dist: 0 },
   );
 }
 
-export function formatDuration(sec) {
+export function formatDuration(sec: number): string {
   const h = Math.floor(sec / 3600);
   const m = Math.round((sec % 3600) / 60);
   return h > 0 ? `${h} год ${m} хв` : `${m} хв`;
 }
 
-export function formatDistance(meters) {
-  return meters >= 1000
-    ? `${(meters / 1000).toFixed(1)} км`
-    : `${meters} м`;
+export function formatDistance(meters: number): string {
+  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} км` : `${meters} м`;
 }
