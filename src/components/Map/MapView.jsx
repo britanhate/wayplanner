@@ -119,8 +119,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const tileLayerRef = useRef(null);
   const routePickTargetRef = useRef(null);
 
-  const { snap, setSnap, onTouchStart, onTouchEnd } =
-    useBottomSheetSwipe("keep");
+  const {
+    snap,
+    sheetRef,
+    scrollRef,
+    onHandlePointerDown,
+    onScrollPointerDown,
+    sheetStyle,
+  } = useBottomSheetSwipe("keep");
 
   const [pendingPos, setPendingPos] = useState(null);
   const [geocoded, setGeocoded] = useState(null);
@@ -659,7 +665,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setRoutePickTarget(null);
   };
 
-  const snapClass = snap === "full" ? "sheet-full" : "sheet-keep";
+  const snapClass = snap === "full" ? "sheet-full" : snap === "half" ? "sheet-half" : "sheet-keep";
 
   const renderContent = () => {
     if (routePanelOpen && routePickTarget) {
@@ -767,11 +773,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         <div ref={mapRef} className="leaflet-map" />
       </div>
 
-      <div className={`map-sheet ${snapClass} slide-up`}>
+      <div ref={sheetRef} className={`map-sheet ${snapClass} slide-up`} style={sheetStyle}>
         <div
           className="sheet-handle-wrap"
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
+          onPointerDown={onHandlePointerDown}
         >
           <div className="sheet-handle" />
         </div>
@@ -809,7 +814,13 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           </div>
         )}
 
-        <div className="sheet-scroll fade-in">{renderContent()}</div>
+        <div
+          ref={scrollRef}
+          className="sheet-scroll fade-in"
+          onPointerDown={onScrollPointerDown}
+        >
+          {renderContent()}
+        </div>
       </div>
 
       {pendingPos && (
