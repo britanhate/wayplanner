@@ -11,12 +11,12 @@ type UsePointsResult = {
   updatePoint: (id: number, updates: Partial<Point>) => Promise<void>;
 };
 
-export function usePoints(): UsePointsResult {
+export function usePoints(tripId?: string | null): UsePointsResult {
   const [points, setPoints] = useState<Point[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPoints().then(({ data }) => {
+    fetchPoints(tripId).then(({ data }) => {
       setPoints((data as Point[]) || []);
       setLoading(false);
     });
@@ -37,7 +37,7 @@ export function usePoints(): UsePointsResult {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [tripId]);
 
   const addPoint = async (point: Partial<Point>) => {
     const { error } = await insertPoint(point);

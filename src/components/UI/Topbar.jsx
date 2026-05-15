@@ -214,12 +214,29 @@ export default function Topbar({
   onSearchToggle,
   mapStyle,
   onMapStyleChange,
+  trips = [],
+  activeTrip,
+  onTripChange,
+  onTripCreate,
+  onTripRename,
 }) {
   const { logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [styleOpen, setStyleOpen] = useState(false);
   const menuRef = useRef(null);
   const styleRef = useRef(null);
+
+
+  const handleCreateTrip = async () => {
+    const name = window.prompt("Назва подорожі", "My Trip");
+    if (name) await onTripCreate?.(name);
+  };
+
+  const handleRenameTrip = async () => {
+    if (!activeTrip) return;
+    const name = window.prompt("Нова назва", activeTrip.name);
+    if (name) await onTripRename?.(activeTrip.id, name);
+  };
 
   useEffect(() => {
     const handler = (e) => {
@@ -238,6 +255,13 @@ export default function Topbar({
 
   return (
     <header className="topbar-ios">
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginRight: 8 }}>
+        <select className="field-sel" value={activeTrip?.id || ""} onChange={(e) => onTripChange?.(trips.find((t) => t.id === e.target.value) || null)}>
+          {trips.map((trip) => (<option key={trip.id} value={trip.id}>{trip.name}</option>))}
+        </select>
+        <button className="topbar-btn pressable" onClick={handleCreateTrip} title="Create trip">+</button>
+        <button className="topbar-btn pressable" onClick={handleRenameTrip} title="Rename trip">✎</button>
+      </div>
       <div className="topbar-left">
         {/* NAV MENU (tabs) */}
         <div className="pos-relative" ref={menuRef}>

@@ -131,10 +131,10 @@ const Icons = {
 };
 
 
-export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
+export default function MapView({ searchOpen, onSearchClose, mapStyle, activeTrip }) {
   const { user } = useAuth();
-  const { points, loading: pointsLoading, deletePoint, updatePoint } = usePoints();
-  const { addExpense, deleteExpense, updateExpense, deleteExpenseByPointId } = useExpenses({ enabled: false });
+  const { points, loading: pointsLoading, deletePoint, updatePoint } = usePoints(activeTrip?.id);
+  const { addExpense, deleteExpense, updateExpense, deleteExpenseByPointId } = useExpenses({ enabled: false, tripId: activeTrip?.id });
 
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -582,6 +582,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       .from("expenses")
       .select("id")
       .eq("point_id", pointId)
+      .or(activeTrip?.id ? `trip_id.eq.${activeTrip.id},trip_id.is.null` : "id.not.is.null")
       .order("created_at", { ascending: true });
 
     if (loadExpenseError) throw loadExpenseError;
@@ -607,6 +608,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         ...payload,
         created_by: user.id,
         point_id: pointId,
+        trip_id: activeTrip?.id,
       });
       return;
     }
@@ -634,7 +636,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     try {
       const { data: inserted, error } = await supabase
         .from("points")
-        .insert([{ ...data, created_by: user.id }])
+        .insert([{ ...data, created_by: user.id, trip_id: activeTrip?.id }])
         .select()
         .single();
       if (error) throw error;
