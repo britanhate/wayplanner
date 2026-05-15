@@ -1,4 +1,6 @@
 import { Suspense, lazy, useState, useEffect } from "react";
+import { useAuth } from "../lib/AuthContext";
+import { useTrips } from "../features/trips/hooks/useTrips";
 import Topbar from "../components/UI/Topbar";
 import PwaStatus from "../components/UI/PwaStatus";
 import MapView from "../features/map/components/MapView";
@@ -8,6 +10,8 @@ import { logSlowInteraction } from "../shared/lib/perf";
 const FinanceView = lazy(() => import("../features/finance/components/FinanceView"));
 
 export default function App() {
+  const { user } = useAuth();
+  const { trips, activeTrip, setActiveTrip, addTrip, updateTripName, tripsError } = useTrips(user?.id);
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem("activeTab") || "map";
   });
@@ -40,6 +44,12 @@ export default function App() {
         onSearchToggle={() => setSearchOpen((v) => !v)}
         mapStyle={mapStyle}
         onMapStyleChange={setMapStyle}
+        trips={trips}
+        activeTrip={activeTrip}
+        onTripChange={setActiveTrip}
+        onTripCreate={addTrip}
+        onTripRename={updateTripName}
+        tripsError={tripsError}
       />
       <PwaStatus />
       <div className="app-content">
@@ -49,11 +59,12 @@ export default function App() {
               searchOpen={searchOpen}
               onSearchClose={() => setSearchOpen(false)}
               mapStyle={mapStyle}
+              activeTrip={activeTrip}
             />
           )}
           {activeTab === "finance" && (
             <Suspense fallback={<div className="p-panel fade-in">Завантаження фінансів...</div>}>
-              <FinanceView />
+              <FinanceView activeTrip={activeTrip} />
             </Suspense>
           )}
         </div>

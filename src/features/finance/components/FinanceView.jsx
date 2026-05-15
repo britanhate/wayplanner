@@ -12,7 +12,7 @@ import { markPerf, measurePerf } from "../../../shared/lib/perf";
 
 let hasAutoSyncedPointCosts = false;
 
-export default function FinanceView() {
+export default function FinanceView({ activeTrip }) {
   const { user } = useAuth();
   const {
     expenses,
@@ -23,7 +23,7 @@ export default function FinanceView() {
     saveBudget,
     loading,
     syncAllPointExpenses,
-  } = useExpenses();
+  } = useExpenses({ tripId: activeTrip?.id });
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -110,6 +110,7 @@ export default function FinanceView() {
       created_by: user.id,
       currency: budgetCurrency,
       paid: false,
+      trip_id: activeTrip?.id,
     });
     setName("");
     setAmount("");

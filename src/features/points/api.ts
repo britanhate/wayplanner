@@ -12,12 +12,15 @@ export type PointRow = Point & {
   created_at?: string | null;
 };
 
-export const fetchPoints = () =>
+export const fetchPoints = (tripId?: string | null) =>
   debugSupabaseFetch({
     table: 'points',
     columns: POINT_FIELDS,
     action: 'select',
-    query: () => supabase.from('points').select(POINT_FIELDS).order('created_at', { ascending: true }),
+    query: () => {
+      const query = supabase.from('points').select(POINT_FIELDS).order('created_at', { ascending: true });
+      return tripId ? query.or(`trip_id.eq.${tripId},trip_id.is.null`) : query;
+    },
   });
 
 export const insertPoint = (point: Partial<PointRow>) => supabase.from('points').insert([point]).select('id').single();

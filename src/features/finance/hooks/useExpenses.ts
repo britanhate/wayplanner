@@ -19,7 +19,7 @@ const PAGE_SIZE = 50;
 
 type ExpenseRow = Expense & { name?: string; paid?: boolean; id: number; point_id?: number | null; created_at?: string };
 type BudgetPayload = { amount: number; currency: string };
-type UseExpensesOptions = { enabled?: boolean };
+type UseExpensesOptions = { enabled?: boolean; tripId?: string | null };
 type UseExpensesResult = {
   expenses: ExpenseRow[];
   budget: BudgetPayload;
@@ -35,7 +35,7 @@ type UseExpensesResult = {
   saveBudget: (payload: BudgetPayload) => Promise<void>;
 };
 
-export function useExpenses({ enabled = true }: UseExpensesOptions = {}): UseExpensesResult {
+export function useExpenses({ enabled = true, tripId }: UseExpensesOptions = {}): UseExpensesResult {
   const [expenses, setExpenses] = useState<ExpenseRow[]>([]);
   const [budget, setBudgetState] = useState<BudgetPayload>({ amount: 0, currency: 'UAH' });
   const [loading, setLoading] = useState(enabled);
@@ -45,11 +45,11 @@ export function useExpenses({ enabled = true }: UseExpensesOptions = {}): UseExp
   const loadExpensesPage = useCallback(async (pageToLoad = 0, append = false) => {
     const from = pageToLoad * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    const { data } = await fetchExpenses({ from, to });
+    const { data } = await fetchExpenses({ from, to, tripId });
     const nextData = (data as ExpenseRow[]) || [];
     setHasMore(nextData.length === PAGE_SIZE);
     setExpenses(prev => (append ? [...prev, ...nextData] : nextData));
-  }, []);
+  }, [tripId]);
 
   const loadMore = useCallback(async () => {
     const nextPage = page + 1;
@@ -111,7 +111,7 @@ export function useExpenses({ enabled = true }: UseExpensesOptions = {}): UseExp
   };
 
   const syncAllPointExpenses = async () => {
-    const [{ data: points, error: pointsError }, { data: pointExpenses, error: expensesError }] = await Promise.all([fetchPoints(), fetchPointExpenses()]);
+    const [{ data: points, error: pointsError }, { data: pointExpenses, error: expensesError }] = await Promise.all([fetchPoints(tripId), fetchPointExpenses(tripId)]);
     if (pointsError) throw pointsError;
     if (expensesError) throw expensesError;
     const expensesByPointId = new Map<number, ExpenseRow>();
@@ -140,7 +140,7 @@ export function useExpenses({ enabled = true }: UseExpensesOptions = {}): UseExp
       const nextName = `🏷️ ${point.name}`;
       const nextCurrency = point.currency || 'EUR';
       if (!existingExpense) {
-        toCreate.push({ name: nextName, amount: normalizedAmount, currency: nextCurrency, category: 'Місце', point_id: point.id, created_by: point.created_by, created_at: point.point_date || point.created_at, paid: false });
+        toCreate.push({ name: nextName, amount: normalizedAmount, currency: nextCurrency, category: 'Місце', point_id: point.id, created_by: point.created_by, created_at: point.point_date || point.created_at, paid: false, trip_id: tripId });
         return;
       }
       const payload: Partial<ExpenseRow> = { name: nextName, amount: normalizedAmount, currency: nextCurrency, category: 'Місце', point_id: point.id, created_by: point.created_by };
