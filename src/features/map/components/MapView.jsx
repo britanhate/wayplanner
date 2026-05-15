@@ -9,6 +9,7 @@ import { supabase } from "../../../lib/supabase";
 import { POINT_TYPES } from "../../../lib/constants";
 import { createTileLayer, getPointImageSrc, getRouteSegmentStyle } from "../lib/mapUtils";
 import SearchBox from "./SearchBox";
+import { reverseGeocode, buildMultiStopRoute } from "../../../lib/arcgis";
 import PointsSidebar from "../../points/components/PointsSidebar";
 import AddPointModal from "../../points/components/AddPointModal";
 import EditPointModal from "../../points/components/EditPointModal";
@@ -181,10 +182,17 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     map.on("click", (e) => {
       const { lat, lng } = e.latlng;
       setPreviewPos({ lat, lng });
-      setGeocoded({
-        name: "Обране місце",
-        addr: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
-      });
+      (async () => {
+        try {
+          const place = await reverseGeocode(lat, lng);
+          setGeocoded(place);
+        } catch {
+          setGeocoded({
+            name: "Обране місце",
+            addr: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+          });
+        }
+      })();
     });
 
     // ВАЖЛИВО: Видаляємо дані прев'ю, коли попап закривається (хрестиком або кліком мимо)
@@ -468,39 +476,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     return null;
   }, []);
 
-  const fetchPublicRouteGeometry = useCallback(
-    async (waypoints, travelMode) => {
-      if (!Array.isArray(waypoints) || waypoints.length < 2)
-        return { coords: [], steps: [] };
-      const profile =
-        travelMode === 2 ? "walking" : travelMode === 1 ? "cycling" : "driving";
-      const coordsStr = waypoints.map((wp) => `${wp.lng},${wp.lat}`).join(";");
-      const url = `https://router.project-osrm.org/route/v1/${profile}/${coordsStr}?alternatives=false&overview=full&geometries=geojson&steps=true`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`OSRM error: ${res.status}`);
-      const data = await res.json();
-      const geometry = data?.routes?.[0]?.geometry?.coordinates || [];
-      const coords = geometry
-        .map((pt) =>
-          Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null,
-        )
-        .filter(Boolean);
-      const steps = (data?.routes?.[0]?.legs || [])
-        .flatMap((leg) => leg.steps || [])
-        .map((step) => {
-          const loc = step?.maneuver?.location;
-          return {
-            mode: step?.mode || profile,
-            instruction: step?.maneuver?.instruction || "",
-            lat: Array.isArray(loc) ? loc[1] : null,
-            lng: Array.isArray(loc) ? loc[0] : null,
-          };
-        })
-        .filter((s) => s.lat != null && s.lng != null);
-      return { coords, steps };
-    },
-    [],
-  );
 
   const handleSegmentSelect = useCallback((segment) => {
     if (!segment) return;
@@ -549,84 +524,40 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     if (routeWaypoints.length < 2) return;
     setRouteBuilding(true);
     try {
-      const [serpapi, publicRoute] = await Promise.all([
-        import("../../../lib/serpapi"),
-        fetchPublicRouteGeometry(routeWaypoints, travelMode),
-      ]);
-      const data = await serpapi.fetchDirections(routeWaypoints, travelMode);
-      const legs = data.legs.map((leg) => {
-        const parsed = serpapi.parseLeg(leg);
-        return {
-          from: leg.from,
-          to: leg.to,
-          totalDurFmt: parsed?.totalDurFmt || "—",
-          totalDistFmt: parsed?.totalDistFmt || "—",
-          totalDurSec: parsed?.totalDurSec || 0,
-          totalDistM: parsed?.totalDistM || 0,
-          via: parsed?.via || "",
-          segments: parsed?.segments || [],
-          steps: parsed?.steps || [],
-        };
-      });
-      const segments = legs.flatMap((l) => l.segments || []);
-      const transfers = Math.max(0, segments.filter((s) => s.type !== "walk").length - 1);
-      setRouteResult({ legs, segments, transfers });
+      const selectedMode = travelMode === 2 ? "walk" : "transit";
+      const route = await buildMultiStopRoute(routeWaypoints, selectedMode);
+      const coords = (route.paths || []).flatMap((path) =>
+        Array.isArray(path)
+          ? path.map((pt) =>
+              Array.isArray(pt) && pt.length >= 2 ? [pt[1], pt[0]] : null,
+            ).filter(Boolean)
+          : [],
+      );
+
+      const legs = [
+        {
+          from: routeWaypoints[0],
+          to: routeWaypoints[routeWaypoints.length - 1],
+          totalDurFmt: route.totalMin ? `${route.totalMin} хв` : "—",
+          totalDistFmt: route.totalKm ? `${route.totalKm.toFixed(1)} км` : "—",
+          totalDurSec: (route.totalMin || 0) * 60,
+          totalDistM: (route.totalKm || 0) * 1000,
+          segments: route.segments || [],
+          steps: route.segments || [],
+        },
+      ];
+      setRouteResult({ legs, segments: route.segments || [], transfers: route.transfers || 0 });
 
       clearRouteLines();
+      if (coords.length > 1) {
+        const pl = L.polyline(coords, getRouteSegmentStyle(selectedMode === "walk" ? "walk" : "transit", false)).addTo(mapInstance.current);
+        pl.__segmentType = selectedMode === "walk" ? "walk" : "transit";
+        routeLayers.current.push(pl);
+        segmentLayerMap.current.set("arcgis-main-route", pl);
+      }
 
-      const legCoordsList = data.legs.map((leg) => extractRouteCoords(leg)).map((coords, legIdx) => {
-        if (Array.isArray(coords) && coords.length > 1) return coords;
-        if (publicRoute.coords.length > 1) {
-          const a = routeWaypoints[legIdx];
-          const b = routeWaypoints[legIdx + 1];
-          return publicRoute.coords.filter((pt) => Array.isArray(pt) && pt.length === 2) || (a && b ? [[a.lat, a.lng], [b.lat, b.lng]] : []);
-        }
-        const a = routeWaypoints[legIdx];
-        const b = routeWaypoints[legIdx + 1];
-        return a && b ? [[a.lat, a.lng], [b.lat, b.lng]] : [];
-      });
-
-      legs.forEach((leg, legIdx) => {
-        const legCoords = legCoordsList[legIdx] || [];
-        if (legCoords.length < 2) return;
-        const legSegments = leg.segments || [];
-        if (!legSegments.length) {
-          const fallbackId = `leg-${legIdx}-fallback`;
-          const pl = L.polyline(legCoords, getRouteSegmentStyle("unknown", false)).addTo(mapInstance.current);
-          pl.__segmentType = "unknown";
-          routeLayers.current.push(pl);
-          segmentLayerMap.current.set(fallbackId, pl);
-          return;
-        }
-
-        legSegments.forEach((segment, segIdx) => {
-          let coords = [];
-          if (Array.isArray(segment.polyline) && segment.polyline.length > 1) {
-            const first = segment.polyline[0];
-            coords = segment.polyline
-              .map((pt) =>
-                Array.isArray(pt) && pt.length >= 2
-                  ? Math.abs(first[0]) <= 90
-                    ? [pt[0], pt[1]]
-                    : [pt[1], pt[0]]
-                  : null,
-              )
-              .filter(Boolean);
-          }
-
-          if (coords.length < 2) {
-            const total = legSegments.length;
-            const start = Math.floor((segIdx / total) * (legCoords.length - 1));
-            const end = Math.max(start + 1, Math.floor(((segIdx + 1) / total) * (legCoords.length - 1)));
-            coords = legCoords.slice(start, end + 1);
-          }
-
-          if (coords.length < 2) return;
-          const pl = L.polyline(coords, getRouteSegmentStyle(segment.type, false)).addTo(mapInstance.current);
-          pl.__segmentType = segment.type;
-          routeLayers.current.push(pl);
-          segmentLayerMap.current.set(segment.id, pl);
-        });
+      (route.segments || []).forEach((segment) => {
+        segmentLayerMap.current.set(segment.id, routeLayers.current[0] || null);
       });
 
       if (routeLayers.current.length) {
