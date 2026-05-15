@@ -613,21 +613,24 @@
 
 @media (max-width: 767px) {
   .map-toast {
-    top: calc(72px + env(safe-area-inset-top, 0px));
+    top: calc(104px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translateX(-50%);
     bottom: auto;
-    max-width: calc(100vw - 32px);
-    padding: 8px 12px;
+    max-width: calc(100vw - 48px);
+    padding: 7px 11px;
     font-size: 12px;
+    border-radius: 999px;
     z-index: 1250;
   }
 
   .map-toast-secondary {
-    top: calc(112px + env(safe-area-inset-top, 0px));
+    top: calc(154px + env(safe-area-inset-top, 0px));
     bottom: auto;
   }
 
   .map-toast-warning {
-    top: calc(152px + env(safe-area-inset-top, 0px));
+    top: calc(190px + env(safe-area-inset-top, 0px));
     bottom: auto;
   }
 }
