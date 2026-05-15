@@ -164,3 +164,9 @@ header[style] {
 
 /* Misc */
 .pos-relative { position: relative; }
+
+
+.topbar-trip{display:flex;align-items:center;gap:8px;min-width:0;flex:1;justify-content:center;}
+.topbar-trip-select{height:36px;max-width:220px;min-width:120px;width:100%;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:0 10px;}
+.topbar-trip-error{position:absolute;top:100%;left:12px;right:12px;margin-top:6px;color:#ffb4b4;font-size:12px;background:rgba(50,0,0,.6);padding:6px 8px;border-radius:8px;}
+@media (max-width: 768px){.topbar-trip{max-width:48%;}.topbar-trip-select{max-width:140px;}}

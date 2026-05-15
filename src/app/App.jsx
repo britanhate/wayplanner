@@ -11,7 +11,7 @@ const FinanceView = lazy(() => import("../features/finance/components/FinanceVie
 
 export default function App() {
   const { user } = useAuth();
-  const { trips, activeTrip, setActiveTrip, addTrip, updateTripName } = useTrips(user?.id);
+  const { trips, activeTrip, setActiveTrip, addTrip, updateTripName, tripsError } = useTrips(user?.id);
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem("activeTab") || "map";
   });
@@ -49,6 +49,7 @@ export default function App() {
         onTripChange={setActiveTrip}
         onTripCreate={addTrip}
         onTripRename={updateTripName}
+        tripsError={tripsError}
       />
       <PwaStatus />
       <div className="app-content">
