@@ -428,3 +428,88 @@
 }
 .add-preview-btn:hover  { background: #0066dd; }
 .add-preview-btn:active { transform: scale(0.98); }
+
+/* ── Motion utilities (iOS-like) ── */
+:root {
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-duration-fast: 180ms;
+  --motion-duration-base: 240ms;
+}
+
+.fade-in {
+  animation: fade-in var(--motion-duration-base) var(--motion-ease-out);
+}
+
+.slide-up {
+  animation: slide-up var(--motion-duration-base) var(--motion-ease-out);
+}
+
+.slide-left {
+  animation: slide-left 280ms var(--motion-ease-out);
+}
+
+.scale-in {
+  animation: scale-in 220ms var(--motion-ease-out);
+}
+
+.interactive-card {
+  transition: transform var(--motion-duration-fast) var(--motion-ease-out),
+    background var(--motion-duration-fast) ease-out,
+    border-color var(--motion-duration-fast) ease-out,
+    box-shadow var(--motion-duration-fast) ease-out;
+  will-change: transform;
+}
+
+.interactive-card:hover {
+  transform: translateY(-1px);
+}
+
+.interactive-card:active {
+  transform: scale(0.985);
+}
+
+.pressable {
+  transition: transform var(--motion-duration-fast) var(--motion-ease-out),
+    opacity var(--motion-duration-fast) ease-out,
+    background var(--motion-duration-fast) ease-out,
+    border-color var(--motion-duration-fast) ease-out,
+    color var(--motion-duration-fast) ease-out;
+}
+
+.pressable:active {
+  transform: scale(0.97);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes slide-left {
+  from { opacity: 0; transform: translate3d(-14px, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96) translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in,
+  .slide-up,
+  .slide-left,
+  .scale-in {
+    animation: none !important;
+  }
+
+  .pressable,
+  .interactive-card {
+    transition: none !important;
+  }
+}

@@ -14,3 +14,8 @@
   inset: 0;
   overflow: hidden;
 }
+
+.tab-view {
+  position: absolute;
+  inset: 0;
+}

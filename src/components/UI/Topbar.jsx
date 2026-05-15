@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../lib/AuthContext";
-import "./Topbar.css";
+import "./topbar.css";
 
 const TabIcons = {
   map: (
@@ -259,7 +259,7 @@ export default function Topbar({
         {/* NAV MENU (tabs) */}
         <div className="pos-relative" ref={menuRef}>
           <button
-            className="topbar-btn"
+            className="topbar-btn pressable"
             onClick={() => {
               setMenuOpen((v) => !v);
               setStyleOpen(false);
@@ -389,7 +389,7 @@ export default function Topbar({
 
             {/* SEARCH (map-only UX) */}
             <button
-              className={`topbar-btn ${searchOpen ? "topbar-btn-active" : ""}`}
+              className={`topbar-btn pressable ${searchOpen ? "topbar-btn-active" : ""}`}
               onClick={onSearchToggle}
               aria-label="Пошук"
             >
@@ -413,7 +413,7 @@ export default function Topbar({
         )}
 
         {/* GLOBAL ACTIONS */}
-        <button className="topbar-btn" onClick={logout} aria-label="Вийти">
+        <button className="topbar-btn pressable" onClick={logout} aria-label="Вийти">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
             <path
               d="M16 17l5-5-5-5M21 12H9M13 19H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h7"

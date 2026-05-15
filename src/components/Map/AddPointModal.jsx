@@ -55,11 +55,11 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay fade-in" onClick={onClose}>
+      <div className="modal-box scale-in" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title">Нова точка</div>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close pressable" onClick={onClose}>×</button>
         </div>
 
         <div className="modal-body">
@@ -188,9 +188,9 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
         </div>
 
         <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Скасувати</button>
+          <button className="btn-secondary pressable" onClick={onClose}>Скасувати</button>
           <button
-            className="btn-primary"
+            className="btn-primary pressable"
             onClick={handleSave}
             disabled={!name.trim()}
           >

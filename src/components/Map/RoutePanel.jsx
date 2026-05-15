@@ -152,7 +152,7 @@ export default function RoutePanel({
   const summary = summarizeRoute(result);
 
   return (
-    <div className="route-panel p-panel">
+    <div className="route-panel p-panel fade-in">
       {showHeader && (
         <div className="route-panel-header">
           <span className="rp-title flex items-center gap-2">
@@ -160,12 +160,12 @@ export default function RoutePanel({
           </span>
           <div className="rp-header-actions">
             <button
-              className="rp-icon-btn"
+              className="rp-icon-btn pressable"
               onClick={() => setMinimized((v) => !v)}
             >
               {minimized ? Icons.chevronUp : Icons.chevronDown}
             </button>
-            <button className="rp-icon-btn" onClick={onClose}>
+            <button className="rp-icon-btn pressable" onClick={onClose}>
               {Icons.close}
             </button>
           </div>
@@ -185,7 +185,7 @@ export default function RoutePanel({
             {TRAVEL_MODES.map((m) => (
               <button
                 key={m.id}
-                className={`rp-mode-tab ${travelMode === m.id ? "active" : ""}`}
+                className={`rp-mode-tab pressable ${travelMode === m.id ? "active" : ""}`}
                 onClick={() => setTravelMode(m.id)}
               >
                 <span dangerouslySetInnerHTML={{ __html: m.icon }} />
@@ -202,7 +202,7 @@ export default function RoutePanel({
               </div>
             )}
             {waypoints.map((wp, i) => (
-              <div key={wp.id} className="rp-waypoint-row">
+              <div key={wp.id} className="rp-waypoint-row fade-in">
                 <div
                   className="rp-wp-dot"
                   style={{
@@ -229,7 +229,7 @@ export default function RoutePanel({
 
             {waypoints.length < 8 && (
               <button
-                className={`rp-add-stop-btn ${pickMode ? "active" : ""}`}
+                className={`rp-add-stop-btn pressable ${pickMode ? "active" : ""}`}
                 onClick={onAddWaypoint}
               >
                 <span className="flex items-center gap-2">
@@ -245,7 +245,7 @@ export default function RoutePanel({
           {/* Кнопка побудови */}
           <div className="rp-actions-row">
             <button
-              className="rp-build-btn flex items-center justify-center gap-2"
+              className="rp-build-btn pressable flex items-center justify-center gap-2"
               onClick={() => onBuild(travelMode)}
               disabled={building || waypoints.length < 2}
             >
@@ -289,7 +289,7 @@ export default function RoutePanel({
               {result.legs.map((leg, li) => (
                 <div key={li} className="rp-leg">
                   <div
-                    className="rp-leg-header"
+                    className="rp-leg-header interactive-card"
                     onClick={() => setOpenLeg(openLeg === li ? null : li)}
                   >
                     <div className="rp-leg-route">

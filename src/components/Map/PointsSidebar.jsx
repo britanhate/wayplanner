@@ -145,14 +145,14 @@ export default function PointsSidebar({
   );
 
   return (
-    <aside className="sidebar p-panel">
+    <aside className="sidebar p-panel fade-in">
       <div className="section">
         <div className="section-title">Точки на карті</div>
 
         {/* Фільтр по типу */}
         <div className="flex gap-2 overflow-x-auto py-2">
           <button
-            className={`badge ${selectedType === "all" ? "badge-secondary" : "badge"}`}
+            className={`badge pressable ${selectedType === "all" ? "badge-secondary" : "badge"}`}
             onClick={() => setSelectedType("all")}
           >
             Всі
@@ -160,7 +160,7 @@ export default function PointsSidebar({
           {Object.entries(POINT_TYPES).map(([key, type]) => (
             <button
               key={key}
-              className={`badge ${selectedType === key ? "badge-secondary" : "badge"}`}
+              className={`badge pressable ${selectedType === key ? "badge-secondary" : "badge"}`}
               onClick={() => setSelectedType(key)}
             >
               <span className="mr-2">{type.emoji}</span>
@@ -179,7 +179,7 @@ export default function PointsSidebar({
             ].map((s) => (
               <button
                 key={s.id}
-                className={`btn-ghost ${sortBy === s.id ? "text-white" : "text-white/60"}`}
+                className={`btn-ghost pressable ${sortBy === s.id ? "text-white" : "text-white/60"}`}
                 onClick={() => setSortBy(s.id)}
               >
                 {s.label}
@@ -188,7 +188,7 @@ export default function PointsSidebar({
           </div>
 
           <button
-            className={`btn-ghost ${showCompleted ? "text-white" : "text-white/60"}`}
+            className={`btn-ghost pressable ${showCompleted ? "text-white" : "text-white/60"}`}
             onClick={() => setShowCompleted((prev) => !prev)}
             title={showCompleted ? "Приховати виконані" : "Показати виконані"}
           >
@@ -211,7 +211,7 @@ export default function PointsSidebar({
             return (
               <div
                 key={p.id}
-                className={`flex list-item items-center gap-3 ${
+                className={`flex list-item interactive-card fade-in items-center gap-3 ${
                   p.is_completed ? "opacity-disabled" : ""
                 }`}
                 onClick={() => (routeMode ? onRouteToggle(p) : onFly(p))}
