@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import Topbar from "../components/UI/Topbar";
 import MapView from "../features/map/components/MapView";
-import NotesView from "../features/notes/components/NotesView";
-import FinanceView from "../features/finance/components/FinanceView";
 import "./App.css";
+
+const NotesView = lazy(() => import("../features/notes/components/NotesView"));
+const FinanceView = lazy(() => import("../features/finance/components/FinanceView"));
 
 export default function App() {
   const [activeTab, setActiveTab] = useState(() => {
@@ -46,8 +47,16 @@ export default function App() {
               mapStyle={mapStyle}
             />
           )}
-          {activeTab === "notes" && <NotesView />}
-          {activeTab === "finance" && <FinanceView />}
+          {activeTab === "notes" && (
+            <Suspense fallback={<div className="p-panel fade-in">Завантаження нотаток...</div>}>
+              <NotesView />
+            </Suspense>
+          )}
+          {activeTab === "finance" && (
+            <Suspense fallback={<div className="p-panel fade-in">Завантаження фінансів...</div>}>
+              <FinanceView />
+            </Suspense>
+          )}
         </div>
       </div>
     </div>

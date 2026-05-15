@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { Suspense, lazy, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import L from "leaflet";
 import "@maptiler/leaflet-maptilersdk";
 import "leaflet/dist/leaflet.css";
@@ -6,17 +6,18 @@ import { useAuth } from "../../../lib/AuthContext";
 import { usePoints } from "../../points/hooks/usePoints";
 import { useExpenses } from "../../finance/hooks/useExpenses";
 import { supabase } from "../../../lib/supabase";
-import { fetchDirections, parseLeg } from "../../../lib/serpapi";
 import { POINT_TYPES } from "../../../lib/constants";
 import { createTileLayer, getPointImageSrc, getRouteSegmentStyle } from "../lib/mapUtils";
 import SearchBox from "./SearchBox";
 import PointsSidebar from "../../points/components/PointsSidebar";
-import RoutePanel from "../../routes/components/RoutePanel";
 import AddPointModal from "../../points/components/AddPointModal";
 import EditPointModal from "../../points/components/EditPointModal";
 import { useBottomSheetSwipe } from "../../../shared/hooks/useBottomSheetSwipe";
-import MetroPanel from "../../metro/components/MetroPanel";
 import "./MapView.css";
+import { markPerf, measurePerf } from "../../../shared/lib/perf";
+
+const RoutePanel = lazy(() => import("../../routes/components/RoutePanel"));
+const MetroPanel = lazy(() => import("../../metro/components/MetroPanel"));
 
 const Icons = {
   route: (
@@ -97,7 +98,7 @@ const Icons = {
 
 export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const { user } = useAuth();
-  const { points, deletePoint, updatePoint } = usePoints();
+  const { points, loading: pointsLoading, deletePoint, updatePoint } = usePoints();
   const { addExpense, updateExpense, deleteExpenseByPointId } = useExpenses({ enabled: false });
 
   const mapRef = useRef(null);
@@ -109,6 +110,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const previewMarkerRef = useRef(null);
   const tileLayerRef = useRef(null);
   const routePickTargetRef = useRef(null);
+  const pointIconCacheRef = useRef(new Map());
 
   const {
     snap,
@@ -188,6 +190,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     window.addEventListener("keydown", handleEsc);
 
     tileLayerRef.current = createTileLayer("standard").addTo(map);
+    map.whenReady(() => {
+      markPerf("map_ready");
+      measurePerf("startup_to_map_ready", "app_start", "map_ready");
+    });
 
     // ... ваш код з геолокацією ...
     navigator.geolocation.getCurrentPosition(
@@ -213,6 +219,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
   // ── Зміна стилю карти ──
   useEffect(() => {
+    if (!pointsLoading) {
+      markPerf("points_loaded");
+      measurePerf("startup_to_points_loaded", "app_start", "points_loaded");
+    }
+
     if (!mapInstance.current) return;
 
     if (tileLayerRef.current) {
@@ -224,42 +235,71 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     );
   }, [mapStyle]);
 
+  const getMarkerIcon = useCallback((type, isWaypoint) => {
+    const key = `${type}:${isWaypoint ? "1" : "0"}`;
+    const cached = pointIconCacheRef.current.get(key);
+    if (cached) return cached;
+    const t = POINT_TYPES[type] || POINT_TYPES.sight;
+    const icon = L.divIcon({
+      html: `<div class="wp-marker ${isWaypoint ? "wp-marker-from" : ""}" style="background:${t.color}dd">${t.emoji}</div>`,
+      className: "wp-marker-wrap",
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -18],
+    });
+    pointIconCacheRef.current.set(key, icon);
+    return icon;
+  }, []);
+
+  const pointPopupMap = useMemo(
+    () =>
+      new Map(
+        points.map((p) => {
+          const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
+          const imgSrc = getPointImageSrc(p.attachments);
+          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}</div></div>`;
+          return [p.id, popup];
+        }),
+      ),
+    [points],
+  );
+
   // ── Markers ──
   useEffect(() => {
+    if (!pointsLoading) {
+      markPerf("points_loaded");
+      measurePerf("startup_to_points_loaded", "app_start", "points_loaded");
+    }
+
     if (!mapInstance.current) return;
-    Object.values(markersRef.current).forEach((m) => m.remove());
-    markersRef.current = {};
-    points.forEach((p) => {
-      const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
-      const isWaypoint = routeWaypoints.some((w) => w.id === p.id);
-      const icon = L.divIcon({
-        html: `<div class="wp-marker ${isWaypoint ? "wp-marker-from" : ""}" style="background:${t.color}dd">${t.emoji}</div>`,
-        className: "wp-marker-wrap",
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -18],
-      });
-      const imgSrc = getPointImageSrc(p.attachments);
-      const popup = `
-        <div class="ios-card">
-          ${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}
-          <div class="ios-card-content">
-            <div class="ios-title">${p.name}</div>
-            <div class="ios-subtitle">${t.emoji} ${t.label}</div>
-            ${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}
-            ${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}
-            ${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}
-          </div>
-        </div>`;
-      const m = L.marker([p.lat, p.lng], { icon }).addTo(mapInstance.current);
-      m.bindPopup(popup);
-      markersRef.current[p.id] = m;
+    const nextIds = new Set(points.map((p) => p.id));
+
+    Object.entries(markersRef.current).forEach(([id, marker]) => {
+      if (!nextIds.has(id)) {
+        marker.remove();
+        delete markersRef.current[id];
+      }
     });
-    return () => {
-      Object.values(markersRef.current).forEach((m) => m.remove());
-      markersRef.current = {};
-    };
-  }, [points, routeWaypoints]);
+
+    points.forEach((p) => {
+      const isWaypoint = routeWaypoints.some((w) => w.id === p.id);
+      const icon = getMarkerIcon(p.type, isWaypoint);
+      const popup = pointPopupMap.get(p.id);
+      const existing = markersRef.current[p.id];
+      if (!existing) {
+        const marker = L.marker([p.lat, p.lng], { icon }).addTo(mapInstance.current);
+        marker.bindPopup(popup);
+        markersRef.current[p.id] = marker;
+        return;
+      }
+
+      existing.setLatLng([p.lat, p.lng]);
+      existing.setIcon(icon);
+      if (existing.getPopup()?.getContent() !== popup) {
+        existing.setPopupContent(popup);
+      }
+    });
+  }, [points, pointsLoading, routeWaypoints, pointPopupMap, getMarkerIcon]);
 
   // ── Preview marker ──
   // ── Preview marker ──
@@ -445,12 +485,13 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     if (routeWaypoints.length < 2) return;
     setRouteBuilding(true);
     try {
-      const [data, publicRoute] = await Promise.all([
-        fetchDirections(routeWaypoints, travelMode),
+      const [serpapi, publicRoute] = await Promise.all([
+        import("../../../lib/serpapi"),
         fetchPublicRouteGeometry(routeWaypoints, travelMode),
       ]);
+      const data = await serpapi.fetchDirections(routeWaypoints, travelMode);
       const legs = data.legs.map((leg) => {
-        const parsed = parseLeg(leg);
+        const parsed = serpapi.parseLeg(leg);
         return {
           from: leg.from,
           to: leg.to,
@@ -653,7 +694,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
   const renderContent = () => {
     if (metroPanelOpen) {
-      return <MetroPanel />;
+      return (
+        <Suspense fallback={<div className="p-panel fade-in">Завантаження метро...</div>}>
+          <MetroPanel />
+        </Suspense>
+      );
     }
     if (routePanelOpen && routePickTarget) {
       return (
@@ -671,7 +716,8 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     }
     if (routePanelOpen) {
       return (
-        <RoutePanel
+        <Suspense fallback={<div className="p-panel fade-in">Завантаження маршруту...</div>}>
+          <RoutePanel
           waypoints={routeWaypoints}
           onAddWaypoint={startWaypointPicking}
           onRemoveWaypoint={(i) =>
@@ -685,7 +731,8 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           onClose={closeRouteMode}
           onSegmentSelect={handleSegmentSelect}
           activeSegmentId={activeSegmentId}
-        />
+          />
+        </Suspense>
       );
     }
     return (
