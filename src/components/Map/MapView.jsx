@@ -14,7 +14,7 @@ import RoutePanel from "./RoutePanel";
 import AddPointModal from "./AddPointModal";
 import EditPointModal from "./EditPointModal";
 import { useBottomSheetSwipe } from "../../hooks/useBottomSheetSwipe";
-import { useMetroLayer } from "../../hooks/useMetroLayer";
+import MetroPanel from "./MetroPanel";
 import "./MapView.css";
 
 const Icons = {
@@ -133,7 +133,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const [geocoded, setGeocoded] = useState(null);
   const [previewPos, setPreviewPos] = useState(null);
   const [editingPoint, setEditingPoint] = useState(null);
-  const [showMetro, setShowMetro] = useState(true);
+  const [metroPanelOpen, setMetroPanelOpen] = useState(false);
 
   const [routePanelOpen, setRoutePanelOpen] = useState(false);
   const [routeWaypoints, setRouteWaypoints] = useState([]);
@@ -146,7 +146,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     routePickTargetRef.current = routePickTarget;
   }, [routePickTarget]);
 
-  useMetroLayer(mapInstance, showMetro);
 
   // ── Створення шару плиток ──
   const createTileLayer = useCallback((style) => {
@@ -728,9 +727,25 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setRoutePickTarget(null);
   };
 
+  const openRouteMode = () => {
+    setMetroPanelOpen(false);
+    startRouteMode();
+  };
+
+  const toggleMetroPanel = () => {
+    setMetroPanelOpen((prev) => {
+      const next = !prev;
+      if (next) closeRouteMode();
+      return next;
+    });
+  };
+
   const snapClass = snap === "expanded" ? "sheet-expanded" : "sheet-collapsed";
 
   const renderContent = () => {
+    if (metroPanelOpen) {
+      return <MetroPanel />;
+    }
     if (routePanelOpen && routePickTarget) {
       return (
         <PointsSidebar
@@ -797,7 +812,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         <div className="sidebar-section">
           <button
             className={`route-btn ${routePanelOpen ? "active" : ""}`}
-            onClick={routePanelOpen ? closeRouteMode : startRouteMode}
+            onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
               {routePanelOpen ? Icons.close : Icons.route}
@@ -805,12 +820,12 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             </span>
           </button>
           <button
-            className={`route-btn ${showMetro ? "active" : ""}`}
-            onClick={() => setShowMetro((v) => !v)}
+            className={`route-btn ${metroPanelOpen ? "active" : ""}`}
+            onClick={toggleMetroPanel}
           >
             <span className="flex items-center gap-2">
               {Icons.metro}
-              {showMetro ? "Метро (вкл)" : "Метро (викл)"}
+              Метро
             </span>
           </button>
         </div>
@@ -847,15 +862,15 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           <div className="sheet-actions">
           <button
             className={`sheet-action-btn ${routePanelOpen ? "active" : ""}`}
-            onClick={routePanelOpen ? closeRouteMode : startRouteMode}
+            onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
               {routePanelOpen ? Icons.close : Icons.route} Маршрут
             </span>
           </button>
           <button
-            className={`sheet-action-btn ${showMetro ? "active" : ""}`}
-            onClick={() => setShowMetro((v) => !v)}
+            className={`sheet-action-btn ${metroPanelOpen ? "active" : ""}`}
+            onClick={toggleMetroPanel}
           >
             <span className="flex items-center gap-2">{Icons.metro} Метро</span>
           </button>
