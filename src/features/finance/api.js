@@ -1,10 +1,21 @@
 import { supabase } from '../../lib/supabase';
+import { debugSupabaseFetch } from '../../lib/supabaseDebug';
 
 const EXPENSE_FIELDS = 'id, name, point_id, amount, category, note, currency, paid, created_by, created_at';
 
 export const fetchExpenses = ({ from = 0, to = 49 } = {}) =>
-  supabase.from('expenses').select(EXPENSE_FIELDS).order('created_at', { ascending: false }).range(from, to);
-export const fetchBudget = () => supabase.from('trip_settings').select('budget, currency').eq('id', 1).single();
+  debugSupabaseFetch({
+    table: 'expenses',
+    columns: EXPENSE_FIELDS,
+    action: 'select',
+    query: () => supabase.from('expenses').select(EXPENSE_FIELDS).order('created_at', { ascending: false }).range(from, to),
+  });
+export const fetchBudget = () => debugSupabaseFetch({
+  table: 'trip_settings',
+  columns: 'budget, currency',
+  action: 'select',
+  query: () => supabase.from('trip_settings').select('budget, currency').eq('id', 1).single(),
+});
 export const insertExpense = (expense) => supabase.from('expenses').insert([expense]);
 export const deleteExpenseById = (id) => supabase.from('expenses').delete().eq('id', id);
 export const updateExpenseById = (id, updates) => supabase.from('expenses').update(updates).eq('id', id);
