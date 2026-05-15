@@ -367,6 +367,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       previewMarkerRef.current = null;
     }
     delete window.__addPreviewPoint;
+    delete window.__openNearbyFromPreview;
 
     // 2. Якщо позиції немає — просто виходимо (маркер уже видалено вище)
     if (!previewPos || !mapInstance.current) return;
@@ -384,7 +385,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       <div class="ios-card-content">
         <div class="ios-title">${geocoded?.name || "Знайдене місце"}</div>
         ${geocoded?.addr ? `<div class="ios-popup-addr">📍 ${geocoded.addr}</div>` : ""}
-        <button onclick="window.__addPreviewPoint()" class="add-preview-btn">+ Додати точку</button>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="window.__addPreviewPoint(); event.stopPropagation();" class="add-preview-btn">+ Додати точку</button>
+          <button onclick="window.__openNearbyFromPreview(); event.stopPropagation();" class="add-preview-btn">Що поруч?</button>
+        </div>
       </div>
     </div>`;
 
@@ -402,14 +406,20 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       marker.closePopup();
     };
 
+    window.__openNearbyFromPreview = () => {
+      openNearbyForPoint({ lat: previewPos.lat, lng: previewPos.lng });
+      marker.closePopup();
+    };
+
     return () => {
       if (previewMarkerRef.current) {
         previewMarkerRef.current.remove();
         previewMarkerRef.current = null;
       }
       delete window.__addPreviewPoint;
+      delete window.__openNearbyFromPreview;
     };
-  }, [previewPos, geocoded]);
+  }, [previewPos, geocoded, openNearbyForPoint]);
 
   // ── Helpers ──
   const flyTo = (p) => {
