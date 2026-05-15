@@ -558,57 +558,67 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       const segments = legs.flatMap((l) => l.segments || []);
       const transfers = Math.max(0, segments.filter((s) => s.type !== "walk").length - 1);
       setRouteResult({ legs, segments, transfers });
-      if (publicRoute.coords.length > 1) {
-        clearRouteLines();
-        const route = L.polyline(publicRoute.coords, {
-          color: "#2a7de8",
-          weight: 5,
-          opacity: 0.88,
-        }).addTo(mapInstance.current);
-        routeLayers.current.push(route);
-        publicRoute.steps.forEach((step, idx) => {
-          const isWalk = step.mode === "walking";
-          const marker = L.circleMarker([step.lat, step.lng], {
-            radius: isWalk ? 4 : 3,
-            color: isWalk ? "#30d158" : "#0a84ff",
-            weight: 2,
-            fillColor: isWalk ? "#30d158" : "#0a84ff",
-            fillOpacity: 0.95,
-          })
-            .bindTooltip(
-              `${isWalk ? "🚶 Пішки" : "🧭 Крок"}${step.instruction ? `: ${step.instruction}` : ""}`,
-              { direction: "top", offset: [0, -8] },
-            )
-            .addTo(mapInstance.current);
-          if (idx % 2 === 0 || isWalk) routeStepLayers.current.push(marker);
-          else marker.remove();
-        });
-        mapInstance.current.fitBounds(route.getBounds().pad(0.2));
-      } else {
-        drawRouteLegs(legs, data.legs);
-      }
 
-      // Segment polylines (step-by-step)
       clearRouteLines();
-      const fallbackCoords = routeWaypoints.map((wp) => [wp.lat, wp.lng]);
-      (legs.flatMap((l) => l.segments || [])).forEach((segment, idx) => {
-        let coords = [];
-        if (Array.isArray(segment.polyline) && segment.polyline.length > 1) {
-          const first = segment.polyline[0];
-          coords = segment.polyline.map((pt) => Array.isArray(pt) && pt.length >= 2 ? (Math.abs(first[0]) <= 90 ? [pt[0], pt[1]] : [pt[1], pt[0]]) : null).filter(Boolean);
+
+      const legCoordsList = data.legs.map((leg) => extractRouteCoords(leg)).map((coords, legIdx) => {
+        if (Array.isArray(coords) && coords.length > 1) return coords;
+        if (publicRoute.coords.length > 1) {
+          const a = routeWaypoints[legIdx];
+          const b = routeWaypoints[legIdx + 1];
+          return publicRoute.coords.filter((pt) => Array.isArray(pt) && pt.length === 2) || (a && b ? [[a.lat, a.lng], [b.lat, b.lng]] : []);
         }
-        if (coords.length < 2) {
-          const a = fallbackCoords[Math.min(idx, Math.max(0, fallbackCoords.length - 2))];
-          const b = fallbackCoords[Math.min(idx + 1, fallbackCoords.length - 1)];
-          coords = a && b ? [a, b] : [];
-        }
-        if (coords.length < 2) return;
-        const pl = L.polyline(coords, styleForType(segment.type, false)).addTo(mapInstance.current);
-        pl.__segmentType = segment.type;
-        routeLayers.current.push(pl);
-        segmentLayerMap.current.set(segment.id, pl);
+        const a = routeWaypoints[legIdx];
+        const b = routeWaypoints[legIdx + 1];
+        return a && b ? [[a.lat, a.lng], [b.lat, b.lng]] : [];
       });
-      if (routeLayers.current.length) mapInstance.current.fitBounds(L.featureGroup(routeLayers.current).getBounds().pad(0.2));
+
+      legs.forEach((leg, legIdx) => {
+        const legCoords = legCoordsList[legIdx] || [];
+        if (legCoords.length < 2) return;
+        const legSegments = leg.segments || [];
+        if (!legSegments.length) {
+          const fallbackId = `leg-${legIdx}-fallback`;
+          const pl = L.polyline(legCoords, styleForType("unknown", false)).addTo(mapInstance.current);
+          pl.__segmentType = "unknown";
+          routeLayers.current.push(pl);
+          segmentLayerMap.current.set(fallbackId, pl);
+          return;
+        }
+
+        legSegments.forEach((segment, segIdx) => {
+          let coords = [];
+          if (Array.isArray(segment.polyline) && segment.polyline.length > 1) {
+            const first = segment.polyline[0];
+            coords = segment.polyline
+              .map((pt) =>
+                Array.isArray(pt) && pt.length >= 2
+                  ? Math.abs(first[0]) <= 90
+                    ? [pt[0], pt[1]]
+                    : [pt[1], pt[0]]
+                  : null,
+              )
+              .filter(Boolean);
+          }
+
+          if (coords.length < 2) {
+            const total = legSegments.length;
+            const start = Math.floor((segIdx / total) * (legCoords.length - 1));
+            const end = Math.max(start + 1, Math.floor(((segIdx + 1) / total) * (legCoords.length - 1)));
+            coords = legCoords.slice(start, end + 1);
+          }
+
+          if (coords.length < 2) return;
+          const pl = L.polyline(coords, styleForType(segment.type, false)).addTo(mapInstance.current);
+          pl.__segmentType = segment.type;
+          routeLayers.current.push(pl);
+          segmentLayerMap.current.set(segment.id, pl);
+        });
+      });
+
+      if (routeLayers.current.length) {
+        mapInstance.current.fitBounds(L.featureGroup(routeLayers.current).getBounds().pad(0.2));
+      }
     } catch (e) {
       alert("Помилка маршруту: " + e.message);
     }
