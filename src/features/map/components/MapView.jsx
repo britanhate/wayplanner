@@ -203,8 +203,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     map.on("click", (e) => {
       const { lat, lng } = e.latlng;
       setPreviewPos({ lat, lng });
-      setNearbyAnchor({ lat, lng });
-      setNearbyOpen(true);
       (async () => {
         try {
           const place = await reverseGeocode(lat, lng);
@@ -287,18 +285,41 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     return icon;
   }, []);
 
+
+  const openNearbyForPoint = useCallback((point) => {
+    if (!point) return;
+    setNearbyAnchor({ lat: point.lat, lng: point.lng });
+    setNearbyCategory(NEARBY_CATEGORIES[0].id);
+    setNearbyOpen(true);
+    setSnap("expanded");
+  }, [setSnap]);
+
   const pointPopupMap = useMemo(
     () =>
       new Map(
         points.map((p) => {
           const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
           const imgSrc = getPointImageSrc(p.attachments);
-          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}</div></div>`;
+          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}<button onclick="window.__openNearbyFromPoint(\'${p.id}\')" class="add-preview-btn" style="margin-top:8px;">Що поруч?</button></div></div>`;
           return [p.id, popup];
         }),
       ),
     [points],
   );
+
+
+  useEffect(() => {
+    const pointsById = new Map(points.map((point) => [String(point.id), point]));
+    window.__openNearbyFromPoint = (pointId) => {
+      const point = pointsById.get(String(pointId));
+      if (!point) return;
+      openNearbyForPoint(point);
+    };
+
+    return () => {
+      delete window.__openNearbyFromPoint;
+    };
+  }, [points, openNearbyForPoint]);
 
   // ── Markers ──
   useEffect(() => {
@@ -395,8 +416,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setSelectedPointId(p.id);
     mapInstance.current?.flyTo([p.lat, p.lng], 15, { duration: 0.8 });
     markersRef.current[p.id]?.openPopup();
-    setNearbyAnchor({ lat: p.lat, lng: p.lng });
-    setNearbyOpen(true);
   };
 
   const handleGeocodeResult = (result) => {
@@ -810,6 +829,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         routeFrom={null}
         onRouteToggle={handleRoutePointPick}
         selectedPointId={selectedPointId}
+        onNearby={openNearbyForPoint}
       />
     ),
     [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points, selectedPointId],
@@ -827,6 +847,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         routeFrom={null}
         onRouteToggle={handleRoutePointPick}
         selectedPointId={selectedPointId}
+        onNearby={openNearbyForPoint}
       />
     ),
     [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points, activeRouteIndex, selectedPointId],
