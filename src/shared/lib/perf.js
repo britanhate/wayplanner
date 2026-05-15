@@ -24,3 +24,11 @@ export function measurePerf(name, startMark, endMark) {
     // ignore invalid mark states in development
   }
 }
+
+export function logSlowInteraction(name, startTime, threshold = 120) {
+  if (!IS_DEV || typeof performance === "undefined") return;
+  const duration = performance.now() - startTime;
+  if (duration >= threshold) {
+    console.log(`[perf][slow] ${name}: ${duration.toFixed(1)}ms`);
+  }
+}

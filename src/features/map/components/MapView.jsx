@@ -14,7 +14,7 @@ import AddPointModal from "../../points/components/AddPointModal";
 import EditPointModal from "../../points/components/EditPointModal";
 import { useBottomSheetSwipe } from "../../../shared/hooks/useBottomSheetSwipe";
 import "./MapView.css";
-import { markPerf, measurePerf } from "../../../shared/lib/perf";
+import { logSlowInteraction, markPerf, measurePerf } from "../../../shared/lib/perf";
 
 const RoutePanel = lazy(() => import("../../routes/components/RoutePanel"));
 const MetroPanel = lazy(() => import("../../metro/components/MetroPanel"));
@@ -695,10 +695,13 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   };
 
   const handleToggleCompleted = async (point) => {
+    const startedAt = performance.now();
     try {
       await updatePoint(point.id, { is_completed: !point.is_completed });
     } catch (e) {
       console.error(e);
+    } finally {
+      logSlowInteraction("point_toggle_completed", startedAt);
     }
   };
 
@@ -715,14 +718,48 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   };
 
   const toggleMetroPanel = () => {
+    const startedAt = performance.now();
     setMetroPanelOpen((prev) => {
       const next = !prev;
       if (next) closeRouteMode();
       return next;
     });
+    logSlowInteraction("metro_panel_toggle", startedAt);
   };
 
   const snapClass = snap === "expanded" ? "sheet-expanded" : "sheet-collapsed";
+
+  const baseSidebar = useMemo(
+    () => (
+      <PointsSidebar
+        points={points}
+        onFly={flyTo}
+        onDelete={handleDeletePoint}
+        onEdit={(p) => setEditingPoint(p)}
+        onToggleCompleted={handleToggleCompleted}
+        routeMode={false}
+        routeFrom={null}
+        onRouteToggle={handleRoutePointPick}
+      />
+    ),
+    [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points],
+  );
+
+  const routePickSidebar = useMemo(
+    () => (
+      <PointsSidebar
+        points={points}
+        onFly={flyTo}
+        onDelete={handleDeletePoint}
+        onEdit={(p) => setEditingPoint(p)}
+        onToggleCompleted={handleToggleCompleted}
+        routeMode={true}
+        routeFrom={null}
+        onRouteToggle={handleRoutePointPick}
+      />
+    ),
+    [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points, routePickTarget],
+  );
 
   const renderContent = () => {
     if (metroPanelOpen) {
@@ -733,18 +770,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       );
     }
     if (routePanelOpen && routePickTarget) {
-      return (
-        <PointsSidebar
-          points={points}
-          onFly={flyTo}
-          onDelete={handleDeletePoint}
-          onEdit={(p) => setEditingPoint(p)}
-          onToggleCompleted={handleToggleCompleted}
-          routeMode={true}
-          routeFrom={null}
-          onRouteToggle={handleRoutePointPick}
-        />
-      );
+      return routePickSidebar;
     }
     if (routePanelOpen) {
       return (
@@ -767,18 +793,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         </Suspense>
       );
     }
-    return (
-      <PointsSidebar
-        points={points}
-        onFly={flyTo}
-        onDelete={handleDeletePoint}
-        onEdit={(p) => setEditingPoint(p)}
-        onToggleCompleted={handleToggleCompleted}
-        routeMode={false}
-        routeFrom={null}
-        onRouteToggle={handleRoutePointPick}
-      />
-    );
+    return baseSidebar;
   };
 
   return (

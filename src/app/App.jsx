@@ -3,6 +3,7 @@ import Topbar from "../components/UI/Topbar";
 import PwaStatus from "../components/UI/PwaStatus";
 import MapView from "../features/map/components/MapView";
 import "./App.css";
+import { logSlowInteraction } from "../shared/lib/perf";
 
 const FinanceView = lazy(() => import("../features/finance/components/FinanceView"));
 
@@ -24,8 +25,10 @@ export default function App() {
   }, [mapStyle]);
 
   const handleTabChange = (tab) => {
+    const startedAt = performance.now();
     setActiveTab(tab);
     setSearchOpen(false);
+    logSlowInteraction(`tab_switch_${tab}`, startedAt);
   };
 
   return (
@@ -40,7 +43,7 @@ export default function App() {
       />
       <PwaStatus />
       <div className="app-content">
-        <div key={activeTab} className="tab-view fade-in">
+        <div className="tab-view fade-in">
           {activeTab === "map" && (
             <MapView
               searchOpen={searchOpen}
