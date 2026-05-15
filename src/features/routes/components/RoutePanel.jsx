@@ -17,16 +17,16 @@ export default function RoutePanel({
   const canSwap = canOpenRoute;
   const canClear = Boolean(start || destination);
   const isPickingStart = pickMode && pickTarget === "start";
-  const isPickingDestination = pickMode && pickTarget === "finish";
+  const isPickingDestination = pickMode && pickTarget === "destination";
 
   const renderPointCard = (label, point, isStart) => (
     <button
       type="button"
-      className={`rp-point-card ${isStart ? "start" : "destination"} ${(pickMode && ((isStart && pickTarget === "start") || (!isStart && pickTarget === "finish"))) ? "is-active" : ""}`}
+      className={`rp-point-card ${isStart ? "start" : "destination"} ${(pickMode && ((isStart && pickTarget === "start") || (!isStart && pickTarget === "destination"))) ? "is-active" : ""}`}
       onClick={isStart ? onPickStart : onPickDestination}
     >
       <div className="rp-point-head"><span className="rp-point-label">{label}</span></div>
-      <div className={`rp-point-value ${!point ? "is-empty" : ""}`}>{point?.name || "Не обрано"}</div>
+      <div className={`rp-point-value ${!point ? "is-empty" : ""}`}>{point?.name || (isStart ? "Оберіть старт" : "Оберіть пункт призначення")}</div>
     </button>
   );
 

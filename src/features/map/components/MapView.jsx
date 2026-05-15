@@ -474,8 +474,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setRouteSelection({ start: null, destination: null });
     setRoutePanelOpen(true);
     clearRouteLines();
-    setRoutePickTarget("start");
-    setSnap("expanded");
+    setRoutePickTarget(null);
   };
 
 
@@ -630,7 +629,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
   const handleClearRoutePoints = () => {
     setRouteSelection({ start: null, destination: null });
-    setRoutePickTarget("start");
+    setRoutePickTarget(null);
   };
 
   const openRouteMode = () => {
@@ -702,7 +701,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           start={routeSelection.start}
           destination={routeSelection.destination}
           onPickStart={() => setRoutePickTarget("start")}
-          onPickDestination={() => setRoutePickTarget("finish")}
+          onPickDestination={() => setRoutePickTarget("destination")}
           onBuild={handleBuildRoute}
           building={routeBuilding}
           pickMode={Boolean(routePickTarget)}
