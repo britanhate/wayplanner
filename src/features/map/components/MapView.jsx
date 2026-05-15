@@ -79,6 +79,22 @@ const Icons = {
       <circle cx="12" cy="10" r="3" />
     </svg>
   ),
+  myLocation: (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+      <circle cx="12" cy="12" r="9" opacity="0.5" />
+    </svg>
+  ),
   arrowLeft: (
     <svg
       width="15"
@@ -111,6 +127,9 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const tileLayerRef = useRef(null);
   const routePickTargetRef = useRef(null);
   const pointIconCacheRef = useRef(new Map());
+  const userLocationMarkerRef = useRef(null);
+  const userAccuracyCircleRef = useRef(null);
+
 
   const {
     snap,
@@ -134,6 +153,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const [routeResult, setRouteResult] = useState(null);
   const [routeBuilding, setRouteBuilding] = useState(false);
   const [activeSegmentId, setActiveSegmentId] = useState(null);
+  const [locationMessage, setLocationMessage] = useState("");
 
   useEffect(() => {
     routePickTargetRef.current = routePickTarget;
@@ -194,21 +214,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       markPerf("map_ready");
       measurePerf("startup_to_map_ready", "app_start", "map_ready");
     });
-
-    // ... ваш код з геолокацією ...
-    navigator.geolocation.getCurrentPosition(
-      (pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 15),
-      async () => {
-        try {
-          const res = await fetch("https://ipapi.co/json/");
-          const data = await res.json();
-          map.setView([data.latitude, data.longitude], 11);
-        } catch {
-          map.setView([50.4501, 30.5234], 12);
-        }
-      },
-      { enableHighAccuracy: true, timeout: 5000 },
-    );
 
     return () => {
       window.removeEventListener("keydown", handleEsc);
@@ -368,6 +373,65 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     onSearchClose?.();
     setSnap("full");
   };
+
+
+  useEffect(() => {
+    if (!locationMessage) return undefined;
+    const timeoutId = window.setTimeout(() => setLocationMessage(""), 2600);
+    return () => window.clearTimeout(timeoutId);
+  }, [locationMessage]);
+
+  const handleLocateUser = useCallback(() => {
+    if (!mapInstance.current) return;
+
+    if (!navigator.geolocation) {
+      setLocationMessage("Geolocation is not supported in this browser");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        const latLng = [latitude, longitude];
+
+        if (!userLocationMarkerRef.current) {
+          const locationIcon = L.divIcon({
+            html: '<span class="my-location-dot"></span>',
+            className: 'my-location-marker-wrap',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          });
+          userLocationMarkerRef.current = L.marker(latLng, { icon: locationIcon }).addTo(mapInstance.current);
+        } else {
+          userLocationMarkerRef.current.setLatLng(latLng);
+        }
+
+        if (!userAccuracyCircleRef.current) {
+          userAccuracyCircleRef.current = L.circle(latLng, {
+            radius: accuracy || 35,
+            color: '#0a84ff',
+            fillColor: '#0a84ff',
+            fillOpacity: 0.14,
+            weight: 1.5,
+            interactive: false,
+          }).addTo(mapInstance.current);
+        } else {
+          userAccuracyCircleRef.current.setLatLng(latLng);
+          userAccuracyCircleRef.current.setRadius(accuracy || 35);
+        }
+
+        mapInstance.current.flyTo(latLng, 15, { duration: 0.8 });
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationMessage("Location permission denied");
+          return;
+        }
+        setLocationMessage("Unable to get current location");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
+  }, []);
 
   const clearRouteLines = useCallback(() => {
     routeLayers.current.forEach((l) => l.remove());
@@ -854,6 +918,16 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
       <div className="map-wrap">
         <div ref={mapRef} className="leaflet-map" />
+        <button
+          type="button"
+          className="my-location-btn"
+          onClick={handleLocateUser}
+          aria-label="Center map on my location"
+          title="My location"
+        >
+          {Icons.myLocation}
+        </button>
+        {locationMessage && <div className="map-toast">{locationMessage}</div>}
       </div>
 
       <div ref={sheetRef} className={`map-sheet ${snapClass} slide-up`} style={sheetStyle}>
