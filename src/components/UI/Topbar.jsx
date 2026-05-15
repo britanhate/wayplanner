@@ -1,3 +1,4 @@
+import CalciteIcon from "../../shared/ui/CalciteIcon";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../lib/AuthContext";
 import "./topbar.css";
@@ -150,8 +151,8 @@ const StyleIcons = {
 };
 
 const TABS = [
-  { id: "map", label: "Карта", icon: TabIcons.map },
-  { id: "finance", label: "Фінанси", icon: TabIcons.finance },
+  { id: "map", label: "Карта", icon: <CalciteIcon name="globe" /> },
+  { id: "finance", label: "Фінанси", icon: <CalciteIcon name="coin" /> },
 ];
 
 const MAP_STYLES = [
@@ -248,14 +249,7 @@ export default function Topbar({
             }}
             aria-label="Меню"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M3 6h18M3 12h18M3 18h18"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-              />
-            </svg>
+            <CalciteIcon name="menu" size={20} />
           </button>
 
           {menuOpen && (
@@ -314,20 +308,7 @@ export default function Topbar({
                 }}
                 aria-label="Стиль карти"
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="2" y1="12" x2="22" y2="12" />
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
+                <CalciteIcon name="globe" size={20} />
               </button>
 
               {styleOpen && (
@@ -375,36 +356,14 @@ export default function Topbar({
               onClick={onSearchToggle}
               aria-label="Пошук"
             >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-                <circle
-                  cx="11"
-                  cy="11"
-                  r="7"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                />
-                <path
-                  d="M16.5 16.5L21 21"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <CalciteIcon name="search" size={19} />
             </button>
           </>
         )}
 
         {/* GLOBAL ACTIONS */}
         <button className="topbar-btn pressable" onClick={logout} aria-label="Вийти">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M16 17l5-5-5-5M21 12H9M13 19H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h7"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <CalciteIcon name="logout" size={19} />
         </button>
       </div>
 
