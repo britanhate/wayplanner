@@ -375,7 +375,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setPendingPos(null);
     mapInstance.current?.flyTo([result.lat, result.lng], 15, { duration: 0.9 });
     onSearchClose?.();
-    setSnap("full");
+    setSnap("expanded");
   };
 
 
@@ -461,7 +461,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setRoutePanelOpen(true);
     clearRouteLines();
     setRoutePickTarget("start");
-    setSnap("full");
+    setSnap("expanded");
   };
 
   const startWaypointPicking = () => {
@@ -624,6 +624,20 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setRoutePickTarget(null);
   };
 
+  const handleSwapRoutePoints = () => {
+    setRouteWaypoints((prev) => {
+      if (prev.length < 2) return prev;
+      const start = prev[0];
+      const destination = prev[prev.length - 1];
+      return [destination, start];
+    });
+  };
+
+  const handleClearRoutePoints = () => {
+    setRouteWaypoints([]);
+    setRoutePickTarget("start");
+  };
+
   const openRouteMode = () => {
     setMetroPanelOpen(false);
     startRouteMode();
@@ -695,8 +709,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           }
           onBuild={handleBuildRoute}
           building={routeBuilding}
-          pickMode={false}
+          pickMode={Boolean(routePickTarget)}
+          pickTarget={routePickTarget}
           showHeader={false}
+          onSwap={handleSwapRoutePoints}
+          onClear={handleClearRoutePoints}
           onClose={closeRouteMode}
           />
         </Suspense>
