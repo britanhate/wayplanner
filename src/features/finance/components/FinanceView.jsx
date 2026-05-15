@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useAuth } from "../../lib/AuthContext";
-import { useExpenses } from "../../hooks/useExpenses";
+import { useAuth } from "../../../lib/AuthContext";
+import { useExpenses } from "../hooks/useExpenses";
 import {
   EXPENSE_CATEGORIES,
   CURRENCIES,
   USERS,
   EXCHANGE_RATES,
-} from "../../lib/constants";
+} from "../../../lib/constants";
 import "./FinanceView.css";
 
 export default function FinanceView() {

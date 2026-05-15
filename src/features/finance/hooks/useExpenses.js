@@ -1,22 +1,16 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../../../lib/supabase";
+import { fetchExpenses, fetchBudget, insertExpense, deleteExpenseById, updateExpenseById, deleteExpenseByPoint, upsertBudget } from "../api";
 
 export function useExpenses() {
   const [expenses, setExpenses] = useState([]);
   const [budget, setBudgetState] = useState({ amount: 0, currency: "UAH" });
 
   useEffect(() => {
-    supabase
-      .from("expenses")
-      .select("id, point_id, amount, category, note, currency, created_at")
-      .order("created_at", { ascending: false })
+    fetchExpenses()
       .then(({ data }) => setExpenses(data || []));
 
-    supabase
-      .from("trip_settings")
-      .select("budget, currency")
-      .eq("id", 1)
-      .single()
+    fetchBudget()
       .then(({ data }) => {
         if (data)
           setBudgetState({ amount: data.budget, currency: data.currency });
@@ -49,36 +43,28 @@ export function useExpenses() {
   }, []);
 
   const addExpense = async (expense) => {
-    const { error } = await supabase.from("expenses").insert([expense]);
+    const { error } = await insertExpense(expense);
     if (error) throw error;
   };
 
   const deleteExpense = async (id) => {
-    const { error } = await supabase.from("expenses").delete().eq("id", id);
+    const { error } = await deleteExpenseById(id);
     if (error) throw error;
   };
 
   const updateExpense = async (id, updates) => {
-    const { error } = await supabase
-      .from("expenses")
-      .update(updates)
-      .eq("id", id);
+    const { error } = await updateExpenseById(id, updates);
     if (error) throw error;
   };
 
   const deleteExpenseByPointId = async (pointId) => {
-    const { error } = await supabase
-      .from("expenses")
-      .delete()
-      .eq("point_id", pointId);
+    const { error } = await deleteExpenseByPoint(pointId);
     if (error) throw error;
   };
 
   const saveBudget = async ({ amount, currency }) => {
     setBudgetState({ amount, currency });
-    await supabase
-      .from("trip_settings")
-      .upsert({ id: 1, budget: amount, currency });
+    await upsertBudget({ id: 1, budget: amount, currency });
   };
 
   return {

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useAuth } from "../../lib/AuthContext";
-import { useNotes } from "../../hooks/useNotes";
+import { useAuth } from "../../../lib/AuthContext";
+import { useNotes } from "../hooks/useNotes";
 import "./NotesView.css";
 
 export default function NotesView() {
