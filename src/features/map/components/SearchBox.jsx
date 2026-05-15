@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { suggestAddresses, findAddress } from '../../lib/arcgis'
+import { suggestAddresses, findAddress } from '../../../lib/arcgis'
 
 const Icons = {
   search: (

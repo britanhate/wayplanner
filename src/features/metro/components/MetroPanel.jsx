@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { METRO_MAPS } from "./metroMaps";
+import { METRO_MAPS } from "../data";
 import MetroMapModal from "./MetroMapModal";
 
 const ZOOM_LEVELS = [1, 1.25, 1.5, 2, 3];

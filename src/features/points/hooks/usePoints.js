@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../../../lib/supabase'
+import { fetchPoints, insertPoint, deletePointById, updatePointById } from '../api'
 
 export function usePoints() {
   const [points, setPoints] = useState([])
@@ -7,10 +8,7 @@ export function usePoints() {
 
   useEffect(() => {
     // Initial fetch
-    supabase
-      .from('points')
-      .select('id, name, addr, lat, lng, type, description, comment, estimated_cost, currency, point_date, is_completed, created_by, attachments, created_at')
-      .order('created_at', { ascending: true })
+    fetchPoints()
       .then(({ data }) => {
         setPoints(data || [])
         setLoading(false)
@@ -31,17 +29,17 @@ export function usePoints() {
   }, [])
 
   const addPoint = async (point) => {
-    const { error } = await supabase.from('points').insert([point])
+    const { error } = await insertPoint(point)
     if (error) throw error
   }
 
   const deletePoint = async (id) => {
-    const { error } = await supabase.from('points').delete().eq('id', id)
+    const { error } = await deletePointById(id)
     if (error) throw error
   }
 
   const updatePoint = async (id, updates) => {
-    const { error } = await supabase.from('points').update(updates).eq('id', id)
+    const { error } = await updatePointById(id, updates)
     if (error) throw error
   }
 

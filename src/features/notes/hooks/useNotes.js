@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../../../lib/supabase'
+import { fetchNotesByUser, insertNote, updateNoteById, deleteNoteById } from '../api'
 
 export function useNotes(userId) {
   const [notes, setNotes] = useState([])
 
   useEffect(() => {
     if (!userId) return
-    supabase
-      .from('notes')
-      .select('*')
-      .eq('created_by', userId)
-      .order('created_at', { ascending: false })
+    fetchNotesByUser(userId)
       .then(({ data }) => setNotes(data || []))
 
     const channel = supabase
@@ -18,8 +15,7 @@ export function useNotes(userId) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notes',
         filter: `created_by=eq.${userId}` },
         () => {
-          supabase.from('notes').select('*').eq('created_by', userId)
-            .order('created_at', { ascending: false })
+          fetchNotesByUser(userId)
             .then(({ data }) => setNotes(data || []))
         })
       .subscribe()
@@ -28,19 +24,17 @@ export function useNotes(userId) {
   }, [userId])
 
   const addNote = async ({ title, body, userId }) => {
-    const { error } = await supabase.from('notes').insert([{
-      title, body, created_by: userId,
-    }])
+    const { error } = await insertNote({ title, body, userId })
     if (error) throw error
   }
 
   const updateNote = async (id, { title, body }) => {
-    const { error } = await supabase.from('notes').update({ title, body }).eq('id', id)
+    const { error } = await updateNoteById(id, { title, body })
     if (error) throw error
   }
 
   const deleteNote = async (id) => {
-    const { error } = await supabase.from('notes').delete().eq('id', id)
+    const { error } = await deleteNoteById(id)
     if (error) throw error
   }
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { POINT_TYPES } from "../../lib/constants";
+import { POINT_TYPES } from "../../../lib/constants";
 import { filterAndSortPoints, getUserInfo } from "./pointsSidebarUtils";
-import { useAuth } from "../../lib/AuthContext";
+import { useAuth } from "../../../lib/AuthContext";
 
 // ── SVG іконки ──
 const Icons = {

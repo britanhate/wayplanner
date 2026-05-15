@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { POINT_TYPES, CURRENCIES } from "../../lib/constants";
+import { POINT_TYPES, CURRENCIES } from "../../../lib/constants";
 
 export default function EditPointModal({ point, onSave, onClose }) {
   const [name, setName] = useState(point.name || "");

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import Topbar from "../components/UI/Topbar";
-import MapView from "../components/Map/MapView";
-import NotesView from "../components/Notes/NotesView";
-import FinanceView from "../components/Finance/FinanceView";
+import MapView from "../features/map/components/MapView";
+import NotesView from "../features/notes/components/NotesView";
+import FinanceView from "../features/finance/components/FinanceView";
 import "./App.css";
 
 export default function App() {
