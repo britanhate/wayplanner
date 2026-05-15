@@ -1,50 +1,61 @@
 import "./RoutePanel.css";
 
 export default function RoutePanel({
-  start,
-  destination,
-  onPickStart,
-  onPickDestination,
+  routePoints,
+  activeRouteIndex,
+  onPickRoutePoint,
+  onAddPoint,
+  onRemovePoint,
   onBuild,
   building,
-  pickMode,
-  pickTarget,
-  onSwap,
   onClear,
   showHeader = true,
 }) {
-  const canOpenRoute = Boolean(start && destination);
-  const canSwap = canOpenRoute;
-  const canClear = Boolean(start || destination);
-  const isPickingStart = pickMode && pickTarget === "start";
-  const isPickingDestination = pickMode && pickTarget === "destination";
+  const hasEnoughPoints = routePoints.length >= 2;
+  const canOpenRoute = Boolean(routePoints[0] && routePoints[routePoints.length - 1]);
+  const canClear = routePoints.some(Boolean);
 
-  const renderPointCard = (label, point, isStart) => (
-    <button
-      type="button"
-      className={`rp-point-card ${isStart ? "start" : "destination"} ${(pickMode && ((isStart && pickTarget === "start") || (!isStart && pickTarget === "destination"))) ? "is-active" : ""}`}
-      onClick={isStart ? onPickStart : onPickDestination}
-    >
-      <div className="rp-point-head"><span className="rp-point-label">{label}</span></div>
-      <div className={`rp-point-value ${!point ? "is-empty" : ""}`}>{point?.name || (isStart ? "Оберіть старт" : "Оберіть пункт призначення")}</div>
-    </button>
-  );
+  const getLabel = (index) => {
+    if (index === 0) return "Старт";
+    if (index === routePoints.length - 1) return "Фініш";
+    return "Точка";
+  };
+
+  const getIndicator = (index) => {
+    if (index === 0) return "○";
+    if (index === routePoints.length - 1) return "◎";
+    return "●";
+  };
 
   return (
     <div className="route-panel p-panel fade-in">
-      {showHeader && <div className="route-panel-header"><span className="rp-title">Маршрут</span><button className="rp-icon-btn" aria-label="Очистити маршрут" onClick={onClear} disabled={!canClear}>🗑</button></div>}
-      <div className={`rp-pick-hint ${pickMode ? "active" : ""}`}>
-        {isPickingStart && "Selecting start"}
-        {isPickingDestination && "Selecting destination"}
-        {!pickMode && "Оберіть старт і пункт призначення."}
-      </div>
+      {showHeader && <div className="route-panel-header"><span className="rp-title">Маршрут</span><button className="rp-icon-btn" aria-label="Очистити маршрут" onClick={onClear} disabled={!canClear}>✕</button></div>}
+      <div className="rp-pick-hint">Оберіть старт, точки маршруту та фініш.</div>
       <div className="rp-waypoints">
-        {renderPointCard("Старт", start, true)}
-        <button className="rp-swap-compact" aria-label="Поміняти місцями" onClick={onSwap} disabled={!canSwap}>⇅</button>
-        {renderPointCard("Пункт призначення", destination, false)}
+        {routePoints.map((point, index) => {
+          const removable = routePoints.length > 2 && index !== 0 && index !== routePoints.length - 1;
+          return (
+            <div className="rp-flow-row" key={`route-point-${index}`}>
+              <div className="rp-flow-col">
+                <span className="rp-flow-indicator">{getIndicator(index)}</span>
+                {index < routePoints.length - 1 && <span className="rp-flow-line" />}
+              </div>
+              <button
+                type="button"
+                className={`rp-point-card ${index === 0 ? "start" : index === routePoints.length - 1 ? "destination" : "waypoint"} ${activeRouteIndex === index ? "is-active" : ""}`}
+                onClick={() => onPickRoutePoint(index)}
+              >
+                <div className="rp-point-head"><span className="rp-point-label">{getLabel(index)}</span></div>
+                <div className={`rp-point-value ${!point ? "is-empty" : ""}`}>{point?.name || `Оберіть: ${getLabel(index).toLowerCase()}`}</div>
+              </button>
+              {removable && <button type="button" className="rp-remove-btn" aria-label="Видалити точку" onClick={() => onRemovePoint(index)}>−</button>}
+            </div>
+          );
+        })}
       </div>
-      {!canOpenRoute && <div className="rp-empty">Спочатку оберіть дві точки: старт і пункт призначення.</div>}
-      <button className="rp-build-btn" onClick={onBuild} disabled={building || !canOpenRoute}>{building ? "Відкриваємо..." : "Відкрити маршрут у Google Maps"}</button>
+      <button type="button" className="rp-add-point-btn" onClick={onAddPoint}>+ Додати точку</button>
+      {!canOpenRoute && <div className="rp-empty">Спочатку оберіть щонайменше старт і фініш.</div>}
+      <button className="rp-build-btn" onClick={onBuild} disabled={building || !canOpenRoute || !hasEnoughPoints}>{building ? "Відкриваємо..." : "Відкрити маршрут у Google Maps"}</button>
       <div className="rp-google-hint">Маршрут громадським транспортом відкриється в Google Maps</div>
     </div>
   );
