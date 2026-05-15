@@ -259,3 +259,12 @@
 .cat-bar-wrap { flex: 1; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
 .cat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
 .cat-amt      { font-size: 13px; font-weight: 500; white-space: nowrap; min-width: 40px; text-align: right; }
+
+.finance-loading-hint {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 20;
+  font-size: 13px;
+  color: var(--muted);
+}
