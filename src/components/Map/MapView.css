@@ -143,9 +143,8 @@
     will-change: transform;
     transform: translateZ(0);
   }
-  .map-sheet.sheet-keep,
-  .map-sheet.sheet-half,
-  .map-sheet.sheet-full { height: min(calc(80svh - 72px), 680px); }
+  .map-sheet.sheet-collapsed,
+  .map-sheet.sheet-expanded { height: min(calc(80svh - 72px), 680px); }
 
   .map-sheet .sheet-scroll {
     flex: 1;
@@ -161,6 +160,11 @@
 
 @media (min-width: 768px) {
   .map-sheet { display: none; }
+}
+
+.sheet-drag-area {
+  min-height: 56px;
+  touch-action: none;
 }
 
 /* Sheet drag handle */

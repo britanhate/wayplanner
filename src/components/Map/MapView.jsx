@@ -123,10 +123,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     snap,
     sheetRef,
     scrollRef,
-    onHandlePointerDown,
+    onDragAreaPointerDown,
     onScrollPointerDown,
     sheetStyle,
-  } = useBottomSheetSwipe("keep");
+  } = useBottomSheetSwipe("collapsed");
 
   const [pendingPos, setPendingPos] = useState(null);
   const [geocoded, setGeocoded] = useState(null);
@@ -665,7 +665,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setRoutePickTarget(null);
   };
 
-  const snapClass = snap === "full" ? "sheet-full" : snap === "half" ? "sheet-half" : "sheet-keep";
+  const snapClass = snap === "expanded" ? "sheet-expanded" : "sheet-collapsed";
 
   const renderContent = () => {
     if (routePanelOpen && routePickTarget) {
@@ -774,14 +774,12 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       </div>
 
       <div ref={sheetRef} className={`map-sheet ${snapClass} slide-up`} style={sheetStyle}>
-        <div
-          className="sheet-handle-wrap"
-          onPointerDown={onHandlePointerDown}
-        >
-          <div className="sheet-handle" />
-        </div>
+        <div className="sheet-drag-area" onPointerDown={onDragAreaPointerDown}>
+          <div className="sheet-handle-wrap">
+            <div className="sheet-handle" />
+          </div>
 
-        <div className="sheet-actions">
+          <div className="sheet-actions">
           <button
             className={`sheet-action-btn ${routePanelOpen ? "active" : ""}`}
             onClick={routePanelOpen ? closeRouteMode : startRouteMode}
@@ -796,6 +794,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           >
             <span className="flex items-center gap-2">{Icons.metro} Метро</span>
           </button>
+          </div>
         </div>
 
         {routePanelOpen && routePickTarget && (

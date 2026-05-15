@@ -2,11 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const MOBILE_QUERY = "(max-width: 767px)";
 const COLLAPSED_VISIBLE = 82;
-const HALF_VISIBLE_RATIO = 0.52;
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-export function useBottomSheetSwipe(initialSnap = "keep") {
+export function useBottomSheetSwipe(initialSnap = "collapsed") {
   const [snap, setSnap] = useState(initialSnap);
   const [isDragging, setIsDragging] = useState(false);
   const [dragTranslateY, setDragTranslateY] = useState(null);
@@ -25,61 +24,52 @@ export function useBottomSheetSwipe(initialSnap = "keep") {
   const getSnapPoints = useCallback(() => {
     const height = sheetRef.current?.getBoundingClientRect().height ?? 0;
     const collapsed = Math.max(height - COLLAPSED_VISIBLE, 0);
-    const halfVisible = height * HALF_VISIBLE_RATIO;
-    const half = clamp(height - halfVisible, 0, collapsed);
-    return { full: 0, half, keep: collapsed, min: 0, max: collapsed };
+    return { expanded: 0, collapsed, min: 0, max: collapsed };
   }, []);
 
-  const currentSnapTranslate = getSnapPoints()[snap] ?? getSnapPoints().keep;
+  const currentSnapTranslate = getSnapPoints()[snap] ?? getSnapPoints().collapsed;
   const translateY = dragTranslateY ?? currentSnapTranslate;
 
-  const startDrag = useCallback(
-    (clientY, pointerId) => {
-      if (!isMobile) return;
-      activePointerIdRef.current = pointerId;
-      dragStartYRef.current = clientY;
-      dragStartTranslateRef.current = translateY;
-      setIsDragging(true);
-    },
-    [isMobile, translateY],
-  );
+  const startDrag = useCallback((clientY, pointerId) => {
+    if (!isMobile) return;
+    activePointerIdRef.current = pointerId;
+    dragStartYRef.current = clientY;
+    dragStartTranslateRef.current = translateY;
+    setIsDragging(true);
+  }, [isMobile, translateY]);
 
-  const onPointerDown = useCallback(
-    (e) => {
-      startDrag(e.clientY, e.pointerId);
-    },
-    [startDrag],
-  );
+  const onDragAreaPointerDown = useCallback((e) => {
+    startDrag(e.clientY, e.pointerId);
+  }, [startDrag]);
 
-  const onPointerMove = useCallback(
-    (e) => {
-      if (!isDragging || activePointerIdRef.current !== e.pointerId || !isMobile)
-        return;
-      e.preventDefault();
-      const dy = e.clientY - dragStartYRef.current;
-      const { min, max } = getSnapPoints();
-      setDragTranslateY(clamp(dragStartTranslateRef.current + dy, min, max));
-    },
-    [getSnapPoints, isDragging, isMobile],
-  );
+  const onScrollPointerDown = useCallback((e) => {
+    if (!isMobile) return;
+    const scrollTop = scrollRef.current?.scrollTop ?? 0;
+    if (scrollTop === 0) startDrag(e.clientY, e.pointerId);
+  }, [isMobile, startDrag]);
 
-  const onPointerUp = useCallback(
-    (e) => {
-      if (activePointerIdRef.current !== e.pointerId || !isMobile) return;
-      const points = getSnapPoints();
-      const finalY = dragTranslateY ?? currentSnapTranslate;
-      const nearest = ["full", "half", "keep"].reduce((best, key) =>
-        Math.abs(points[key] - finalY) < Math.abs(points[best] - finalY)
-          ? key
-          : best,
-      );
-      setSnap(nearest);
-      setDragTranslateY(null);
-      setIsDragging(false);
-      activePointerIdRef.current = null;
-    },
-    [currentSnapTranslate, dragTranslateY, getSnapPoints, isMobile],
-  );
+  const onPointerMove = useCallback((e) => {
+    if (!isDragging || activePointerIdRef.current !== e.pointerId || !isMobile) return;
+    e.preventDefault();
+    const dy = e.clientY - dragStartYRef.current;
+    const { min, max } = getSnapPoints();
+    setDragTranslateY(clamp(dragStartTranslateRef.current + dy, min, max));
+  }, [getSnapPoints, isDragging, isMobile]);
+
+  const onPointerUp = useCallback((e) => {
+    if (activePointerIdRef.current !== e.pointerId || !isMobile) return;
+    const points = getSnapPoints();
+    const finalY = dragTranslateY ?? currentSnapTranslate;
+    const midpoint = (points.collapsed + points.expanded) / 2;
+    const dy = e.clientY - dragStartYRef.current;
+
+    const nextSnap = dy < -8 || finalY < midpoint ? "expanded" : "collapsed";
+
+    setSnap(nextSnap);
+    setDragTranslateY(null);
+    setIsDragging(false);
+    activePointerIdRef.current = null;
+  }, [currentSnapTranslate, dragTranslateY, getSnapPoints, isMobile]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -95,21 +85,12 @@ export function useBottomSheetSwipe(initialSnap = "keep") {
     };
   }, [isDragging, onPointerMove, onPointerUp]);
 
-  const onScrollPointerDown = useCallback(
-    (e) => {
-      if (!isMobile) return;
-      const scrollTop = scrollRef.current?.scrollTop ?? 0;
-      if (scrollTop === 0) startDrag(e.clientY, e.pointerId);
-    },
-    [isMobile, startDrag],
-  );
-
   return {
     snap,
     setSnap,
     sheetRef,
     scrollRef,
-    onHandlePointerDown: onPointerDown,
+    onDragAreaPointerDown,
     onScrollPointerDown,
     sheetStyle: {
       transform: `translateY(${translateY}px)`,
