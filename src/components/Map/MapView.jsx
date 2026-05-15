@@ -15,6 +15,7 @@ import AddPointModal from "./AddPointModal";
 import EditPointModal from "./EditPointModal";
 import { useBottomSheetSwipe } from "../../hooks/useBottomSheetSwipe";
 import { useMetroLayer } from "../../hooks/useMetroLayer";
+import "./MapView.css";
 
 const Icons = {
   route: (

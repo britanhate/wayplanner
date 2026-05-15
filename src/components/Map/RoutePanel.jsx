@@ -5,6 +5,7 @@ import {
   formatDuration,
   formatDistance,
 } from "./routePanelUtils";
+import "./RoutePanel.css";
 
 const Icons = {
   chevronUp: (

@@ -7,6 +7,7 @@ import {
   USERS,
   EXCHANGE_RATES,
 } from "../../lib/constants";
+import "./FinanceView.css";
 
 export default function FinanceView() {
   const { user } = useAuth();

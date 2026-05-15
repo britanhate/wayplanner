@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../lib/AuthContext";
+import "./Topbar.css";
 
 const TabIcons = {
   map: (

@@ -3,6 +3,7 @@ import Topbar from "../components/UI/Topbar";
 import MapView from "../components/Map/MapView";
 import NotesView from "../components/Notes/NotesView";
 import FinanceView from "../components/Finance/FinanceView";
+import "./App.css";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState(() => {

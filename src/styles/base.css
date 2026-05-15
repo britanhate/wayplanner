@@ -1,0 +1,155 @@
+/* ============================================================
+   BASE — tokens, reset, typography, global utilities
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+/* ── Design tokens ── */
+:root {
+  color-scheme: dark;
+
+  /* Backgrounds */
+  --bg-900: #05060a;
+  --bg-800: #0b1220;
+
+  /* Surfaces */
+  --panel:         rgba(255, 255, 255, 0.04);
+  --ios-bg:        rgba(12, 16, 28, 0.97);
+  --glass-border:  rgba(255, 255, 255, 0.06);
+
+  /* Colors */
+  --muted:   #9aa3b2;
+  --accent:  #0a84ff;
+  --success: #30d158;
+  --danger:  #ff453a;
+  --warning: #ff9f0a;
+
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+
+  /* Shadows */
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-md:   0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-lg:   0 18px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+html {
+  overscroll-behavior: none;
+  height: -webkit-fill-available;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+  background: linear-gradient(180deg, var(--bg-900), var(--bg-800));
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  min-height: -webkit-fill-available;
+  overscroll-behavior: none;
+}
+
+#root {
+  height: -webkit-fill-available;
+}
+
+a { color: inherit; }
+button { font-family: inherit; }
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: rgba(255, 255, 255, 0.08); border-radius: 2px; }
+
+/* ── Animations ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-marker {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.12); }
+}
+
+/* ── Utility classes ── */
+.flex         { display: flex; }
+.flex-1       { flex: 1 1 0%; }
+.flex-center  { display: flex; align-items: center; justify-content: center; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2        { gap: 8px; }
+.mr-2         { margin-right: 4px; }
+
+.w-10 { width: 40px; }
+.h-10 { height: 40px; }
+.rounded-full { border-radius: 50%; }
+
+.text-small   { font-size: 12px; }
+.text-lg      { font-size: 18px; }
+.font-medium  { font-weight: 500; }
+.text-white   { color: #fff !important; }
+.text-white\/60 { color: rgba(255, 255, 255, 0.6) !important; }
+.text-gray-400 { color: var(--muted); }
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.truncate-lines-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hidden   { display: none; }
+.shrink-0 { flex-shrink: 0; }
+
+.opacity-disabled { opacity: 0.45; }
+
+.overflow-x-auto {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.overflow-x-auto::-webkit-scrollbar { display: none; }
+
+.mt-section { margin-top: 10px; }
+
+/* Responsive show/hide */
+@media (min-width: 640px) {
+  .sm\:inline { display: inline !important; }
+}
+
+/* ── Loading screen ── */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-900);
+  color: #fff;
+  font-size: 24px;
+  z-index: 9999;
+}
