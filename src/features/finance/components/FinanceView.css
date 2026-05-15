@@ -268,3 +268,25 @@
   font-size: 13px;
   color: var(--muted);
 }
+
+.finance-sync-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.finance-sync-message {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+
+.finance-syncing-hint {
+  position: absolute;
+  top: 32px;
+  left: 14px;
+  z-index: 20;
+  font-size: 13px;
+  color: var(--muted);
+}

@@ -10,6 +10,8 @@ import {
 import "./FinanceView.css";
 import { markPerf, measurePerf } from "../../../shared/lib/perf";
 
+let hasAutoSyncedPointCosts = false;
+
 export default function FinanceView() {
   const { user } = useAuth();
   const {
@@ -22,12 +24,15 @@ export default function FinanceView() {
     loading,
     hasMore,
     loadMore,
+    syncAllPointExpenses,
   } = useExpenses();
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Їжа");
   const [statsOpen, setStatsOpen] = useState(false);
+  const [syncingPointCosts, setSyncingPointCosts] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
 
   // ── Бюджет ──
   const [budgetInput, setBudgetInput] = useState(null);
@@ -140,6 +145,26 @@ export default function FinanceView() {
     await updateExpense(expense.id, { paid: !expense.paid });
   };
 
+  const handleSyncPointCosts = async ({ silent = false } = {}) => {
+    if (!silent) setSyncMessage("");
+    setSyncingPointCosts(true);
+    try {
+      await syncAllPointExpenses();
+      if (!silent) setSyncMessage("Point costs synced successfully.");
+    } catch (error) {
+      console.error(error);
+      if (!silent) setSyncMessage("Failed to sync point costs.");
+    } finally {
+      setSyncingPointCosts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (hasAutoSyncedPointCosts) return;
+    hasAutoSyncedPointCosts = true;
+    handleSyncPointCosts({ silent: true });
+  }, []);
+
   return (
     <div className="finance-view">
       {/* ── Хедер: бюджет ── */}
@@ -168,6 +193,17 @@ export default function FinanceView() {
           >
             Зберегти
           </button>
+        </div>
+
+        <div className="finance-sync-row">
+          <button
+            className="btn-primary btn-primary-small"
+            onClick={handleSyncPointCosts}
+            disabled={syncingPointCosts}
+          >
+            {syncingPointCosts ? "Syncing..." : "Sync point costs"}
+          </button>
+          {syncMessage ? <span className="finance-sync-message">{syncMessage}</span> : null}
         </div>
 
         {/* Прогрес бюджету */}
@@ -225,6 +261,7 @@ export default function FinanceView() {
 
       <div className="finance-body">
         {loading && <div className="finance-loading-hint">Завантаження витрат...</div>}
+        {syncingPointCosts && <div className="finance-syncing-hint">Syncing point costs...</div>}
 
       {/* ── Список + форма ── */}
         <div className="finance-left">
