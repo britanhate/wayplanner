@@ -98,7 +98,7 @@ const Icons = {
 export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const { user } = useAuth();
   const { points, deletePoint, updatePoint } = usePoints();
-  const { addExpense, updateExpense, deleteExpenseByPointId } = useExpenses();
+  const { addExpense, updateExpense, deleteExpenseByPointId } = useExpenses({ enabled: false });
 
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
