@@ -23,12 +23,25 @@ import CalciteIcon from "../../../shared/ui/CalciteIcon";
 const NEARBY_CATEGORIES = [
   { id: "restaurants", label: "Ресторани", arcgis: "13065", pointType: "food" },
   { id: "cafes", label: "Кафе", arcgis: "13032", pointType: "food" },
-  { id: "bars", label: "Бари", arcgis: "13003", pointType: "food" },
+  { id: "bars", label: "Бари / Паби", arcgis: "13003", pointType: "food" },
   { id: "museums", label: "Музеї", arcgis: "10027", pointType: "museum" },
   { id: "landmarks", label: "Памʼятки", arcgis: "16000", pointType: "sight" },
-  { id: "hotels", label: "Готелі", arcgis: "10001", pointType: "hotel" },
-  { id: "shops", label: "Магазини", arcgis: "11000", pointType: "shop" },
 ];
+
+
+const NEARBY_EXCLUDE_TERMS = [
+  "dentist", "dental", "стоматолог", "clinic", "клініка", "hospital", "аптека", "pharmacy", "hair", "salon", "beauty", "apartment", "condo", "real estate", "school", "bank", "atm", "insurance", "repair", "service",
+];
+const NEARBY_INCLUDE_TERMS = [
+  "restaurant", "cafe", "coffee", "bar", "pub", "museum", "attraction", "landmark", "historic", "monument", "art", "gallery", "park", "viewpoint",
+];
+const NEARBY_PRIORITY_TERMS = ["museum", "landmark", "attraction", "historic", "monument", "restaurant", "cafe", "bar", "pub"];
+
+const matchesAnyTerm = (text, terms) => terms.some((term) => text.includes(term));
+const getNearbyPriority = (text) => {
+  const idx = NEARBY_PRIORITY_TERMS.findIndex((term) => text.includes(term));
+  return idx === -1 ? NEARBY_PRIORITY_TERMS.length : idx;
+};
 
 const RoutePanel = lazy(() => import("../../routes/components/RoutePanel"));
 const MetroPanel = lazy(() => import("../../metro/components/MetroPanel"));
@@ -146,6 +159,8 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const userLocationMarkerRef = useRef(null);
   const userAccuracyCircleRef = useRef(null);
   const nearbyMarkersLayerRef = useRef(null);
+  const nearbyMarkersRef = useRef(new Map());
+  const previewMarkerPosRef = useRef(null);
 
 
   const {
@@ -177,6 +192,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const [nearbyCategory, setNearbyCategory] = useState(NEARBY_CATEGORIES[0].id);
   const [nearbyAnchor, setNearbyAnchor] = useState(null);
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
+  const [selectedNearbyPlace, setSelectedNearbyPlace] = useState(null);
 
   // ── Ініціалізація карти ──
   // ── Ініціалізація карти ──
@@ -201,8 +217,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     map.on("click", (e) => {
       const { lat, lng } = e.latlng;
       setPreviewPos({ lat, lng });
-      setNearbyAnchor({ lat, lng });
-      setNearbyOpen(true);
       (async () => {
         try {
           const place = await reverseGeocode(lat, lng);
@@ -285,18 +299,41 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     return icon;
   }, []);
 
+
+  const openNearbyForPoint = useCallback((point) => {
+    if (!point) return;
+    setNearbyAnchor({ lat: point.lat, lng: point.lng });
+    setNearbyCategory(NEARBY_CATEGORIES[0].id);
+    setNearbyOpen(true);
+    setSnap("expanded");
+  }, [setSnap]);
+
   const pointPopupMap = useMemo(
     () =>
       new Map(
         points.map((p) => {
           const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
           const imgSrc = getPointImageSrc(p.attachments);
-          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}</div></div>`;
+          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}<button onclick="window.__openNearbyFromPoint(\'${p.id}\')" class="add-preview-btn" style="margin-top:8px;">Що поруч?</button></div></div>`;
           return [p.id, popup];
         }),
       ),
     [points],
   );
+
+
+  useEffect(() => {
+    const pointsById = new Map(points.map((point) => [String(point.id), point]));
+    window.__openNearbyFromPoint = (pointId) => {
+      const point = pointsById.get(String(pointId));
+      if (!point) return;
+      openNearbyForPoint(point);
+    };
+
+    return () => {
+      delete window.__openNearbyFromPoint;
+    };
+  }, [points, openNearbyForPoint]);
 
   // ── Markers ──
   useEffect(() => {
@@ -336,65 +373,75 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   }, [points, pointsLoading, routePoints, pointPopupMap, getMarkerIcon]);
 
   // ── Preview marker ──
-  // ── Preview marker ──
   useEffect(() => {
-    // 1. Завжди чистимо старий маркер перед новим рендером
-    if (previewMarkerRef.current) {
-      previewMarkerRef.current.remove();
-      previewMarkerRef.current = null;
-    }
     delete window.__addPreviewPoint;
+    delete window.__openNearbyFromPreview;
 
-    // 2. Якщо позиції немає — просто виходимо (маркер уже видалено вище)
-    if (!previewPos || !mapInstance.current) return;
-
-    const icon = L.divIcon({
-      html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff">📍</div>`,
-      className: "wp-marker-wrap",
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-      popupAnchor: [0, -18],
-    });
+    if (!previewPos || !mapInstance.current) {
+      if (previewMarkerRef.current) {
+        previewMarkerRef.current.remove();
+        previewMarkerRef.current = null;
+      }
+      previewMarkerPosRef.current = null;
+      return;
+    }
 
     const popup = `
     <div class="ios-card">
       <div class="ios-card-content">
         <div class="ios-title">${geocoded?.name || "Знайдене місце"}</div>
         ${geocoded?.addr ? `<div class="ios-popup-addr">📍 ${geocoded.addr}</div>` : ""}
-        <button onclick="window.__addPreviewPoint()" class="add-preview-btn">+ Додати точку</button>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="window.__addPreviewPoint(); event.stopPropagation();" class="add-preview-btn">+ Додати точку</button>
+          <button onclick="window.__openNearbyFromPreview(); event.stopPropagation();" class="add-preview-btn">Що поруч?</button>
+        </div>
       </div>
     </div>`;
 
-    const marker = L.marker([previewPos.lat, previewPos.lng], { icon })
-      .addTo(mapInstance.current)
-      .bindPopup(popup, { autoClose: false }) // autoClose: false дозволяє нам контролювати процес
-      .openPopup();
+    const samePosition = previewMarkerPosRef.current
+      && previewMarkerPosRef.current.lat === previewPos.lat
+      && previewMarkerPosRef.current.lng === previewPos.lng;
 
-    previewMarkerRef.current = marker;
+    if (!previewMarkerRef.current || !samePosition) {
+      if (previewMarkerRef.current) previewMarkerRef.current.remove();
+      const icon = L.divIcon({
+        html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff">📍</div>`,
+        className: "wp-marker-wrap",
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -18],
+      });
+      previewMarkerRef.current = L.marker([previewPos.lat, previewPos.lng], { icon })
+        .addTo(mapInstance.current)
+        .bindPopup(popup, { autoClose: false, closeOnClick: false })
+        .openPopup();
+      previewMarkerPosRef.current = { lat: previewPos.lat, lng: previewPos.lng };
+    } else {
+      previewMarkerRef.current.setPopupContent(popup);
+      previewMarkerRef.current.openPopup();
+    }
 
     window.__addPreviewPoint = () => {
       setPendingPos(previewPos);
-      // При кліку на "Додати" ми не обнуляємо previewPos відразу,
-      // щоб модалка бачила координати, але закриваємо попап.
-      marker.closePopup();
+      previewMarkerRef.current?.closePopup();
+    };
+
+    window.__openNearbyFromPreview = () => {
+      openNearbyForPoint({ lat: previewPos.lat, lng: previewPos.lng });
+      previewMarkerRef.current?.closePopup();
     };
 
     return () => {
-      if (previewMarkerRef.current) {
-        previewMarkerRef.current.remove();
-        previewMarkerRef.current = null;
-      }
       delete window.__addPreviewPoint;
+      delete window.__openNearbyFromPreview;
     };
-  }, [previewPos, geocoded]);
+  }, [previewPos, geocoded, openNearbyForPoint]);
 
   // ── Helpers ──
   const flyTo = (p) => {
     setSelectedPointId(p.id);
     mapInstance.current?.flyTo([p.lat, p.lng], 15, { duration: 0.8 });
     markersRef.current[p.id]?.openPopup();
-    setNearbyAnchor({ lat: p.lat, lng: p.lng });
-    setNearbyOpen(true);
   };
 
   const handleGeocodeResult = (result) => {
@@ -652,7 +699,20 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     }
   };
 
+  const highlightNearbyMarker = useCallback((placeId) => {
+    nearbyMarkersRef.current.forEach((marker, id) => {
+      const isSelected = id === placeId;
+      marker.setStyle({
+        radius: isSelected ? 8 : 5,
+        color: isSelected ? "#0a84ff" : "#7ec8ff",
+        weight: isSelected ? 2 : 1,
+        fillOpacity: isSelected ? 1 : 0.85,
+      });
+    });
+  }, []);
+
   const clearNearbyMarkers = useCallback(() => {
+    nearbyMarkersRef.current.clear();
     nearbyMarkersLayerRef.current?.clearLayers();
   }, []);
 
@@ -660,6 +720,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     if (!anchor) return;
     const category = NEARBY_CATEGORIES.find((item) => item.id === categoryId) || NEARBY_CATEGORIES[0];
     setNearbyLoading(true);
+    setSelectedNearbyPlace(null);
     try {
       const results = await searchNearbyPlaces({ lat: anchor.lat, lng: anchor.lng, radius: 500, category: category.arcgis });
       const normalized = results.map((item, idx) => ({
@@ -674,17 +735,48 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         rating: item.rating,
         openingHours: item.openingHours?.text,
         pointType: category.pointType,
-      })).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+      }))
+        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+        .filter((p) => {
+          const searchable = `${p.name} ${p.category} ${p.address || ""}`.toLowerCase();
+          if (matchesAnyTerm(searchable, NEARBY_EXCLUDE_TERMS)) return false;
+          return matchesAnyTerm(searchable, NEARBY_INCLUDE_TERMS);
+        })
+        .sort((a, b) => {
+          const textA = `${a.name} ${a.category}`.toLowerCase();
+          const textB = `${b.name} ${b.category}`.toLowerCase();
+          const priorityDiff = getNearbyPriority(textA) - getNearbyPriority(textB);
+          if (priorityDiff !== 0) return priorityDiff;
+          return a.distance - b.distance;
+        });
+
       setNearbyPlaces(normalized);
       clearNearbyMarkers();
-      normalized.forEach((place) => L.circleMarker([place.lat, place.lng], { radius: 5, color: "#7ec8ff", weight: 1, fillOpacity: 0.85 }).addTo(nearbyMarkersLayerRef.current));
+
+      normalized.forEach((place) => {
+        const marker = L.circleMarker([place.lat, place.lng], {
+          radius: 5,
+          color: "#7ec8ff",
+          weight: 1,
+          fillOpacity: 0.85,
+        }).addTo(nearbyMarkersLayerRef.current);
+
+        marker.on("click", (e) => {
+          if (e?.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
+          setSelectedNearbyPlace(place);
+          highlightNearbyMarker(place.id);
+        });
+
+        nearbyMarkersRef.current.set(place.id, marker);
+      });
     } catch (error) {
       setNearbyPlaces([]);
+      setSelectedNearbyPlace(null);
       setUiMessage("Не вдалося завантажити місця поруч.");
     } finally {
       setNearbyLoading(false);
     }
-  }, [clearNearbyMarkers]);
+  }, [clearNearbyMarkers, highlightNearbyMarker]);
 
   useEffect(() => {
     if (!nearbyOpen || !nearbyAnchor) return;
@@ -697,8 +789,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const handleCloseNearby = () => {
     setNearbyOpen(false);
     setNearbyPlaces([]);
+    setSelectedNearbyPlace(null);
     clearNearbyMarkers();
   };
+
+  const handleSelectNearbyPlace = useCallback((place) => {
+    setSelectedNearbyPlace(place);
+    highlightNearbyMarker(place.id);
+  }, [highlightNearbyMarker]);
 
   const handleAddNearbyPoint = async (place) => {
     await handleSavePoint({
@@ -770,6 +868,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         routeFrom={null}
         onRouteToggle={handleRoutePointPick}
         selectedPointId={selectedPointId}
+        onNearby={openNearbyForPoint}
       />
     ),
     [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points, selectedPointId],
@@ -787,6 +886,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         routeFrom={null}
         onRouteToggle={handleRoutePointPick}
         selectedPointId={selectedPointId}
+        onNearby={openNearbyForPoint}
       />
     ),
     [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points, activeRouteIndex, selectedPointId],
@@ -886,20 +986,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             places={nearbyPlaces}
             onAdd={handleAddNearbyPoint}
             onClose={handleCloseNearby}
+            selectedPlace={selectedNearbyPlace}
+            onSelectPlace={handleSelectNearbyPlace}
+            onBackToList={() => setSelectedNearbyPlace(null)}
           />
         )}
-                {nearbyOpen && !routePanelOpen && !metroPanelOpen && (
-          <NearbyPlacesPanel
-            category={nearbyCategory}
-            onCategoryChange={setNearbyCategory}
-            categories={NEARBY_CATEGORIES}
-            loading={nearbyLoading}
-            places={nearbyPlaces}
-            onAdd={handleAddNearbyPoint}
-            onClose={handleCloseNearby}
-          />
-        )}
-          {renderContent()}
       </div>
 
       <div className="map-wrap">
@@ -963,7 +1054,20 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           className="sheet-scroll fade-in"
           onPointerDown={onScrollPointerDown}
         >
-          {renderContent()}
+          {nearbyOpen && !routePanelOpen && !metroPanelOpen ? (
+            <NearbyPlacesPanel
+              category={nearbyCategory}
+              onCategoryChange={setNearbyCategory}
+              categories={NEARBY_CATEGORIES}
+              loading={nearbyLoading}
+              places={nearbyPlaces}
+              onAdd={handleAddNearbyPoint}
+              onClose={handleCloseNearby}
+              selectedPlace={selectedNearbyPlace}
+              onSelectPlace={handleSelectNearbyPlace}
+              onBackToList={() => setSelectedNearbyPlace(null)}
+            />
+          ) : renderContent()}
         </div>
       </div>
 

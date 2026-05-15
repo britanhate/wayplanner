@@ -559,6 +559,18 @@
 .my-location-btn:hover { background: rgba(14, 20, 34, 0.96); }
 .my-location-btn:active { transform: scale(0.98); }
 
+
+@media (max-width: 767px) {
+  .my-location-btn {
+    top: calc(env(safe-area-inset-top, 0px) + 76px);
+    bottom: auto;
+    right: 12px;
+    width: 48px;
+    height: 48px;
+    z-index: 1300;
+  }
+}
+
 @media (min-width: 768px) {
   .my-location-btn {
     bottom: 24px;
@@ -632,10 +644,20 @@
   }
 }
 
-.nearby-panel { margin: 12px 0; }
-.nearby-chips { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 12px; }
-.nearby-list { display:grid; gap:10px; }
-.nearby-card { border:0.5px solid rgba(255,255,255,.12); border-radius:12px; padding:10px; background:rgba(255,255,255,.03); display:grid; gap:4px; }
-.nearby-title { font-weight:600; color:#eef5ff; }
+.nearby-panel { margin: 8px 0 10px; }
+.nearby-header-row { align-items: flex-start; margin-bottom: 8px; }
+.nearby-subtitle { font-size: 12px; color: rgba(231,240,255,.66); margin-top: 2px; }
+.nearby-chips { display:flex; gap:8px; overflow-x:auto; white-space:nowrap; padding: 2px 0 8px; margin: 8px 0 10px; }
+.nearby-chip { border: 0.5px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); color:#eaf2ff; border-radius: 999px; padding: 7px 12px; font-size: 12px; flex: 0 0 auto; }
+.nearby-chip-active { background: rgba(10,132,255,.26); border-color: rgba(10,132,255,.55); color: #fff; }
+.nearby-list { display:grid; gap:8px; }
+.nearby-card { border:0.5px solid rgba(255,255,255,.08); border-radius:12px; padding:10px 11px; background:rgba(255,255,255,.02); display:grid; gap:4px; }
+.nearby-card-selected { border-color: rgba(10,132,255,.4); background: rgba(10,132,255,.08); }
+.nearby-title { font-weight:600; color:#eef5ff; line-height: 1.25; }
+.nearby-title-lg { font-size: 16px; }
 .nearby-meta,.nearby-addr { font-size:12px; color:rgba(231,240,255,.72); }
-.nearby-empty { font-size:13px; color:rgba(231,240,255,.72); padding:8px 0; }
+.nearby-details-btn { justify-self: end; border: none; background: transparent; color: #8fc4ff; font-size: 12px; padding: 4px 2px; }
+.nearby-actions-row { display:flex; gap:8px; margin-top: 8px; }
+.nearby-actions-row .btn-ghost { flex: 1; }
+.nearby-actions-row .metro-open-btn { flex: 2; }
+.nearby-empty { font-size:13px; color:rgba(231,240,255,.72); padding:10px 2px; }
