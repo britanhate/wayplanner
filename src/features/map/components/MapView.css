@@ -559,6 +559,18 @@
 .my-location-btn:hover { background: rgba(14, 20, 34, 0.96); }
 .my-location-btn:active { transform: scale(0.98); }
 
+
+@media (max-width: 767px) {
+  .my-location-btn {
+    top: calc(env(safe-area-inset-top, 0px) + 76px);
+    bottom: auto;
+    right: 12px;
+    width: 48px;
+    height: 48px;
+    z-index: 1300;
+  }
+}
+
 @media (min-width: 768px) {
   .my-location-btn {
     bottom: 24px;

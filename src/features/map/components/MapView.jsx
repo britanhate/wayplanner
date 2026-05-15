@@ -147,6 +147,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const userAccuracyCircleRef = useRef(null);
   const nearbyMarkersLayerRef = useRef(null);
   const nearbyMarkersRef = useRef(new Map());
+  const previewMarkerPosRef = useRef(null);
 
 
   const {
@@ -359,26 +360,18 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   }, [points, pointsLoading, routePoints, pointPopupMap, getMarkerIcon]);
 
   // ── Preview marker ──
-  // ── Preview marker ──
   useEffect(() => {
-    // 1. Завжди чистимо старий маркер перед новим рендером
-    if (previewMarkerRef.current) {
-      previewMarkerRef.current.remove();
-      previewMarkerRef.current = null;
-    }
     delete window.__addPreviewPoint;
     delete window.__openNearbyFromPreview;
 
-    // 2. Якщо позиції немає — просто виходимо (маркер уже видалено вище)
-    if (!previewPos || !mapInstance.current) return;
-
-    const icon = L.divIcon({
-      html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff">📍</div>`,
-      className: "wp-marker-wrap",
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-      popupAnchor: [0, -18],
-    });
+    if (!previewPos || !mapInstance.current) {
+      if (previewMarkerRef.current) {
+        previewMarkerRef.current.remove();
+        previewMarkerRef.current = null;
+      }
+      previewMarkerPosRef.current = null;
+      return;
+    }
 
     const popup = `
     <div class="ios-card">
@@ -392,18 +385,37 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       </div>
     </div>`;
 
-    const marker = L.marker([previewPos.lat, previewPos.lng], { icon })
-      .addTo(mapInstance.current)
-      .bindPopup(popup, { autoClose: false }) // autoClose: false дозволяє нам контролювати процес
-      .openPopup();
+    const samePosition = previewMarkerPosRef.current
+      && previewMarkerPosRef.current.lat === previewPos.lat
+      && previewMarkerPosRef.current.lng === previewPos.lng;
 
-    previewMarkerRef.current = marker;
+    if (!previewMarkerRef.current || !samePosition) {
+      if (previewMarkerRef.current) previewMarkerRef.current.remove();
+      const icon = L.divIcon({
+        html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff">📍</div>`,
+        className: "wp-marker-wrap",
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -18],
+      });
+      previewMarkerRef.current = L.marker([previewPos.lat, previewPos.lng], { icon })
+        .addTo(mapInstance.current)
+        .bindPopup(popup, { autoClose: false, closeOnClick: false })
+        .openPopup();
+      previewMarkerPosRef.current = { lat: previewPos.lat, lng: previewPos.lng };
+    } else {
+      previewMarkerRef.current.setPopupContent(popup);
+      previewMarkerRef.current.openPopup();
+    }
 
     window.__addPreviewPoint = () => {
       setPendingPos(previewPos);
-      // При кліку на "Додати" ми не обнуляємо previewPos відразу,
-      // щоб модалка бачила координати, але закриваємо попап.
-      marker.closePopup();
+      previewMarkerRef.current?.closePopup();
+    };
+
+    window.__openNearbyFromPreview = () => {
+      openNearbyForPoint({ lat: previewPos.lat, lng: previewPos.lng });
+      previewMarkerRef.current?.closePopup();
     };
 
     window.__openNearbyFromPreview = () => {
@@ -412,10 +424,6 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     };
 
     return () => {
-      if (previewMarkerRef.current) {
-        previewMarkerRef.current.remove();
-        previewMarkerRef.current = null;
-      }
       delete window.__addPreviewPoint;
       delete window.__openNearbyFromPreview;
     };
