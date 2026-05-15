@@ -9,14 +9,26 @@ import { supabase } from "../../../lib/supabase";
 import { POINT_TYPES } from "../../../lib/constants";
 import { createTileLayer, getPointImageSrc } from "../lib/mapUtils";
 import SearchBox from "./SearchBox";
-import { reverseGeocode } from "../../../lib/arcgis";
+import { reverseGeocode, searchNearbyPlaces } from "../../../lib/arcgis";
 import PointsSidebar from "../../points/components/PointsSidebar";
 import AddPointModal from "../../points/components/AddPointModal";
 import EditPointModal from "../../points/components/EditPointModal";
+import NearbyPlacesPanel from "./NearbyPlacesPanel";
 import { useBottomSheetSwipe } from "../../../shared/hooks/useBottomSheetSwipe";
 import "./MapView.css";
 import { logSlowInteraction, markPerf, measurePerf } from "../../../shared/lib/perf";
 import CalciteIcon from "../../../shared/ui/CalciteIcon";
+
+
+const NEARBY_CATEGORIES = [
+  { id: "restaurants", label: "Ресторани", arcgis: "13065", pointType: "food" },
+  { id: "cafes", label: "Кафе", arcgis: "13032", pointType: "food" },
+  { id: "bars", label: "Бари", arcgis: "13003", pointType: "food" },
+  { id: "museums", label: "Музеї", arcgis: "10027", pointType: "museum" },
+  { id: "landmarks", label: "Памʼятки", arcgis: "16000", pointType: "sight" },
+  { id: "hotels", label: "Готелі", arcgis: "10001", pointType: "hotel" },
+  { id: "shops", label: "Магазини", arcgis: "11000", pointType: "shop" },
+];
 
 const RoutePanel = lazy(() => import("../../routes/components/RoutePanel"));
 const MetroPanel = lazy(() => import("../../metro/components/MetroPanel"));
@@ -133,6 +145,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const pointIconCacheRef = useRef(new Map());
   const userLocationMarkerRef = useRef(null);
   const userAccuracyCircleRef = useRef(null);
+  const nearbyMarkersLayerRef = useRef(null);
 
 
   const {
@@ -159,6 +172,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const [uiMessage, setUiMessage] = useState("");
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [selectedPointId, setSelectedPointId] = useState(null);
+  const [nearbyOpen, setNearbyOpen] = useState(false);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyCategory, setNearbyCategory] = useState(NEARBY_CATEGORIES[0].id);
+  const [nearbyAnchor, setNearbyAnchor] = useState(null);
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
 
   // ── Ініціалізація карти ──
   // ── Ініціалізація карти ──
@@ -177,11 +195,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       map.attributionControl.setPrefix(false);
     }
     mapInstance.current = map;
+    nearbyMarkersLayerRef.current = L.layerGroup().addTo(map);
 
     // Клік по карті — ставимо прев'ю
     map.on("click", (e) => {
       const { lat, lng } = e.latlng;
       setPreviewPos({ lat, lng });
+      setNearbyAnchor({ lat, lng });
+      setNearbyOpen(true);
       (async () => {
         try {
           const place = await reverseGeocode(lat, lng);
@@ -372,6 +393,8 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setSelectedPointId(p.id);
     mapInstance.current?.flyTo([p.lat, p.lng], 15, { duration: 0.8 });
     markersRef.current[p.id]?.openPopup();
+    setNearbyAnchor({ lat: p.lat, lng: p.lng });
+    setNearbyOpen(true);
   };
 
   const handleGeocodeResult = (result) => {
@@ -629,6 +652,71 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     }
   };
 
+  const clearNearbyMarkers = useCallback(() => {
+    nearbyMarkersLayerRef.current?.clearLayers();
+  }, []);
+
+  const runNearbySearch = useCallback(async (categoryId, anchor) => {
+    if (!anchor) return;
+    const category = NEARBY_CATEGORIES.find((item) => item.id === categoryId) || NEARBY_CATEGORIES[0];
+    setNearbyLoading(true);
+    try {
+      const results = await searchNearbyPlaces({ lat: anchor.lat, lng: anchor.lng, radius: 500, category: category.arcgis });
+      const normalized = results.map((item, idx) => ({
+        id: item.placeId || item.id || `${item.name}-${idx}`,
+        name: item.name || "Без назви",
+        category: item.categories?.[0]?.label || category.label,
+        lat: item.location?.y || item.y,
+        lng: item.location?.x || item.x,
+        address: item.address?.formattedAddress || item.address?.address || item.address,
+        distance: Number(item.distance || 0),
+        distanceText: `${Math.round(Number(item.distance || 0))} м`,
+        rating: item.rating,
+        openingHours: item.openingHours?.text,
+        pointType: category.pointType,
+      })).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+      setNearbyPlaces(normalized);
+      clearNearbyMarkers();
+      normalized.forEach((place) => L.circleMarker([place.lat, place.lng], { radius: 5, color: "#7ec8ff", weight: 1, fillOpacity: 0.85 }).addTo(nearbyMarkersLayerRef.current));
+    } catch (error) {
+      setNearbyPlaces([]);
+      setUiMessage("Не вдалося завантажити місця поруч.");
+    } finally {
+      setNearbyLoading(false);
+    }
+  }, [clearNearbyMarkers]);
+
+  useEffect(() => {
+    if (!nearbyOpen || !nearbyAnchor) return;
+    const timer = window.setTimeout(() => {
+      runNearbySearch(nearbyCategory, nearbyAnchor);
+    }, 220);
+    return () => window.clearTimeout(timer);
+  }, [nearbyOpen, nearbyCategory, nearbyAnchor, runNearbySearch]);
+
+  const handleCloseNearby = () => {
+    setNearbyOpen(false);
+    setNearbyPlaces([]);
+    clearNearbyMarkers();
+  };
+
+  const handleAddNearbyPoint = async (place) => {
+    await handleSavePoint({
+      name: place.name,
+      lat: place.lat,
+      lng: place.lng,
+      type: place.pointType,
+      addr: place.address || "",
+      description: [place.category, place.openingHours].filter(Boolean).join(" • "),
+      estimated_cost: null,
+      currency: "EUR",
+      attachments: [],
+      point_date: null,
+      comment: "",
+      is_completed: false,
+    });
+  };
+
   const closeRouteMode = () => {
     setRoutePanelOpen(false);
     clearRouteLines();
@@ -789,7 +877,29 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           </div>
         )}
 
-        {renderContent()}
+        {nearbyOpen && !routePanelOpen && !metroPanelOpen && (
+          <NearbyPlacesPanel
+            category={nearbyCategory}
+            onCategoryChange={setNearbyCategory}
+            categories={NEARBY_CATEGORIES}
+            loading={nearbyLoading}
+            places={nearbyPlaces}
+            onAdd={handleAddNearbyPoint}
+            onClose={handleCloseNearby}
+          />
+        )}
+                {nearbyOpen && !routePanelOpen && !metroPanelOpen && (
+          <NearbyPlacesPanel
+            category={nearbyCategory}
+            onCategoryChange={setNearbyCategory}
+            categories={NEARBY_CATEGORIES}
+            loading={nearbyLoading}
+            places={nearbyPlaces}
+            onAdd={handleAddNearbyPoint}
+            onClose={handleCloseNearby}
+          />
+        )}
+          {renderContent()}
       </div>
 
       <div className="map-wrap">

@@ -631,3 +631,11 @@
     bottom: auto;
   }
 }
+
+.nearby-panel { margin: 12px 0; }
+.nearby-chips { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 12px; }
+.nearby-list { display:grid; gap:10px; }
+.nearby-card { border:0.5px solid rgba(255,255,255,.12); border-radius:12px; padding:10px; background:rgba(255,255,255,.03); display:grid; gap:4px; }
+.nearby-title { font-weight:600; color:#eef5ff; }
+.nearby-meta,.nearby-addr { font-size:12px; color:rgba(231,240,255,.72); }
+.nearby-empty { font-size:13px; color:rgba(231,240,255,.72); padding:8px 0; }
