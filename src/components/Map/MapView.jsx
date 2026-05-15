@@ -119,8 +119,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const tileLayerRef = useRef(null);
   const routePickTargetRef = useRef(null);
 
-  const { snap, setSnap, onTouchStart, onTouchEnd } =
-    useBottomSheetSwipe("keep");
+  const {
+    snap,
+    sheetRef,
+    scrollRef,
+    onDragAreaPointerDown,
+    onScrollPointerDown,
+    sheetStyle,
+  } = useBottomSheetSwipe("collapsed");
 
   const [pendingPos, setPendingPos] = useState(null);
   const [geocoded, setGeocoded] = useState(null);
@@ -659,7 +665,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setRoutePickTarget(null);
   };
 
-  const snapClass = snap === "full" ? "sheet-full" : "sheet-keep";
+  const snapClass = snap === "expanded" ? "sheet-expanded" : "sheet-collapsed";
 
   const renderContent = () => {
     if (routePanelOpen && routePickTarget) {
@@ -767,16 +773,13 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         <div ref={mapRef} className="leaflet-map" />
       </div>
 
-      <div className={`map-sheet ${snapClass} slide-up`}>
-        <div
-          className="sheet-handle-wrap"
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-        >
-          <div className="sheet-handle" />
-        </div>
+      <div ref={sheetRef} className={`map-sheet ${snapClass} slide-up`} style={sheetStyle}>
+        <div className="sheet-drag-area" onPointerDown={onDragAreaPointerDown}>
+          <div className="sheet-handle-wrap">
+            <div className="sheet-handle" />
+          </div>
 
-        <div className="sheet-actions">
+          <div className="sheet-actions">
           <button
             className={`sheet-action-btn ${routePanelOpen ? "active" : ""}`}
             onClick={routePanelOpen ? closeRouteMode : startRouteMode}
@@ -791,6 +794,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           >
             <span className="flex items-center gap-2">{Icons.metro} Метро</span>
           </button>
+          </div>
         </div>
 
         {routePanelOpen && routePickTarget && (
@@ -809,7 +813,13 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           </div>
         )}
 
-        <div className="sheet-scroll fade-in">{renderContent()}</div>
+        <div
+          ref={scrollRef}
+          className="sheet-scroll fade-in"
+          onPointerDown={onScrollPointerDown}
+        >
+          {renderContent()}
+        </div>
       </div>
 
       {pendingPos && (
