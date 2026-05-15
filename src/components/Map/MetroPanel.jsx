@@ -1,13 +1,44 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { METRO_MAPS } from "./metroMaps";
+import MetroMapModal from "./MetroMapModal";
+
+const ZOOM_LEVELS = [1, 1.25, 1.5, 2, 3];
 
 export default function MetroPanel() {
-  const [selectedId, setSelectedId] = useState(METRO_MAPS[0].id);
   const [imageErrors, setImageErrors] = useState({});
+  const [openedCityId, setOpenedCityId] = useState(null);
+  const [scale, setScale] = useState(1);
 
-  const selected = METRO_MAPS.find((item) => item.id === selectedId) || METRO_MAPS[0];
+  const openedCity = useMemo(
+    () => METRO_MAPS.find((item) => item.id === openedCityId) || null,
+    [openedCityId],
+  );
 
   const hasImage = (id) => !imageErrors[id];
+
+  const handleOpen = (cityId) => {
+    setOpenedCityId(cityId);
+    setScale(1);
+  };
+
+  const closeModal = () => {
+    setOpenedCityId(null);
+    setScale(1);
+  };
+
+  const zoomIn = () => {
+    const currentIndex = ZOOM_LEVELS.indexOf(scale);
+    if (currentIndex < ZOOM_LEVELS.length - 1) {
+      setScale(ZOOM_LEVELS[currentIndex + 1]);
+    }
+  };
+
+  const zoomOut = () => {
+    const currentIndex = ZOOM_LEVELS.indexOf(scale);
+    if (currentIndex > 0) {
+      setScale(ZOOM_LEVELS[currentIndex - 1]);
+    }
+  };
 
   return (
     <aside className="sidebar p-panel fade-in metro-panel">
@@ -15,28 +46,10 @@ export default function MetroPanel() {
         <div className="section-title">Метро</div>
       </div>
 
-      <div className="metro-selected-preview">
-        <div className="metro-selected-title">{selected.name} Metro</div>
-        {hasImage(selected.id) ? (
-          <img
-            src={selected.image}
-            alt={`${selected.name} metro map`}
-            className="metro-preview-large"
-            onError={() => setImageErrors((prev) => ({ ...prev, [selected.id]: true }))}
-          />
-        ) : (
-          <div className="metro-preview-fallback">Схема метро ще не додана</div>
-        )}
-      </div>
-
       <div className="metro-list">
         {METRO_MAPS.map((item) => (
-          <button
-            key={item.id}
-            className={`metro-card ${selectedId === item.id ? "active" : ""}`}
-            onClick={() => setSelectedId(item.id)}
-          >
-            <div className="metro-card-title">{item.name} Metro</div>
+          <article key={item.id} className="metro-card">
+            <div className="metro-card-title">{item.name}</div>
             {hasImage(item.id) ? (
               <img
                 src={item.image}
@@ -47,9 +60,28 @@ export default function MetroPanel() {
             ) : (
               <div className="metro-thumb metro-thumb-fallback">Схема метро ще не додана</div>
             )}
-          </button>
+
+            <button
+              className="metro-open-btn"
+              onClick={() => handleOpen(item.id)}
+              disabled={!hasImage(item.id)}
+            >
+              Відкрити схему
+            </button>
+          </article>
         ))}
       </div>
+
+      {openedCity && (
+        <MetroMapModal
+          city={openedCity}
+          scale={scale}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onResetZoom={() => setScale(1)}
+          onClose={closeModal}
+        />
+      )}
     </aside>
   );
 }
