@@ -1,7 +1,7 @@
 import { supabase } from '../../lib/supabase';
 import { debugSupabaseFetch } from '../../lib/supabaseDebug';
 
-const EXPENSE_FIELDS = 'id, name, point_id, amount, category, note, currency, paid, created_by, created_at';
+const EXPENSE_FIELDS = 'id, created_by, name, amount, currency, category, created_at, point_id, paid';
 
 export const fetchExpenses = ({ from = 0, to = 49 } = {}) =>
   debugSupabaseFetch({
@@ -25,7 +25,7 @@ export const upsertBudget = (payload) => supabase.from('trip_settings').upsert(p
 
 export const fetchPointExpenses = () => debugSupabaseFetch({
   table: 'expenses',
-  columns: 'id, point_id, created_at',
+  columns: 'id, created_by, name, amount, currency, category, created_at, point_id, paid',
   action: 'select',
-  query: () => supabase.from('expenses').select('id, point_id, created_at').not('point_id', 'is', null).order('created_at', { ascending: true }),
+  query: () => supabase.from('expenses').select('id, created_by, name, amount, currency, category, created_at, point_id, paid').not('point_id', 'is', null).order('created_at', { ascending: true }),
 });

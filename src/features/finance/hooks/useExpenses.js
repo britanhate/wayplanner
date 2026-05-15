@@ -117,6 +117,8 @@ export function useExpenses({ enabled = true } = {}) {
         expensesByPointId.set(key, expense);
         return;
       }
+
+      existing.paid = Boolean(existing.paid || expense.paid);
       duplicates.push(expense.id);
     });
 
@@ -134,23 +136,43 @@ export function useExpenses({ enabled = true } = {}) {
         return;
       }
 
-      const payload = {
-        name: `🏷️ ${point.name}`,
-        amount: normalizedAmount,
-        currency: point.currency || "EUR",
-        category: "Місце",
-        note: point.addr || null,
-        point_id: point.id,
-        created_by: point.created_by,
-        created_at: point.point_date || point.created_at,
-      };
+      const nextName = `🏷️ ${point.name}`;
+      const nextCurrency = point.currency || "EUR";
 
       if (!existingExpense) {
-        toCreate.push(payload);
+        toCreate.push({
+          name: nextName,
+          amount: normalizedAmount,
+          currency: nextCurrency,
+          category: "Місце",
+          point_id: point.id,
+          created_by: point.created_by,
+          created_at: point.point_date || point.created_at,
+          paid: false,
+        });
         return;
       }
 
-      toUpdate.push({ id: existingExpense.id, payload });
+      const payload = {
+        name: nextName,
+        amount: normalizedAmount,
+        currency: nextCurrency,
+        category: "Місце",
+        point_id: point.id,
+        created_by: point.created_by,
+      };
+
+      const shouldUpdate =
+        existingExpense.name !== payload.name ||
+        Number(existingExpense.amount) !== payload.amount ||
+        existingExpense.currency !== payload.currency ||
+        existingExpense.category !== payload.category ||
+        existingExpense.point_id !== payload.point_id ||
+        existingExpense.created_by !== payload.created_by;
+
+      if (shouldUpdate) {
+        toUpdate.push({ id: existingExpense.id, payload });
+      }
     });
 
     if (toDelete.length) {
