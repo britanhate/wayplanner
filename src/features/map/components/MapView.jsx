@@ -146,6 +146,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const userLocationMarkerRef = useRef(null);
   const userAccuracyCircleRef = useRef(null);
   const nearbyMarkersLayerRef = useRef(null);
+  const nearbyMarkersRef = useRef(new Map());
 
 
   const {
@@ -177,6 +178,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const [nearbyCategory, setNearbyCategory] = useState(NEARBY_CATEGORIES[0].id);
   const [nearbyAnchor, setNearbyAnchor] = useState(null);
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
+  const [selectedNearbyPlace, setSelectedNearbyPlace] = useState(null);
 
   // ── Ініціалізація карти ──
   // ── Ініціалізація карти ──
@@ -652,7 +654,20 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     }
   };
 
+  const highlightNearbyMarker = useCallback((placeId) => {
+    nearbyMarkersRef.current.forEach((marker, id) => {
+      const isSelected = id === placeId;
+      marker.setStyle({
+        radius: isSelected ? 8 : 5,
+        color: isSelected ? "#0a84ff" : "#7ec8ff",
+        weight: isSelected ? 2 : 1,
+        fillOpacity: isSelected ? 1 : 0.85,
+      });
+    });
+  }, []);
+
   const clearNearbyMarkers = useCallback(() => {
+    nearbyMarkersRef.current.clear();
     nearbyMarkersLayerRef.current?.clearLayers();
   }, []);
 
@@ -660,6 +675,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     if (!anchor) return;
     const category = NEARBY_CATEGORIES.find((item) => item.id === categoryId) || NEARBY_CATEGORIES[0];
     setNearbyLoading(true);
+    setSelectedNearbyPlace(null);
     try {
       const results = await searchNearbyPlaces({ lat: anchor.lat, lng: anchor.lng, radius: 500, category: category.arcgis });
       const normalized = results.map((item, idx) => ({
@@ -675,16 +691,34 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         openingHours: item.openingHours?.text,
         pointType: category.pointType,
       })).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+
       setNearbyPlaces(normalized);
       clearNearbyMarkers();
-      normalized.forEach((place) => L.circleMarker([place.lat, place.lng], { radius: 5, color: "#7ec8ff", weight: 1, fillOpacity: 0.85 }).addTo(nearbyMarkersLayerRef.current));
+
+      normalized.forEach((place) => {
+        const marker = L.circleMarker([place.lat, place.lng], {
+          radius: 5,
+          color: "#7ec8ff",
+          weight: 1,
+          fillOpacity: 0.85,
+        }).addTo(nearbyMarkersLayerRef.current);
+
+        marker.on("click", (e) => {
+          if (e?.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
+          setSelectedNearbyPlace(place);
+          highlightNearbyMarker(place.id);
+        });
+
+        nearbyMarkersRef.current.set(place.id, marker);
+      });
     } catch (error) {
       setNearbyPlaces([]);
+      setSelectedNearbyPlace(null);
       setUiMessage("Не вдалося завантажити місця поруч.");
     } finally {
       setNearbyLoading(false);
     }
-  }, [clearNearbyMarkers]);
+  }, [clearNearbyMarkers, highlightNearbyMarker]);
 
   useEffect(() => {
     if (!nearbyOpen || !nearbyAnchor) return;
@@ -697,8 +731,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const handleCloseNearby = () => {
     setNearbyOpen(false);
     setNearbyPlaces([]);
+    setSelectedNearbyPlace(null);
     clearNearbyMarkers();
   };
+
+  const handleSelectNearbyPlace = useCallback((place) => {
+    setSelectedNearbyPlace(place);
+    highlightNearbyMarker(place.id);
+  }, [highlightNearbyMarker]);
 
   const handleAddNearbyPoint = async (place) => {
     await handleSavePoint({
@@ -886,20 +926,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             places={nearbyPlaces}
             onAdd={handleAddNearbyPoint}
             onClose={handleCloseNearby}
+            selectedPlace={selectedNearbyPlace}
+            onSelectPlace={handleSelectNearbyPlace}
+            onBackToList={() => setSelectedNearbyPlace(null)}
           />
         )}
-                {nearbyOpen && !routePanelOpen && !metroPanelOpen && (
-          <NearbyPlacesPanel
-            category={nearbyCategory}
-            onCategoryChange={setNearbyCategory}
-            categories={NEARBY_CATEGORIES}
-            loading={nearbyLoading}
-            places={nearbyPlaces}
-            onAdd={handleAddNearbyPoint}
-            onClose={handleCloseNearby}
-          />
-        )}
-          {renderContent()}
       </div>
 
       <div className="map-wrap">
@@ -963,7 +994,20 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           className="sheet-scroll fade-in"
           onPointerDown={onScrollPointerDown}
         >
-          {renderContent()}
+          {nearbyOpen && !routePanelOpen && !metroPanelOpen ? (
+            <NearbyPlacesPanel
+              category={nearbyCategory}
+              onCategoryChange={setNearbyCategory}
+              categories={NEARBY_CATEGORIES}
+              loading={nearbyLoading}
+              places={nearbyPlaces}
+              onAdd={handleAddNearbyPoint}
+              onClose={handleCloseNearby}
+              selectedPlace={selectedNearbyPlace}
+              onSelectPlace={handleSelectNearbyPlace}
+              onBackToList={() => setSelectedNearbyPlace(null)}
+            />
+          ) : renderContent()}
         </div>
       </div>
 
