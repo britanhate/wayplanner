@@ -1,5 +1,5 @@
 .route-panel {background: linear-gradient(180deg, rgba(13,17,30,.94), rgba(8,11,20,.96));backdrop-filter: blur(16px);border-radius:var(--radius-lg);border:.5px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px;padding:14px;color:#fff}
-.route-panel-header{display:flex;align-items:center;justify-content:space-between}
+.route-panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
 .rp-title{font-weight:700;font-size:17px}
 .rp-icon-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:#fff;min-width:34px;min-height:34px;border-radius:10px}
 .rp-icon-btn:disabled{opacity:.4}
