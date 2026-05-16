@@ -396,6 +396,9 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       if (!existing) {
         const marker = L.marker([p.lat, p.lng], { icon }).addTo(mapInstance.current);
         marker.bindPopup(popup);
+        marker.on("popupopen", (event) => {
+          attachPopupHandlers(event.popup?.getElement(), { pointId: p.id });
+        });
         markersRef.current[p.id] = marker;
         return;
       }
@@ -406,7 +409,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         existing.setPopupContent(popup);
       }
     });
-  }, [points, pointsLoading, routePoints, pointPopupMap, getMarkerIcon]);
+  }, [points, pointsLoading, routePoints, pointPopupMap, getMarkerIcon, attachPopupHandlers]);
 
   // ── Preview marker ──
   // ── Preview marker ──
@@ -903,6 +906,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     closeNearbySilent();
     setMetroPanelOpen(false);
     startRouteMode();
+    setSnap("expanded");
   };
 
   const toggleMetroPanel = () => {
@@ -912,6 +916,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       if (next) {
         closeRouteMode();
         closeNearbySilent();
+        setSnap("expanded");
       }
       return next;
     });
