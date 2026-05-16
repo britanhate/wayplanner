@@ -18,40 +18,44 @@
 }
 
 /* ── Buttons ── */
-.btn-primary {
-  padding: 11px 20px;
-  border-radius: var(--radius-md);
-  background: var(--accent);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  transition: opacity var(--duration-base), transform var(--duration-fast);
-}
-.btn-primary:hover    { opacity: 0.9; }
-.btn-primary:active   { transform: scale(0.97); }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
 .btn-primary-small {
   padding: 8px 14px;
   white-space: nowrap;
 }
 
-.btn-secondary {
-  padding: 11px 20px;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.06);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 15px;
-  font-weight: 500;
+/* Unified button tokens */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  font-family: inherit;
-  transition: background var(--duration-base), color var(--duration-base);
+  transition: background 0.12s, transform 0.12s, opacity 0.12s;
+  -webkit-tap-highlight-color: transparent;
 }
-.btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
+.btn:active { transform: scale(0.98); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+
+.btn-primary:hover { opacity: 0.95; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-secondary {
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+}
+
+.btn-secondary:hover { background: rgba(255,255,255,0.1); }
 
 .btn-ghost {
   background: transparent;
@@ -63,10 +67,23 @@
   font-size: 13px;
   transition: background var(--duration-base), color var(--duration-base), transform var(--duration-fast);
 }
+
 .btn-ghost:hover {
   background: rgba(255, 255, 255, 0.05);
   color: #fff;
 }
+
+.btn-icon {
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.btn-icon:active { transform: scale(0.98); }
 
 /* ── Badges ── */
 .badge {

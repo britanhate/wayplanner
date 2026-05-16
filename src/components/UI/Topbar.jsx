@@ -242,7 +242,7 @@ export default function Topbar({
         {/* NAV MENU (tabs) */}
         <div className="pos-relative" ref={menuRef}>
           <button
-            className="topbar-btn pressable"
+            className="btn btn-icon topbar-btn"
             onClick={() => {
               setMenuOpen((v) => !v);
               setStyleOpen(false);
@@ -301,7 +301,7 @@ export default function Topbar({
             {/* MAP STYLE SELECTOR */}
             <div className="pos-relative" ref={styleRef}>
               <button
-                className={`topbar-btn ${styleOpen ? "topbar-btn-active" : ""}`}
+                className={`btn btn-icon topbar-btn ${styleOpen ? "topbar-btn-active" : ""}`}
                 onClick={() => {
                   setStyleOpen((v) => !v);
                   setMenuOpen(false);
@@ -352,7 +352,7 @@ export default function Topbar({
 
             {/* SEARCH (map-only UX) */}
             <button
-              className={`topbar-btn pressable ${searchOpen ? "topbar-btn-active" : ""}`}
+              className={`btn btn-icon topbar-btn ${searchOpen ? "topbar-btn-active" : ""}`}
               onClick={onSearchToggle}
               aria-label="Пошук"
             >
@@ -362,7 +362,7 @@ export default function Topbar({
         )}
 
         {/* GLOBAL ACTIONS */}
-        <button className="topbar-btn pressable" onClick={logout} aria-label="Вийти">
+        <button className="btn btn-icon topbar-btn" onClick={logout} aria-label="Вийти">
           <CalciteIcon name="logout" size={19} />
         </button>
       </div>

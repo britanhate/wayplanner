@@ -64,7 +64,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
       >
         <div className="modal-header">
           <div className="modal-title">Редагувати точку</div>
-          <button className="modal-close pressable" onClick={onClose}>
+          <button className="modal-close btn btn-icon" onClick={onClose}>
             ×
           </button>
         </div>
@@ -193,11 +193,11 @@ export default function EditPointModal({ point, onSave, onClose }) {
         </div>
 
         <div className="modal-footer">
-          <button className="btn-secondary pressable" onClick={onClose}>
+          <button className="btn btn-secondary" onClick={onClose}>
             Скасувати
           </button>
           <button
-            className="btn-primary pressable"
+            className="btn btn-primary"
             onClick={handleSave}
             disabled={!name.trim()}
           >

@@ -25,7 +25,7 @@ export default function NearbyPlacesPanel({
     <section className="nearby-panel p-panel fade-in">
       <div className="route-panel-header">
         <span className="rp-title">Що поруч?</span>
-        <button className="rp-icon-btn" onClick={onClose} aria-label="Закрити nearby places">
+        <button className="rp-icon-btn btn btn-icon" onClick={onClose} aria-label="Закрити nearby places">
           <CalciteIcon name="close" size={14} />
         </button>
       </div>
@@ -35,7 +35,7 @@ export default function NearbyPlacesPanel({
               <div className="nearby-title">{place.name}</div>
               <div className="nearby-meta">{place.category} • {place.distanceText}</div>
               {place.address && <div className="nearby-addr">{place.address}</div>}
-              <button type="button" className="metro-open-btn" onClick={() => onAdd(place)}>
+              <button type="button" className="metro-open-btn btn btn-primary" onClick={() => onAdd(place)}>
                 Додати точку
               </button>
             </article>
@@ -53,10 +53,10 @@ export default function NearbyPlacesPanel({
           {selectedPlace.openingHours && <div className="nearby-addr">{selectedPlace.openingHours}</div>}
           {selectedPlace.rating ? <div className="nearby-addr">★ {selectedPlace.rating}</div> : null}
           <div className="nearby-actions-row">
-            <button type="button" className="rp-icon-btn" onClick={onBackToList} aria-label="Назад до списку">
+            <button type="button" className="rp-icon-btn btn btn-icon" onClick={onBackToList} aria-label="Назад до списку">
               <CalciteIcon name="arrowLeft" size={14} />
             </button>
-            <button type="button" className="metro-open-btn" onClick={() => onAdd(selectedPlace)}>
+            <button type="button" className="metro-open-btn btn btn-primary" onClick={() => onAdd(selectedPlace)}>
               Додати в точки
             </button>
           </div>
@@ -70,7 +70,7 @@ export default function NearbyPlacesPanel({
               <div className="nearby-title">{place.name}</div>
               <div className="nearby-meta">{place.category} • {place.distanceText}</div>
               {place.address && <div className="nearby-addr">{place.address}</div>}
-              <button type="button" className="metro-open-btn" onClick={() => onAdd(place)}>
+              <button type="button" className="metro-open-btn btn btn-primary" onClick={() => onAdd(place)}>
                 Додати точку
               </button>
             </article>

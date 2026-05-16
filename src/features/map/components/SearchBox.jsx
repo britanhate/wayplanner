@@ -71,7 +71,7 @@ export default function SearchBox({ onResult }) {
         />
         {loading && <div className="search-spinner" />}
         {query && !loading && (
-          <button className="search-clear" onClick={clear}>{Icons.close}</button>
+          <button className="search-clear btn btn-icon btn-ghost" onClick={clear} aria-label="Clear search">{Icons.close}</button>
         )}
       </div>
       {open && suggestions.length > 0 && (

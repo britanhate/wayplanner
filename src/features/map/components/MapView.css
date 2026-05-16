@@ -438,14 +438,9 @@
   background: rgba(255,255,255,0.03);
 }
 .metro-open-btn {
-  min-height: 44px;
-  border: 0.5px solid rgba(10,132,255,0.45);
-  background: rgba(10,132,255,0.15);
-  color: #eaf3ff;
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-size: 12px;
-  cursor: pointer;
+  width: 100%;
+  display: inline-flex;
+  justify-content: center;
 }
 .metro-open-btn:disabled {
   opacity: 0.5;
@@ -543,20 +538,19 @@
   bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
   width: 52px;
   height: 52px;
-  border: none;
   border-radius: 16px;
-  background: rgba(8, 11, 18, 0.9);
-  color: #d9e8ff;
+  background: rgba(10, 14, 24, 0.98);
+  color: #f8fbff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
   z-index: 1100;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.my-location-btn:hover { background: rgba(14, 20, 34, 0.96); }
+.my-location-btn:hover { background: rgba(16, 22, 38, 1); }
 .my-location-btn:active { transform: scale(0.98); }
 
 @media (min-width: 768px) {
@@ -602,6 +596,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   max-height: 3em;

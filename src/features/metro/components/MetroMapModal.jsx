@@ -102,15 +102,15 @@ export default function MetroMapModal({
       >
         <div className="metro-modal-header">
           <div className="metro-modal-header-left">
-            <button className="metro-modal-close" onClick={onClose} aria-label="Close metro map">
+            <button className="metro-modal-close btn btn-icon" onClick={onClose} aria-label="Close metro map">
               <CalciteIcon name="close" size={17} />
             </button>
             <div className="metro-modal-title">{city.name} Metro</div>
           </div>
           <div className="metro-modal-controls">
-            <button onClick={onZoomIn} disabled={scale === maxScale} aria-label="Zoom in"><CalciteIcon name="add" /></button>
-            <button onClick={onZoomOut} disabled={scale === minScale} aria-label="Zoom out"><CalciteIcon name="minus" /></button>
-            <button onClick={onResetZoom} disabled={scale === 1} aria-label="Reset zoom"><CalciteIcon name="reset" /></button>
+            <button className="btn btn-icon" onClick={onZoomIn} disabled={scale === maxScale} aria-label="Zoom in"><CalciteIcon name="add" /></button>
+            <button className="btn btn-icon" onClick={onZoomOut} disabled={scale === minScale} aria-label="Zoom out"><CalciteIcon name="minus" /></button>
+            <button className="btn btn-icon" onClick={onResetZoom} disabled={scale === 1} aria-label="Reset zoom"><CalciteIcon name="reset" /></button>
           </div>
         </div>
 

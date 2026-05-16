@@ -147,6 +147,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const userAccuracyCircleRef = useRef(null);
   const nearbyMarkersLayerRef = useRef(null);
   const nearbyMarkersRef = useRef(new Map());
+  const reverseGeocodeRequestRef = useRef(0);
 
 
   const {
@@ -204,11 +205,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     map.on("click", (e) => {
       const { lat, lng } = e.latlng;
       setPreviewPos({ lat, lng });
+      const requestId = ++reverseGeocodeRequestRef.current;
       (async () => {
         try {
           const place = await reverseGeocode(lat, lng);
+          if (requestId !== reverseGeocodeRequestRef.current) return;
           setGeocoded(place);
         } catch {
+          if (requestId !== reverseGeocodeRequestRef.current) return;
           setGeocoded({
             name: "Обране місце",
             addr: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
@@ -289,11 +293,60 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
   const openNearbyForPoint = useCallback((point) => {
     if (!point) return;
+    setMetroPanelOpen(false);
+    setRoutePanelOpen(false);
+    setActiveRouteIndex(null);
     setNearbyAnchor({ lat: point.lat, lng: point.lng });
     setNearbyCategory(NEARBY_CATEGORIES[0].id);
     setNearbyOpen(true);
     setSnap("expanded");
   }, [setSnap]);
+
+  const handleOpenNearbyFromPoint = useCallback(
+    (pointId) => {
+      const point = points.find((point) => String(point.id) === String(pointId));
+      if (!point) return;
+      openNearbyForPoint(point);
+    },
+    [openNearbyForPoint, points],
+  );
+
+  const attachPopupHandlers = useCallback(
+    (popupElement, { pointId, previewPos }) => {
+      if (!popupElement || popupElement.dataset.popupActionsBound === "1") return;
+      popupElement.dataset.popupActionsBound = "1";
+
+      popupElement.addEventListener("click", (event) => {
+        const target = event.target.closest(
+          ".open-nearby-from-point, .open-nearby-from-preview, .add-preview-point",
+        );
+        if (!target) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (target.classList.contains("open-nearby-from-point")) {
+          handleOpenNearbyFromPoint(pointId);
+          return;
+        }
+
+        if (target.classList.contains("open-nearby-from-preview")) {
+          if (previewPos) {
+            openNearbyForPoint({ lat: previewPos.lat, lng: previewPos.lng });
+            previewMarkerRef.current?.closePopup();
+          }
+          return;
+        }
+
+        if (target.classList.contains("add-preview-point")) {
+          if (previewPos) {
+            setPendingPos(previewPos);
+            previewMarkerRef.current?.closePopup();
+          }
+        }
+      });
+    },
+    [handleOpenNearbyFromPoint, openNearbyForPoint],
+  );
 
   const pointPopupMap = useMemo(
     () =>
@@ -301,26 +354,13 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         points.map((p) => {
           const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
           const imgSrc = getPointImageSrc(p.attachments);
-          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}<button onclick="window.__openNearbyFromPoint(\'${p.id}\')" class="add-preview-btn" style="margin-top:8px;">Що поруч?</button></div></div>`;
+          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}<button data-point-id="${p.id}" class="add-preview-btn open-nearby-from-point" style="margin-top:8px;">Що поруч?</button></div></div>`;
           return [p.id, popup];
         }),
       ),
     [points],
   );
 
-
-  useEffect(() => {
-    const pointsById = new Map(points.map((point) => [String(point.id), point]));
-    window.__openNearbyFromPoint = (pointId) => {
-      const point = pointsById.get(String(pointId));
-      if (!point) return;
-      openNearbyForPoint(point);
-    };
-
-    return () => {
-      delete window.__openNearbyFromPoint;
-    };
-  }, [points, openNearbyForPoint]);
 
   // ── Markers ──
   useEffect(() => {
@@ -770,11 +810,16 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     return () => window.clearTimeout(timer);
   }, [nearbyOpen, nearbyCategory, nearbyAnchor, runNearbySearch]);
 
-  const handleCloseNearby = () => {
+  const closeNearbySilent = () => {
     setNearbyOpen(false);
     setNearbyPlaces([]);
     setSelectedNearbyPlace(null);
     clearNearbyMarkers();
+  };
+
+  const handleCloseNearby = () => {
+    closeNearbySilent();
+    setSnap("collapsed");
   };
 
   const handleSelectNearbyPlace = useCallback((place) => {
@@ -833,6 +878,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   };
 
   const openRouteMode = () => {
+    closeNearbySilent();
     setMetroPanelOpen(false);
     startRouteMode();
   };
@@ -841,7 +887,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     const startedAt = performance.now();
     setMetroPanelOpen((prev) => {
       const next = !prev;
-      if (next) closeRouteMode();
+      if (next) {
+        closeRouteMode();
+        closeNearbySilent();
+      }
       return next;
     });
     logSlowInteraction("metro_panel_toggle", startedAt);
@@ -935,7 +984,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
         <div className="sidebar-section">
           <button
-            className={`route-btn ${routePanelOpen ? "active" : ""}`}
+            className={`route-btn btn btn-secondary ${routePanelOpen ? "active" : ""}`}
             onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
@@ -944,7 +993,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             </span>
           </button>
           <button
-            className={`route-btn ${metroPanelOpen ? "active" : ""}`}
+            className={`route-btn btn btn-secondary ${metroPanelOpen ? "active" : ""}`}
             onClick={toggleMetroPanel}
           >
             <span className="flex items-center gap-2">
@@ -961,7 +1010,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
                 {Icons.pin} Виберіть точку маршруту
               </span>
               <button
-                className="rp-icon-btn"
+                className="rp-icon-btn btn btn-icon"
                 onClick={() => setActiveRouteIndex(null)}
               >
                 {Icons.arrowLeft}
@@ -990,7 +1039,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         <div ref={mapRef} className="leaflet-map" />
         <button
           type="button"
-          className="my-location-btn"
+          className="my-location-btn btn btn-icon"
           onClick={handleLocateUser}
           aria-label="Center map on my location"
           title="My location"
@@ -1011,7 +1060,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
           <div className="sheet-actions">
           <button
-            className={`sheet-action-btn ${routePanelOpen ? "active" : ""}`}
+          className={`sheet-action-btn btn btn-secondary ${routePanelOpen ? "active" : ""}`}
             onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
@@ -1019,7 +1068,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             </span>
           </button>
           <button
-            className={`sheet-action-btn ${metroPanelOpen ? "active" : ""}`}
+            className={`sheet-action-btn btn btn-secondary ${metroPanelOpen ? "active" : ""}`}
             onClick={toggleMetroPanel}
           >
             <span className="flex items-center gap-2">{Icons.metro} Метро</span>
@@ -1034,7 +1083,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
                 {Icons.pin} Виберіть точку маршруту
               </span>
               <button
-                className="rp-icon-btn"
+                className="rp-icon-btn btn btn-icon"
                 onClick={() => setActiveRouteIndex(null)}
               >
                 {Icons.arrowLeft}

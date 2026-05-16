@@ -190,7 +190,7 @@ export default function FinanceView() {
             ))}
           </select>
           <button
-            className="btn-primary btn-primary-small"
+            className="btn btn-primary btn-primary-small"
             onClick={handleBudgetSave}
           >
             Зберегти
@@ -199,7 +199,7 @@ export default function FinanceView() {
 
         <div className="finance-sync-row">
           <button
-            className="btn-primary btn-primary-small"
+            className="btn btn-primary btn-primary-small"
             onClick={handleSyncPointCosts}
             disabled={syncingPointCosts}
           >
@@ -268,7 +268,7 @@ export default function FinanceView() {
       {/* ── Список + форма ── */}
         <div className="finance-left">
           <button
-            className="stats-toggle-btn"
+            className="btn btn-secondary stats-toggle-btn"
             onClick={() => setStatsOpen(true)}
           >
             📊 Статистика
@@ -309,7 +309,7 @@ export default function FinanceView() {
                   </option>
                 ))}
               </select>
-              <button className="btn-primary" onClick={handleAdd}>
+              <button className="btn btn-primary" onClick={handleAdd}>
                 +
               </button>
             </div>
@@ -352,7 +352,7 @@ export default function FinanceView() {
         <aside className={`finance-right ${statsOpen ? "open" : ""}`}>
           <div className="finance-right-header">
             <span className="section-title">Статистика</span>
-            <button className="btn-ghost" onClick={() => setStatsOpen(false)}>
+            <button className="btn btn-icon btn-ghost" onClick={() => setStatsOpen(false)}>
               ✕
             </button>
           </div>
@@ -501,7 +501,7 @@ const ExpenseItem = memo(function ExpenseItem({
         {expense.amount?.toFixed(0)} <span className="text-small">{expCurrency}</span>
       </div>
       {isOwner && (
-        <button className="expense-del" onClick={() => onDelete(expense.id)}>
+        <button className="btn btn-icon btn-ghost expense-del" onClick={() => onDelete(expense.id)}>
           ×
         </button>
       )}

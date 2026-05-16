@@ -62,7 +62,7 @@ export default function MetroPanel() {
             )}
 
             <button
-              className="metro-open-btn"
+              className="metro-open-btn btn btn-primary"
               onClick={() => handleOpen(item.id)}
               disabled={!hasImage(item.id)}
             >

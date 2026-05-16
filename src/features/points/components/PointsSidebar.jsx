@@ -181,7 +181,7 @@ function PointsSidebar({
             ].map((s) => (
               <button
                 key={s.id}
-                className={`btn-ghost pressable ${sortBy === s.id ? "text-white" : "text-white/60"}`}
+                className={`btn btn-ghost ${sortBy === s.id ? "text-white" : "text-white/60"}`}
                 onClick={() => setSortBy(s.id)}
               >
                 {s.label}
@@ -190,7 +190,7 @@ function PointsSidebar({
           </div>
 
           <button
-            className={`btn-ghost pressable ${showCompleted ? "text-white" : "text-white/60"}`}
+            className={`btn btn-ghost ${showCompleted ? "text-white" : "text-white/60"}`}
             onClick={() => setShowCompleted((prev) => !prev)}
             title={showCompleted ? "Приховати виконані" : "Показати виконані"}
           >
@@ -260,7 +260,7 @@ function PointsSidebar({
                   )}
                   <button
                     type="button"
-                    className="btn-ghost p-1.5 rounded-lg text-white/60 hover:text-white transition-colors"
+                    className="btn btn-ghost"
                     onClick={(e) => {
                       e.stopPropagation();
                       onNearby?.(p);
@@ -274,7 +274,7 @@ function PointsSidebar({
                 {p.created_by === user?.id && (
                   <div className="flex items-center gap-1 shrink-0">
                     <button
-                      className={`btn-ghost p-1.5 rounded-lg transition-colors ${
+                      className={`btn btn-icon btn-ghost ${
                         p.is_completed
                           ? "text-[#30d158]"
                           : "text-white/40 hover:text-white"
@@ -289,7 +289,7 @@ function PointsSidebar({
                     </button>
 
                     <button
-                      className="btn-ghost p-1.5 rounded-lg text-white/40 hover:text-white transition-colors"
+                      className="btn btn-icon btn-ghost text-white/40 hover:text-white"
                       title="Редагувати"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -300,7 +300,7 @@ function PointsSidebar({
                     </button>
 
                     <button
-                      className="btn-ghost p-1.5 rounded-lg text-white/40 hover:text-red-400 transition-colors"
+                      className="btn btn-icon btn-ghost text-white/40 hover:text-red-400"
                       title="Видалити"
                       onClick={(e) => {
                         e.stopPropagation();

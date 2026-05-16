@@ -137,21 +137,23 @@
 /* Stats toggle (mobile only) */
 .stats-toggle-btn {
   margin: 12px 14px 6px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
+  width: auto;
   text-align: left;
-  transition: background 0.15s;
 }
 @media (min-width: 768px) {
   .stats-toggle-btn {
     display: none;
   }
+}
+
+.expense-del {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+}
+.expense-del:hover {
+  color: var(--danger);
 }
 
 /* Add expense form */
