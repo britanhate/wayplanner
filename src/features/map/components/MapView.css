@@ -233,8 +233,13 @@
   overflow: hidden;
 }
 .search-wrap:focus-within .search-input-wrap {
-  border-color: rgba(10, 132, 255, 0.5);
-  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.22), 0 4px 20px rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+.search-wrap,
+.search-input-wrap,
+.search-inp {
+  -webkit-tap-highlight-color: transparent;
 }
 
 .search-icon {
