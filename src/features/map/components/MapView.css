@@ -251,8 +251,25 @@
   outline: none;
   padding: 13px 0;
   color: #e6eef8;
-  font-size: 16px; /* prevents iOS zoom */
+  font-size: 16px;
   font-family: inherit;
+
+  -webkit-tap-highlight-color: transparent;
+  caret-color: #e6eef8;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-inp:-webkit-autofill,
+.search-inp:-webkit-autofill:hover,
+.search-inp:-webkit-autofill:focus {
+  -webkit-text-fill-color: #e6eef8;
+  transition: background-color 9999s ease-in-out 0s;
+  box-shadow: 0 0 0px 1000px transparent inset;
+}
+.search-inp:focus,
+.search-inp:active {
+  outline: none;
+  box-shadow: none;
 }
 .search-inp::placeholder { color: rgba(154, 163, 178, 0.6); }
 
