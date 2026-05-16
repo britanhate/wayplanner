@@ -213,6 +213,7 @@
   left: 12px;
   right: 12px;
   z-index: 1200;
+  border-radius: 16px;
 }
 @media (min-width: 768px) {
   .search-wrap { left: 332px; max-width: 420px; }
@@ -231,7 +232,7 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   overflow: hidden;
 }
-.search-input-wrap:focus-within {
+.search-wrap:focus-within .search-input-wrap {
   border-color: rgba(10, 132, 255, 0.5);
   box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.22), 0 4px 20px rgba(0, 0, 0, 0.4);
 }

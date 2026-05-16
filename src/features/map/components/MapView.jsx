@@ -401,7 +401,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       delete window.__addPreviewPoint;
       delete window.__openNearbyFromPreview;
     };
-  }, [previewPos, geocoded, openNearbyForPoint, getPreviewPopupContent]);
+  // NOTE: this effect should only recreate the preview marker when coordinates change.
+  // Geocoded text updates are handled in the separate popup-content effect below.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewPos, openNearbyForPoint, getPreviewPopupContent]);
 
   useEffect(() => {
     const marker = previewMarkerRef.current;
