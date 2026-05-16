@@ -417,6 +417,19 @@
   display: grid;
   gap: 8px;
 }
+.metro-card.is-clickable {
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.metro-card.is-clickable:hover {
+  border-color: rgba(10, 132, 255, 0.45);
+  background: rgba(10, 132, 255, 0.08);
+}
+.metro-card.is-clickable:active { transform: scale(0.995); }
+.metro-card.is-clickable:focus-visible {
+  outline: 2px solid rgba(10, 132, 255, 0.7);
+  outline-offset: 2px;
+}
 .metro-card-title { font-size: 14px; font-weight: 600; color: #e9f1ff; }
 .metro-thumb {
   width: 100%;
@@ -441,6 +454,10 @@
   width: 100%;
   display: inline-flex;
   justify-content: center;
+}
+.metro-open-hint {
+  font-size: 12px;
+  color: rgba(231, 240, 255, 0.72);
 }
 .metro-open-btn:disabled {
   opacity: 0.5;
@@ -632,6 +649,20 @@
 .nearby-panel {
   margin: 12px 0;
   padding: 8px 0;
+}
+.nearby-trigger-btn {
+  margin-top: 8px;
+  border: 0.5px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+  color: #f1f6ff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.nearby-trigger-btn:hover {
+  background: rgba(10,132,255,.22);
+  border-color: rgba(10,132,255,.5);
 }
 .nearby-chips {
   display:flex;
