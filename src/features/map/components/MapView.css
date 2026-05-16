@@ -405,6 +405,46 @@
 .leaflet-popup-tip-container,
 .leaflet-popup-tip { display: none !important; }
 
+.ios-card {
+  width: min(280px, calc(100vw - 36px));
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(16, 22, 36, 0.98), rgba(10, 14, 24, 0.98));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+.ios-card-media {
+  width: 100%;
+  height: 116px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.ios-card-content {
+  padding: 10px 12px 12px;
+  display: grid;
+  gap: 6px;
+}
+.ios-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f5f8ff;
+  line-height: 1.25;
+}
+.ios-subtitle {
+  font-size: 12px;
+  color: rgba(232, 241, 255, 0.78);
+}
+.ios-line,
+.ios-popup-addr,
+.ios-desc,
+.ios-price {
+  font-size: 12px;
+  color: rgba(232, 241, 255, 0.84);
+  line-height: 1.35;
+}
+.ios-desc {
+  color: rgba(232, 241, 255, 0.68);
+}
+
 
 .metro-panel .section { margin-bottom: 10px; }
 .metro-list { display: grid; gap: 10px; }
@@ -416,6 +456,19 @@
   text-align: left;
   display: grid;
   gap: 8px;
+}
+.metro-card.is-clickable {
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.metro-card.is-clickable:hover {
+  border-color: rgba(10, 132, 255, 0.45);
+  background: rgba(10, 132, 255, 0.08);
+}
+.metro-card.is-clickable:active { transform: scale(0.995); }
+.metro-card.is-clickable:focus-visible {
+  outline: 2px solid rgba(10, 132, 255, 0.7);
+  outline-offset: 2px;
 }
 .metro-card-title { font-size: 14px; font-weight: 600; color: #e9f1ff; }
 .metro-thumb {
@@ -441,6 +494,10 @@
   width: 100%;
   display: inline-flex;
   justify-content: center;
+}
+.metro-open-hint {
+  font-size: 12px;
+  color: rgba(231, 240, 255, 0.72);
 }
 .metro-open-btn:disabled {
   opacity: 0.5;
@@ -632,6 +689,20 @@
 .nearby-panel {
   margin: 12px 0;
   padding: 8px 0;
+}
+.nearby-trigger-btn {
+  margin-top: 8px;
+  border: 0.5px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+  color: #f1f6ff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.nearby-trigger-btn:hover {
+  background: rgba(10,132,255,.22);
+  border-color: rgba(10,132,255,.5);
 }
 .nearby-chips {
   display:flex;

@@ -358,7 +358,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         points.map((p) => {
           const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
           const imgSrc = getPointImageSrc(p.attachments);
-          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}<button data-point-id="${p.id}" class="add-preview-btn open-nearby-from-point" style="margin-top:8px;">Що поруч?</button></div></div>`;
+          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}<button data-point-id="${p.id}" class="nearby-trigger-btn open-nearby-from-point">✨ Що поруч</button></div></div>`;
           return [p.id, popup];
         }),
       ),
@@ -391,6 +391,9 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       if (!existing) {
         const marker = L.marker([p.lat, p.lng], { icon }).addTo(mapInstance.current);
         marker.bindPopup(popup);
+        marker.on("popupopen", (event) => {
+          attachPopupHandlers(event.popup?.getElement(), { pointId: p.id });
+        });
         markersRef.current[p.id] = marker;
         return;
       }
@@ -401,21 +404,29 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         existing.setPopupContent(popup);
       }
     });
-  }, [points, pointsLoading, routePoints, pointPopupMap, getMarkerIcon]);
+  }, [points, pointsLoading, routePoints, pointPopupMap, getMarkerIcon, attachPopupHandlers]);
 
   // ── Preview marker ──
   // ── Preview marker ──
+  const getPreviewPopupContent = useCallback((position, place) => `
+    <div class="ios-card">
+      <div class="ios-card-content">
+        <div class="ios-title">${place?.name || "Знайдене місце"}</div>
+        ${place?.addr ? `<div class="ios-popup-addr">📍 ${place.addr}</div>` : ""}
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="window.__addPreviewPoint(); event.stopPropagation();" class="add-preview-btn">+ Додати точку</button>
+          <button onclick="window.__openNearbyFromPreview(); event.stopPropagation();" class="nearby-trigger-btn">✨ Що поруч</button>
+        </div>
+      </div>
+    </div>`, []);
+
   useEffect(() => {
-    // 1. Завжди чистимо старий маркер перед новим рендером
     if (previewMarkerRef.current) {
-      const oldMarker = previewMarkerRef.current;
+      previewMarkerRef.current.remove();
       previewMarkerRef.current = null;
-      oldMarker.remove();
     }
     delete window.__addPreviewPoint;
     delete window.__openNearbyFromPreview;
-
-    // 2. Якщо позиції немає — просто виходимо (маркер уже видалено вище)
     if (!previewPos || !mapInstance.current) return;
 
     const icon = L.divIcon({
@@ -426,17 +437,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       popupAnchor: [0, -18],
     });
 
-    const popup = `
-    <div class="ios-card">
-      <div class="ios-card-content">
-        <div class="ios-title">${geocoded?.name || "Знайдене місце"}</div>
-        ${geocoded?.addr ? `<div class="ios-popup-addr">📍 ${geocoded.addr}</div>` : ""}
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <button onclick="window.__addPreviewPoint(); event.stopPropagation();" class="add-preview-btn">+ Додати точку</button>
-          <button onclick="window.__openNearbyFromPreview(); event.stopPropagation();" class="add-preview-btn">Що поруч?</button>
-        </div>
-      </div>
-    </div>`;
+    const popup = getPreviewPopupContent(previewPos, geocoded);
 
     const marker = L.marker([previewPos.lat, previewPos.lng], { icon })
       .addTo(mapInstance.current)
@@ -468,7 +469,18 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       delete window.__addPreviewPoint;
       delete window.__openNearbyFromPreview;
     };
-  }, [previewPos, geocoded, openNearbyForPoint]);
+  }, [previewPos, openNearbyForPoint, getPreviewPopupContent]);
+
+  useEffect(() => {
+    const marker = previewMarkerRef.current;
+    if (!marker || !previewPos) return;
+    const popup = marker.getPopup();
+    if (!popup) return;
+    marker.setPopupContent(getPreviewPopupContent(previewPos, geocoded));
+    if (!marker.isPopupOpen()) {
+      marker.openPopup();
+    }
+  }, [geocoded, previewPos, getPreviewPopupContent]);
 
   // ── Helpers ──
   const flyTo = (p) => {
@@ -889,6 +901,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     closeNearbySilent();
     setMetroPanelOpen(false);
     startRouteMode();
+    setSnap("expanded");
   };
 
   const toggleMetroPanel = () => {
@@ -898,6 +911,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       if (next) {
         closeRouteMode();
         closeNearbySilent();
+        setSnap("expanded");
       }
       return next;
     });
@@ -1005,7 +1019,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={toggleMetroPanel}
           >
             <span className="flex items-center gap-2">
-              {Icons.metro}
+              {metroPanelOpen ? Icons.close : Icons.metro}
               Метро
             </span>
           </button>
@@ -1079,7 +1093,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             className={`sheet-action-btn btn btn-secondary ${metroPanelOpen ? "active" : ""}`}
             onClick={toggleMetroPanel}
           >
-            <span className="flex items-center gap-2">{Icons.metro} Метро</span>
+            <span className="flex items-center gap-2">{metroPanelOpen ? Icons.close : Icons.metro} Метро</span>
           </button>
           </div>
         </div>

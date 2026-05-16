@@ -1,43 +1,15 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { METRO_MAPS } from "../data";
-import MetroMapModal from "./MetroMapModal";
-
-const ZOOM_LEVELS = [1, 1.25, 1.5, 2, 3];
 
 export default function MetroPanel() {
   const [imageErrors, setImageErrors] = useState({});
-  const [openedCityId, setOpenedCityId] = useState(null);
-  const [scale, setScale] = useState(1);
-
-  const openedCity = useMemo(
-    () => METRO_MAPS.find((item) => item.id === openedCityId) || null,
-    [openedCityId],
-  );
 
   const hasImage = (id) => !imageErrors[id];
 
   const handleOpen = (cityId) => {
-    setOpenedCityId(cityId);
-    setScale(1);
-  };
-
-  const closeModal = () => {
-    setOpenedCityId(null);
-    setScale(1);
-  };
-
-  const zoomIn = () => {
-    const currentIndex = ZOOM_LEVELS.indexOf(scale);
-    if (currentIndex < ZOOM_LEVELS.length - 1) {
-      setScale(ZOOM_LEVELS[currentIndex + 1]);
-    }
-  };
-
-  const zoomOut = () => {
-    const currentIndex = ZOOM_LEVELS.indexOf(scale);
-    if (currentIndex > 0) {
-      setScale(ZOOM_LEVELS[currentIndex - 1]);
-    }
+    const selected = METRO_MAPS.find((item) => item.id === cityId);
+    if (!selected?.image) return;
+    window.open(selected.image, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -48,7 +20,19 @@ export default function MetroPanel() {
 
       <div className="metro-list">
         {METRO_MAPS.map((item) => (
-          <article key={item.id} className="metro-card">
+          <article
+            key={item.id}
+            className={`metro-card ${hasImage(item.id) ? "is-clickable" : ""}`}
+            onClick={() => hasImage(item.id) && handleOpen(item.id)}
+            role={hasImage(item.id) ? "button" : undefined}
+            tabIndex={hasImage(item.id) ? 0 : -1}
+            onKeyDown={(event) => {
+              if ((event.key === "Enter" || event.key === " ") && hasImage(item.id)) {
+                event.preventDefault();
+                handleOpen(item.id);
+              }
+            }}
+          >
             <div className="metro-card-title">{item.name}</div>
             {hasImage(item.id) ? (
               <img
@@ -61,28 +45,12 @@ export default function MetroPanel() {
               <div className="metro-thumb metro-thumb-fallback">Схема метро ще не додана</div>
             )}
 
-            <button
-              className="metro-open-btn btn btn-primary"
-              onClick={() => handleOpen(item.id)}
-              disabled={!hasImage(item.id)}
-            >
-              Відкрити схему
-            </button>
+            <div className="metro-open-hint">
+              {hasImage(item.id) ? "Натисніть, щоб відкрити схему в новому вікні" : "Схема недоступна"}
+            </div>
           </article>
         ))}
       </div>
-
-      {openedCity && (
-        <MetroMapModal
-          city={openedCity}
-          scale={scale}
-          onZoomIn={zoomIn}
-          onZoomOut={zoomOut}
-          onResetZoom={() => setScale(1)}
-          onScaleChange={setScale}
-          onClose={closeModal}
-        />
-      )}
     </aside>
   );
 }
