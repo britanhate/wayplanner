@@ -192,6 +192,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       attributionControl: false, // Видаляє текст знизу справа
       boxZoom: false, // Вимикає зайві рамки
       doubleClickZoom: false,
+      closePopupOnClick: false,
     });
     if (map.attributionControl) {
       map.attributionControl.setPrefix(false);
@@ -707,19 +708,26 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setSelectedNearbyPlace(null);
     try {
       const results = await searchNearbyPlaces({ lat: anchor.lat, lng: anchor.lng, radius: 500, category: category.arcgis });
-      const normalized = results.map((item, idx) => ({
-        id: item.placeId || item.id || `${item.name}-${idx}`,
-        name: item.name || "Без назви",
-        category: item.categories?.[0]?.label || category.label,
-        lat: item.location?.y || item.y,
-        lng: item.location?.x || item.x,
-        address: item.address?.formattedAddress || item.address?.address || item.address,
-        distance: Number(item.distance || 0),
-        distanceText: `${Math.round(Number(item.distance || 0))} м`,
-        rating: item.rating,
-        openingHours: item.openingHours?.text,
-        pointType: category.pointType,
-      })).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+      const normalized = results.map((item, idx) => {
+        const dist = Number(item.distance || 0);
+        const distanceText = dist >= 1000 ? `${(dist / 1000).toFixed(1)} км` : `${Math.round(dist)} м`;
+        return {
+          id: item.placeId || item.id || `${item.name}-${idx}`,
+          name: item.name || "Без назви",
+          category: item.categories?.[0]?.label || category.label,
+          lat: item.location?.y || item.y,
+          lng: item.location?.x || item.x,
+          address: item.address?.formattedAddress || item.address?.address || item.address,
+          distance: dist,
+          distanceText,
+          rating: item.rating,
+          openingHours: item.openingHours?.text,
+          pointType: category.pointType,
+        };
+      }).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+
+      // sort by distance
+      normalized.sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
       setNearbyPlaces(normalized);
       clearNearbyMarkers();
@@ -736,6 +744,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           if (e?.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
           setSelectedNearbyPlace(place);
           highlightNearbyMarker(place.id);
+          try {
+            mapInstance.current?.flyTo([place.lat, place.lng], 16, { duration: 0.5 });
+          } catch (err) {
+            // ignore if map not available
+          }
         });
 
         nearbyMarkersRef.current.set(place.id, marker);
@@ -767,6 +780,9 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const handleSelectNearbyPlace = useCallback((place) => {
     setSelectedNearbyPlace(place);
     highlightNearbyMarker(place.id);
+    try {
+      mapInstance.current?.flyTo([place.lat, place.lng], 16, { duration: 0.5 });
+    } catch (err) {}
   }, [highlightNearbyMarker]);
 
   const handleAddNearbyPoint = async (place) => {
@@ -784,6 +800,12 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       comment: "",
       is_completed: false,
     });
+    // close nearby UI and clear markers after adding
+    setNearbyOpen(false);
+    setNearbyPlaces([]);
+    setSelectedNearbyPlace(null);
+    clearNearbyMarkers();
+    setSnap("collapsed");
   };
 
   const closeRouteMode = () => {
@@ -975,10 +997,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         >
           {Icons.myLocation}
         </button>
-        {locationMessage && <div className="map-toast">{locationMessage}</div>}
-        {uiMessage && <div className="map-toast map-toast-secondary">{uiMessage}</div>}
-        {isOffline && <div className="map-toast map-toast-warning">Офлайн режим: частина дій синхронізується після підключення.</div>}
       </div>
+
+      {locationMessage && <div className="map-toast">{locationMessage}</div>}
+      {uiMessage && <div className="map-toast map-toast-secondary">{uiMessage}</div>}
+      {isOffline && <div className="map-toast map-toast-info">Офлайн режим: частина дій синхронізується після підключення.</div>}
 
       <div ref={sheetRef} className={`map-sheet ${snapClass} slide-up`} style={sheetStyle}>
         <div className="sheet-drag-area" onPointerDown={onDragAreaPointerDown}>

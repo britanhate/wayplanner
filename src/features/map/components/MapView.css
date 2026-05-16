@@ -582,11 +582,11 @@
 }
 
 .map-toast {
-  position: absolute;
-  right: 50%;
-  top:33%;
+  position: fixed;
+  left: 50%;
+  
   transform: translateX(-50%);
-  bottom: calc(30px + env(safe-area-inset-bottom, 0px) + 24px);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   background: rgba(8, 11, 18, 0.93);
   color: #f0f6ff;
   border: 0.5px solid rgba(255, 255, 255, 0.16);
@@ -605,19 +605,18 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   max-height: 3em;
-
 }
 .map-toast-secondary { bottom: calc(env(safe-area-inset-bottom, 0px) + 68px); }
-.map-toast-warning {
+.map-toast-info {
   bottom: calc(env(safe-area-inset-bottom, 0px) + 112px);
-  border-color: rgba(255, 159, 10, 0.35);
-  color: #ffe3bd;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #eef5ff;
 }
 
 @media (max-width: 767px) {
   .map-toast {
-    top: calc(118px + env(safe-area-inset-top, 0px));
-    bottom: auto;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    top: auto;
     max-width: calc(100vw - 40px);
     padding: 7px 11px;
     font-size: 12px;
@@ -625,20 +624,54 @@
   }
 
   .map-toast-secondary {
-    top: calc(154px + env(safe-area-inset-top, 0px));
-    bottom: auto;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    top: auto;
   }
 
-  .map-toast-warning {
-    top: calc(190px + env(safe-area-inset-top, 0px));
-    bottom: auto;
+  .map-toast-info {
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    top: auto;
   }
 }
 
-.nearby-panel { margin: 12px 0; }
-.nearby-chips { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 12px; }
+.nearby-panel {
+  margin: 12px 0;
+  padding: 8px 0;
+}
+.nearby-chips {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:10px 0 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .nearby-list { display:grid; gap:10px; }
-.nearby-card { border:0.5px solid rgba(255,255,255,.12); border-radius:12px; padding:10px; background:rgba(255,255,255,.03); display:grid; gap:4px; }
+.nearby-card {
+  border:0.5px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  padding:10px;
+  background:rgba(255,255,255,.03);
+  display:grid;
+  gap:8px;
+}
+.nearby-card-selected {
+  border-color: rgba(10, 132, 255, 0.45);
+  background: rgba(10, 132, 255, 0.08);
+}
 .nearby-title { font-weight:600; color:#eef5ff; }
 .nearby-meta,.nearby-addr { font-size:12px; color:rgba(231,240,255,.72); }
+.nearby-actions-row {
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+  justify-content:space-between;
+  align-items:center;
+}
 .nearby-empty { font-size:13px; color:rgba(231,240,255,.72); padding:8px 0; }
+
+@media (max-width: 767px) {
+  .nearby-chips { gap:10px; padding: 4px 10px; }
+  .nearby-card { padding: 12px; }
+  .metro-open-btn { width: 100%; }
+}

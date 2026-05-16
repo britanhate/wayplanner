@@ -1,5 +1,7 @@
 import CalciteIcon from "../../../shared/ui/CalciteIcon";
 
+import { useEffect, useRef } from "react";
+
 export default function NearbyPlacesPanel({
   category,
   onCategoryChange,
@@ -12,6 +14,13 @@ export default function NearbyPlacesPanel({
   onSelectPlace,
   onBackToList,
 }) {
+  const listRef = useRef(null);
+
+  useEffect(() => {
+    if (!selectedPlace || !listRef.current) return;
+    const el = document.getElementById(`nearby-${selectedPlace.id}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [selectedPlace]);
   return (
     <section className="nearby-panel p-panel fade-in">
       <div className="route-panel-header">
@@ -20,18 +29,18 @@ export default function NearbyPlacesPanel({
           <CalciteIcon name="close" size={14} />
         </button>
       </div>
-      <div className="nearby-chips">
-        {categories.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`badge pressable ${category === item.id ? "badge-secondary" : "badge"}`}
-            onClick={() => onCategoryChange(item.id)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+        <div className="nearby-list" ref={listRef}>
+          {places.map((place) => (
+            <article className="nearby-card" id={`nearby-${place.id}`} key={place.id}>
+              <div className="nearby-title">{place.name}</div>
+              <div className="nearby-meta">{place.category} • {place.distanceText}</div>
+              {place.address && <div className="nearby-addr">{place.address}</div>}
+              <button type="button" className="metro-open-btn" onClick={() => onAdd(place)}>
+                Додати точку
+              </button>
+            </article>
+          ))}
+        </div>
 
       {loading && <div className="nearby-empty">Пошук місць поруч...</div>}
       {!loading && !places.length && <div className="nearby-empty">Поруч нічого не знайдено.</div>}
@@ -61,8 +70,8 @@ export default function NearbyPlacesPanel({
               <div className="nearby-title">{place.name}</div>
               <div className="nearby-meta">{place.category} • {place.distanceText}</div>
               {place.address && <div className="nearby-addr">{place.address}</div>}
-              <button type="button" className="metro-open-btn" onClick={() => onSelectPlace(place)}>
-                Деталі
+              <button type="button" className="metro-open-btn" onClick={() => onAdd(place)}>
+                Додати точку
               </button>
             </article>
           ))}
