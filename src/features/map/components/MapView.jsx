@@ -55,79 +55,6 @@ const Icons = {
   pin: (<CalciteIcon name="locate" size={14} />),
   myLocation: (<CalciteIcon name="locate" size={18} />),
   arrowLeft: (<CalciteIcon name="arrowLeft" size={15} />),
-  _legacy_close_svg: (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  ),
-  metro: (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="13" rx="3" />
-      <path d="M3 10h18M8 16l-2 5M16 16l2 5M12 16v5" />
-    </svg>
-  ),
-  pin: (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
-  ),
-  myLocation: (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-      <circle cx="12" cy="12" r="9" opacity="0.5" />
-    </svg>
-  ),
-  arrowLeft: (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <line x1="19" y1="12" x2="5" y2="12" />
-      <polyline points="12 19 5 12 12 5" />
-    </svg>
-  ),
 };
 
 
@@ -474,6 +401,9 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       delete window.__addPreviewPoint;
       delete window.__openNearbyFromPreview;
     };
+  // NOTE: this effect should only recreate the preview marker when coordinates change.
+  // Geocoded text updates are handled in the separate popup-content effect below.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewPos, openNearbyForPoint, getPreviewPopupContent]);
 
   useEffect(() => {
@@ -488,11 +418,11 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   }, [geocoded, previewPos, getPreviewPopupContent]);
 
   // ── Helpers ──
-  const flyTo = (p) => {
+  const flyTo = useCallback((p) => {
     setSelectedPointId(p.id);
     mapInstance.current?.flyTo([p.lat, p.lng], 15, { duration: 0.8 });
     markersRef.current[p.id]?.openPopup();
-  };
+  }, []);
 
   const handleGeocodeResult = (result) => {
     setPreviewPos({ lat: result.lat, lng: result.lng });
@@ -626,7 +556,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     }
   };
 
-  const handleRoutePointPick = (p) => {
+  const handleRoutePointPick = useCallback((p) => {
     if (activeRouteIndex === null) {
       flyTo(p);
       return;
@@ -638,7 +568,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       return next;
     });
     setActiveRouteIndex(null);
-  };
+  }, [activeRouteIndex, fitToWaypoints, flyTo]);
 
   const syncPointExpense = async ({ pointId, pointName, estimatedCost, currency }) => {
     const normalizedAmount = Number(estimatedCost);
@@ -685,7 +615,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     }
   };
 
-  const handleDeletePoint = async (pointId) => {
+  const handleDeletePoint = useCallback(async (pointId) => {
     try {
       await deleteExpenseByPointId(pointId);
       await deletePoint(pointId);
@@ -694,7 +624,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       console.error(e);
       setUiMessage("Не вдалося видалити точку.");
     }
-  };
+  }, [deleteExpenseByPointId, deletePoint]);
 
   const handleSavePoint = async (data) => {
     try {
@@ -738,7 +668,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     }
   };
 
-  const handleToggleCompleted = async (point) => {
+  const handleToggleCompleted = useCallback(async (point) => {
     const startedAt = performance.now();
     try {
       await updatePoint(point.id, { is_completed: !point.is_completed });
@@ -747,7 +677,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     } finally {
       logSlowInteraction("point_toggle_completed", startedAt);
     }
-  };
+  }, [updatePoint]);
 
   const highlightNearbyMarker = useCallback((placeId) => {
     nearbyMarkersRef.current.forEach((marker, id) => {
@@ -811,14 +741,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           highlightNearbyMarker(place.id);
           try {
             mapInstance.current?.flyTo([place.lat, place.lng], 16, { duration: 0.5 });
-          } catch (err) {
+          } catch {
             // ignore if map not available
           }
         });
 
         nearbyMarkersRef.current.set(place.id, marker);
       });
-    } catch (error) {
+    } catch {
       setNearbyPlaces([]);
       setSelectedNearbyPlace(null);
       setUiMessage("Не вдалося завантажити місця поруч.");
@@ -852,7 +782,9 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     highlightNearbyMarker(place.id);
     try {
       mapInstance.current?.flyTo([place.lat, place.lng], 16, { duration: 0.5 });
-    } catch (err) {}
+    } catch {
+      // ignore flyTo errors when map is not ready
+    }
   }, [highlightNearbyMarker]);
 
   const handleAddNearbyPoint = async (place) => {
@@ -940,7 +872,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         onNearby={openNearbyForPoint}
       />
     ),
-    [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points, selectedPointId],
+    [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, openNearbyForPoint, points, selectedPointId],
   );
 
   const routePickSidebar = useMemo(
@@ -958,7 +890,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         onNearby={openNearbyForPoint}
       />
     ),
-    [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, points, activeRouteIndex, selectedPointId],
+    [flyTo, handleDeletePoint, handleRoutePointPick, handleToggleCompleted, openNearbyForPoint, points, selectedPointId],
   );
 
   const renderContent = () => {

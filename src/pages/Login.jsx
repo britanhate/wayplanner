@@ -4,12 +4,12 @@ import { USERS } from "../lib/constants";
 import "./Login.css";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { loginAsUser } = useAuth();
   const [error, setError] = useState("");
 
   const quickLogin = (user) => {
     try {
-      login(user.email, user.password);
+      loginAsUser(user.id);
     } catch (err) {
       setError(err.message);
     }
