@@ -142,6 +142,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const routeLayers = useRef([]);
   const previewMarkerRef = useRef(null);
   const previewCloseByActionRef = useRef(false);
+  const previewCloseByRenderRef = useRef(false);
   const tileLayerRef = useRef(null);
   const pointIconCacheRef = useRef(new Map());
   const userLocationMarkerRef = useRef(null);
@@ -228,6 +229,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     map.on("popupclose", (e) => {
       // Перевіряємо, чи це саме прев'ю-маркер закрив свій попап
       if (!previewMarkerRef.current || e.popup !== previewMarkerRef.current.getPopup()) return;
+      if (previewCloseByRenderRef.current) {
+        previewCloseByRenderRef.current = false;
+        return;
+      }
       if (previewCloseByActionRef.current) {
         // закриття ініційовано дією з попапу — зберігаємо стан до появи модалки
         previewCloseByActionRef.current = false;
