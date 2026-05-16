@@ -47,5 +47,4 @@ export type UserProfile = {
   email: string;
   color: string;
   avatar: string;
-  password?: string;
 };

@@ -9,6 +9,7 @@ export default function RoutePanel({
   onBuild,
   building,
   onClear,
+  onClose,
   showHeader = true,
 }) {
   const hasEnoughPoints = routePoints.length >= 2;
