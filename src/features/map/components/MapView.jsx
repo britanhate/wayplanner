@@ -408,8 +408,9 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   useEffect(() => {
     // 1. Завжди чистимо старий маркер перед новим рендером
     if (previewMarkerRef.current) {
-      previewMarkerRef.current.remove();
+      const oldMarker = previewMarkerRef.current;
       previewMarkerRef.current = null;
+      oldMarker.remove();
     }
     delete window.__addPreviewPoint;
     delete window.__openNearbyFromPreview;
