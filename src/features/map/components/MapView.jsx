@@ -141,6 +141,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
   const markersRef = useRef({});
   const routeLayers = useRef([]);
   const previewMarkerRef = useRef(null);
+  const previewCloseByActionRef = useRef(false);
   const tileLayerRef = useRef(null);
   const pointIconCacheRef = useRef(new Map());
   const userLocationMarkerRef = useRef(null);
@@ -222,15 +223,18 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     });
 
     // ВАЖЛИВО: Видаляємо дані прев'ю, коли попап закривається (хрестиком або кліком мимо)
+    // Але якщо попап закрито дією "Додати точку" або "Що поруч?", ми не очищаємо
+    // preview/ geocoded одразу — це дозволяє модалці отримати дані.
     map.on("popupclose", (e) => {
       // Перевіряємо, чи це саме прев'ю-маркер закрив свій попап
-      if (
-        previewMarkerRef.current &&
-        e.popup === previewMarkerRef.current.getPopup()
-      ) {
-        setPreviewPos(null);
-        setGeocoded(null);
+      if (!previewMarkerRef.current || e.popup !== previewMarkerRef.current.getPopup()) return;
+      if (previewCloseByActionRef.current) {
+        // закриття ініційовано дією з попапу — зберігаємо стан до появи модалки
+        previewCloseByActionRef.current = false;
+        return;
       }
+      setPreviewPos(null);
+      setGeocoded(null);
     });
 
     // Закриття по Esc
@@ -443,11 +447,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     window.__addPreviewPoint = () => {
       setPendingPos(previewPos);
       // При кліку на "Додати" ми не обнуляємо previewPos відразу,
-      // щоб модалка бачила координати, але закриваємо попап.
+      // щоб модалка бачила координати — позначаємо, що закриття попапу
+      // ініційовано дією з попапу, щоб обробник popupclose не очищував стан.
+      previewCloseByActionRef.current = true;
       marker.closePopup();
     };
 
     window.__openNearbyFromPreview = () => {
+      previewCloseByActionRef.current = true;
       openNearbyForPoint({ lat: previewPos.lat, lng: previewPos.lng });
       marker.closePopup();
     };
