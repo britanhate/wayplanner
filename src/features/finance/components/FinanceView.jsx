@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../lib/AuthContext";
 import { useExpenses } from "../hooks/useExpenses";
 import {
@@ -144,7 +144,7 @@ export default function FinanceView() {
     await updateExpense(expense.id, { paid: !expense.paid });
   };
 
-  const handleSyncPointCosts = async ({ silent = false } = {}) => {
+  const handleSyncPointCosts = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setSyncMessage("");
     setSyncingPointCosts(true);
     try {
@@ -156,7 +156,7 @@ export default function FinanceView() {
     } finally {
       setSyncingPointCosts(false);
     }
-  };
+  }, [syncAllPointExpenses]);
 
   useEffect(() => {
     if (hasAutoSyncedPointCosts) return;
@@ -165,7 +165,7 @@ export default function FinanceView() {
       handleSyncPointCosts({ silent: true });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [handleSyncPointCosts]);
 
   return (
     <div className="finance-view">

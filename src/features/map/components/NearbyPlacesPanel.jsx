@@ -3,15 +3,11 @@ import CalciteIcon from "../../../shared/ui/CalciteIcon";
 import { useEffect, useRef } from "react";
 
 export default function NearbyPlacesPanel({
-  category,
-  onCategoryChange,
-  categories,
   loading,
   places,
   onAdd,
   onClose,
   selectedPlace,
-  onSelectPlace,
   onBackToList,
 }) {
   const listRef = useRef(null);
