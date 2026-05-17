@@ -191,6 +191,7 @@
   padding: 12px 12px;
   background: rgba(255, 255, 255, 0.03);
   border: 0.5px solid rgba(255, 255, 255, 0.08);
+  min-width: 0;
 }
 .point-cards-list {
   display: flex;
@@ -206,11 +207,16 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
+  width: 100%;
 }
 .point-card-title {
   flex: 1;
   min-width: 0;
   font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .point-cost-badge {
   flex-shrink: 0;

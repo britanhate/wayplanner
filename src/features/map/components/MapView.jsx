@@ -922,7 +922,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
-              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="search" size={16} />} 
+              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="tour" size={16} />} 
               {routePanelOpen ? "Закрити" : "Маршрут"}
             </span>
           </button>
@@ -998,7 +998,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
-              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="search" size={16} />}  Маршрут
+              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="tour" size={16} />}  Маршрут
             </span>
           </button>
           <button

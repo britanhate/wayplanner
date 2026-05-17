@@ -127,7 +127,7 @@ function PointsSidebar({
                   </div>
                   <div className="text-small text-gray-400 flex items-center gap-2 flex-wrap mt-0.5 point-meta-row">
                     <span className="point-meta-pill point-meta-author" style={{ color: creator.color }}>
-                      {creator.avatar} {creator.name}
+                      {creator.name}
                     </span>
                     <span className="flex items-center gap-1 point-meta-pill"><CalciteIcon name={iconNameForType(p.type)} size={16} /> {t.label}</span>
                     {p.point_date ? (
