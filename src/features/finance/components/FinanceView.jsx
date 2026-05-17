@@ -171,7 +171,8 @@ export default function FinanceView() {
     <div className="finance-view">
       {/* ── Хедер: бюджет ── */}
       <div className="finance-header">
-        <div className="budget-block">
+        <div className="finance-header-top">
+          <div className="budget-block">
           <span className="field-label budget-label-nowrap">Бюджет</span>
           <input
             className="budget-inp"
@@ -189,24 +190,26 @@ export default function FinanceView() {
               <option key={c}>{c}</option>
             ))}
           </select>
+            <button
+              className="btn btn-primary btn-primary-small"
+              onClick={handleBudgetSave}
+            >
+              Зберегти
+            </button>
+          </div>
+
           <button
-            className="btn btn-primary btn-primary-small"
-            onClick={handleBudgetSave}
+            className="finance-sync-icon-btn"
+            onClick={handleSyncPointCosts}
+            disabled={syncingPointCosts}
+            title={syncingPointCosts ? "Синхронізація витрат з точок..." : "Синхронізувати витрати з точок"}
+            aria-label="Синхронізувати витрати з точок"
           >
-            Зберегти
+            {syncingPointCosts ? "⟳" : "🔄"}
           </button>
         </div>
 
-        <div className="finance-sync-row">
-          <button
-            className="btn btn-primary btn-primary-small"
-            onClick={handleSyncPointCosts}
-            disabled={syncingPointCosts}
-          >
-            {syncingPointCosts ? "Syncing..." : "Sync point costs"}
-          </button>
-          {syncMessage ? <span className="finance-sync-message">{syncMessage}</span> : null}
-        </div>
+        {syncMessage ? <span className="finance-sync-message">{syncMessage}</span> : null}
 
         {/* Прогрес бюджету */}
         <div className="budget-progress-wrap">
@@ -263,7 +266,7 @@ export default function FinanceView() {
 
       <div className="finance-body">
         {loading && <div className="finance-loading-hint">Завантаження витрат...</div>}
-        {syncingPointCosts && <div className="finance-syncing-hint">Syncing point costs...</div>}
+        {syncingPointCosts && <div className="finance-syncing-hint">Синхронізація витрат з точок…</div>}
 
       {/* ── Список + форма ── */}
         <div className="finance-left">
