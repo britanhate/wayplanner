@@ -27,7 +27,7 @@ export const USERS: UserProfile[] = [
 export const POINT_TYPES = {
   hotel: { label: "Готель", icon: "home", color: "#2a7de8" },
   sight: { label: "Пам'ятка", icon: "pin", color: "#e8ac2a" },
-  food: { label: "Ресторан", icon: "restaurant", color: "#2abf6e" },
+  food: { label: "Ресторан", icon: "fork-knife", color: "#2abf6e" },
   airport: { label: "Аеропорт", icon: "launch", color: "#2adbe8" },
   photo: { label: "Фото-зона", icon: "camera", color: "#e82a93" },
   museum: { label: "Музей", icon: "organization", color: "#e82a2a" },
@@ -38,7 +38,7 @@ export const POINT_TYPES = {
 
 export const EXPENSE_CATEGORIES = [
   { value: "Житло", icon: "home", color: "#2a7de8" },
-  { value: "Їжа", icon: "restaurant", color: "#2abf6e" },
+  { value: "Їжа", icon: "fork-knife", color: "#2abf6e" },
   { value: "Транспорт", icon: "bus", color: "#e8622a" },
   { value: "Розваги", icon: "theater", color: "#9b59b6" },
   { value: "Шопінг", icon: "shopping-cart", color: "#e8a82a" },

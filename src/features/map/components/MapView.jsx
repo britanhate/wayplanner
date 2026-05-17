@@ -267,7 +267,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         points.map((p) => {
           const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
           const imgSrc = getPointImageSrc(p.attachments);
-          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle"><calcite-icon icon="${t.icon || "pin"}" scale="s"></calcite-icon> ${t.label}</div>${p.addr ? `<div class="ios-line"><calcite-icon icon="pin" scale="s"></calcite-icon> ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price"><calcite-icon icon="credit-card" scale="s"></calcite-icon> ${p.estimated_cost} ${p.currency}</div>` : ""}<button data-point-id="${p.id}" class="nearby-trigger-btn open-nearby-from-point"><calcite-icon icon="directions" scale="s"></calcite-icon> Що поруч</button></div></div>`;
+          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle"><calcite-icon icon="${t.icon || "pin"}" scale="s"></calcite-icon> ${t.label}</div>${p.addr ? `<div class="ios-line"><calcite-icon icon="pin" scale="s"></calcite-icon> ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price"><calcite-icon icon="credit-card" scale="s"></calcite-icon> ${p.estimated_cost} ${p.currency}</div>` : ""}<button data-point-id="${p.id}" class="nearby-trigger-btn open-nearby-from-point"><calcite-icon icon="search" scale="s"></calcite-icon> Що поруч</button></div></div>`;
           return [p.id, popup];
         }),
       ),
@@ -922,7 +922,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
-              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="directions" size={16} />} 
+              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="search" size={16} />} 
               {routePanelOpen ? "Закрити" : "Маршрут"}
             </span>
           </button>
@@ -931,7 +931,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={toggleMetroPanel}
           >
             <span className="flex items-center gap-2">
-              {metroPanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="rail" size={16} />} 
+              {metroPanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="bus" size={16} />} 
               Метро
             </span>
           </button>
@@ -998,14 +998,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
-              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="directions" size={16} />}  Маршрут
+              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="search" size={16} />}  Маршрут
             </span>
           </button>
           <button
             className={`sheet-action-btn btn btn-secondary ${metroPanelOpen ? "active" : ""}`}
             onClick={toggleMetroPanel}
           >
-            <span className="flex items-center gap-2">{metroPanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="rail" size={16} />}  Метро</span>
+            <span className="flex items-center gap-2">{metroPanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="bus" size={16} />}  Метро</span>
           </button>
           </div>
         </div>

@@ -144,9 +144,9 @@ function PointsSidebar({
                     </div>
                   )}
                   <div className="point-card-actions">
-                    <button type="button" className="btn btn-icon btn-ghost point-action-btn" onClick={(e) => { e.stopPropagation(); onNearby?.(p); }} title="Що поруч" aria-label="Що поруч"><CalciteIcon name="route" size={16} /></button>
+                    <button type="button" className="btn btn-icon btn-ghost point-action-btn" onClick={(e) => { e.stopPropagation(); onNearby?.(p); }} title="Що поруч" aria-label="Що поруч"><CalciteIcon name="search" size={16} /></button>
                     {p.created_by === user?.id && (
-                      <button type="button" className="btn btn-icon btn-ghost point-action-btn" title="Редагувати" aria-label="Редагувати" onClick={(e) => { e.stopPropagation(); onEdit(p); }}><CalciteIcon name="edit" size={16} /></button>
+                      <button type="button" className="btn btn-icon btn-ghost point-action-btn" title="Редагувати" aria-label="Редагувати" onClick={(e) => { e.stopPropagation(); onEdit(p); }}><CalciteIcon name="pencil" size={16} /></button>
                     )}
                   </div>
                 </div>
