@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, useEffect } from "react";
+import { Suspense, lazy, startTransition, useState, useEffect } from "react";
 import Topbar from "../components/UI/Topbar";
 import PwaStatus from "../components/UI/PwaStatus";
 import MapView from "../features/map/components/MapView";
@@ -26,7 +26,9 @@ export default function App() {
 
   const handleTabChange = (tab) => {
     const startedAt = performance.now();
-    setActiveTab(tab);
+    startTransition(() => {
+      setActiveTab(tab);
+    });
     setSearchOpen(false);
     logSlowInteraction(`tab_switch_${tab}`, startedAt);
   };
