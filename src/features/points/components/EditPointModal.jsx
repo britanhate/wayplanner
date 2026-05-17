@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { POINT_TYPES, CURRENCIES } from "../../../lib/constants";
+import CalciteIcon from "../../../shared/ui/CalciteIcon";
+import { PLACE_TYPE_ICONS } from "../../../lib/calciteIcons";
 
 export default function EditPointModal({ point, onSave, onClose }) {
   const [name, setName] = useState(point.name || "");
@@ -64,9 +66,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
       >
         <div className="modal-header">
           <div className="modal-title">Редагувати точку</div>
-          <button className="modal-close btn btn-icon" onClick={onClose}>
-            ×
-          </button>
+          <button className="modal-close btn btn-icon" onClick={onClose}><CalciteIcon name="close" size={20} /></button>
         </div>
 
         <div className="modal-body">
@@ -79,7 +79,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
             autoFocus
           />
 
-          {point.addr && <div className="field-addr">📍 {point.addr}</div>}
+          {point.addr && <div className="field-addr"><CalciteIcon name="pin" size={16} /> {point.addr}</div>}
 
           <label className="field-label">Тип</label>
           <div className="type-row">
@@ -90,7 +90,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
                 style={{ "--type-color": t.color }}
                 onClick={() => setType(key)}
               >
-                {t.emoji} {t.label}
+                <CalciteIcon name={PLACE_TYPE_ICONS[key] || "pin"} size={16} /> {t.label}
               </button>
             ))}
           </div>
@@ -151,7 +151,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
 
           <label className="field-label">Фото</label>
           <label className="file-upload-btn">
-            📎 Вибрати фото
+            <CalciteIcon name="add" size={16} /> Вибрати фото
             <input
               type="file"
               accept="image/*"
@@ -172,9 +172,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
                   <button
                     className="attachment-remove"
                     onClick={() => handleRemoveAttachment(idx)}
-                  >
-                    ×
-                  </button>
+                  ><CalciteIcon name="close" size={16} /></button>
                 </div>
               ))}
             </div>
@@ -188,7 +186,7 @@ export default function EditPointModal({ point, onSave, onClose }) {
               onChange={(e) => setIsCompleted(e.target.checked)}
               onClick={(e) => e.stopPropagation()}
             />
-            <label htmlFor="isCompleted">✓ Завдання виконано</label>
+            <label htmlFor="isCompleted">Завдання виконано</label>
           </div>
         </div>
 

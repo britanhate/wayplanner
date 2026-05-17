@@ -137,7 +137,7 @@ export function useExpenses({ enabled = true }: UseExpensesOptions = {}): UseExp
         if (existingExpense) toDelete.push(existingExpense.id);
         return;
       }
-      const nextName = `🏷️ ${point.name}`;
+      const nextName = `${point.name}`;
       const nextCurrency = point.currency || 'EUR';
       if (!existingExpense) {
         toCreate.push({ name: nextName, amount: normalizedAmount, currency: nextCurrency, category: 'Місце', point_id: point.id, created_by: point.created_by, created_at: point.point_date || point.created_at, paid: false });

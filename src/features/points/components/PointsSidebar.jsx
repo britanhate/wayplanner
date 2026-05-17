@@ -1,143 +1,11 @@
 import { memo, useMemo, useState } from "react";
 import { POINT_TYPES } from "../../../lib/constants";
+import CalciteIcon from "../../../shared/ui/CalciteIcon";
+import { PLACE_TYPE_ICONS } from "../../../lib/calciteIcons";
 import { filterAndSortPoints, getUserInfo } from "./pointsSidebarUtils";
 import { useAuth } from "../../../lib/AuthContext";
 
-// ── SVG іконки ──
-const Icons = {
-  check: (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  ),
-  edit: (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  ),
-  close: (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  ),
-  checkboxOn: (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="4" />
-      <polyline points="9 12 11 14 15 10" />
-    </svg>
-  ),
-  checkboxOff: (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="4" />
-    </svg>
-  ),
-  calendar: (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  ),
-  coin: (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M14.8 9A2 2 0 0 0 13 8h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1-1.8-1" />
-      <line x1="12" y1="6" x2="12" y2="8" />
-      <line x1="12" y1="16" x2="12" y2="18" />
-    </svg>
-  ),
-  pin: (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
-  ),
-  route: (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <circle cx="6" cy="18" r="2" />
-      <circle cx="18" cy="6" r="2" />
-      <path d="M8 17v-3a6 6 0 016-6h2" />
-    </svg>
-  ),
-};
+const iconNameForType = (type) => PLACE_TYPE_ICONS[type] || "pin";
 
 function PointsSidebar({
   points,
@@ -180,7 +48,7 @@ function PointsSidebar({
               className={`badge pressable ${selectedType === key ? "badge-secondary" : "badge"}`}
               onClick={() => setSelectedType(key)}
             >
-              <span className="mr-2">{type.emoji}</span>
+              <span className="mr-2 inline-flex"><CalciteIcon name={iconNameForType(key)} size={16} /></span>
               <span className="hidden sm:inline">{type.label}</span>
             </button>
           ))}
@@ -209,7 +77,7 @@ function PointsSidebar({
             onClick={() => setShowCompleted((prev) => !prev)}
             title={showCompleted ? "Приховати виконані" : "Показати виконані"}
           >
-            {showCompleted ? Icons.checkboxOn : Icons.checkboxOff}
+            <CalciteIcon name={showCompleted ? "check" : "minus"} size={16} />
           </button>
         </div>
       </div>
@@ -245,7 +113,7 @@ function PointsSidebar({
                     className="text-lg"
                     style={{ color: p.is_completed ? "#30d158" : t.color }}
                   >
-                    {p.is_completed ? Icons.check : t.emoji}
+                    <CalciteIcon name={p.is_completed ? "check" : iconNameForType(p.type)} size={24} />
                   </span>
                 </div>
 
@@ -261,14 +129,14 @@ function PointsSidebar({
                     <span className="point-meta-pill point-meta-author" style={{ color: creator.color }}>
                       {creator.avatar} {creator.name}
                     </span>
-                    <span className="flex items-center gap-1 point-meta-pill">{t.emoji} {t.label}</span>
+                    <span className="flex items-center gap-1 point-meta-pill"><CalciteIcon name={iconNameForType(p.type)} size={16} /> {t.label}</span>
                     {p.point_date ? (
                       <span className="flex items-center gap-1 point-meta-pill">
                         {Icons.calendar}
                         {new Date(p.point_date).toLocaleDateString("uk-UA")}
                       </span>
                     ) : null}
-                    {p.is_completed && <span className="point-meta-pill">✓ Виконано</span>}
+                    {p.is_completed && <span className="point-meta-pill">Виконано</span>}
                   </div>
                   {p.comment && (
                     <div className="text-small text-gray-400 truncate">
@@ -276,9 +144,9 @@ function PointsSidebar({
                     </div>
                   )}
                   <div className="point-card-actions">
-                    <button type="button" className="btn btn-icon btn-ghost point-action-btn" onClick={(e) => { e.stopPropagation(); onNearby?.(p); }} title="Що поруч" aria-label="Що поруч">{Icons.route}</button>
+                    <button type="button" className="btn btn-icon btn-ghost point-action-btn" onClick={(e) => { e.stopPropagation(); onNearby?.(p); }} title="Що поруч" aria-label="Що поруч"><CalciteIcon name="route" size={16} /></button>
                     {p.created_by === user?.id && (
-                      <button type="button" className="btn btn-icon btn-ghost point-action-btn" title="Редагувати" aria-label="Редагувати" onClick={(e) => { e.stopPropagation(); onEdit(p); }}>{Icons.edit}</button>
+                      <button type="button" className="btn btn-icon btn-ghost point-action-btn" title="Редагувати" aria-label="Редагувати" onClick={(e) => { e.stopPropagation(); onEdit(p); }}><CalciteIcon name="edit" size={16} /></button>
                     )}
                   </div>
                 </div>
@@ -308,7 +176,7 @@ function PointsSidebar({
                         onDelete(p.id);
                       }}
                     >
-                      {Icons.close}
+                      <CalciteIcon name="trash" size={16} />
                     </button>
                   )}
                 </div>
