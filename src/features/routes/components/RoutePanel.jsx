@@ -38,7 +38,7 @@ export default function RoutePanel({
             aria-label="Закрити маршрут"
             onClick={onClose}
           >
-            ✕
+            <calcite-icon icon="x" scale="m" />
           </button>
         </div>
       )}

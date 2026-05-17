@@ -19,7 +19,7 @@ export function Root() {
     }
   }, [loading]);
 
-  if (loading) return <div className="loading-screen">⏳</div>;
+  if (loading) return <div className="loading-screen"><calcite-icon icon="clock" scale="m" /></div>;
 
   return user ? <App /> : <Login />;
 }
