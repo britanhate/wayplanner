@@ -14,13 +14,14 @@ const Icons = {
   ),
 }
 
-export default function SearchBox({ onResult }) {
+export default function SearchBox({ onResult, shouldFocus = false }) {
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const timerRef = useRef(null)
   const wrapRef = useRef(null)
+  const inputRef = useRef(null)
 
   useEffect(() => {
     const handler = (e) => {
@@ -29,6 +30,18 @@ export default function SearchBox({ onResult }) {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  useEffect(() => {
+    if (!shouldFocus) return
+    const timer = setTimeout(() => {
+      const input = inputRef.current
+      if (!input) return
+      if (input.offsetParent === null) return
+      input.focus()
+      input.select()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [shouldFocus])
 
   const handleInput = (val) => {
     setQuery(val)
@@ -63,6 +76,7 @@ export default function SearchBox({ onResult }) {
       <div className="search-input-wrap">
         <span className="search-icon">{Icons.search}</span>
         <input
+          ref={inputRef}
           className="search-inp"
           placeholder="Пошук адреси або місця..."
           value={query}

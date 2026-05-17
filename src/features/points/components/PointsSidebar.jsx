@@ -122,6 +122,21 @@ const Icons = {
       <circle cx="12" cy="10" r="3" />
     </svg>
   ),
+  sparkles: (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4L12 3z" />
+      <path d="M19 14l.9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14z" />
+    </svg>
+  ),
 };
 
 function PointsSidebar({
@@ -237,17 +252,17 @@ function PointsSidebar({
                 {/* Інфо */}
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{p.name}</div>
-                  <div className="text-small text-gray-400 flex items-center gap-2 flex-wrap mt-0.5">
-                    <span style={{ color: creator.color }}>
+                  <div className="text-small text-gray-400 flex items-center gap-2 flex-wrap mt-0.5 point-meta-row">
+                    <span className="point-meta-pill point-meta-author" style={{ color: creator.color }}>
                       {creator.avatar} {creator.name}
                     </span>
                     {p.estimated_cost ? (
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 point-meta-pill">
                         {Icons.coin} {p.estimated_cost} {p.currency}
                       </span>
                     ) : null}
                     {p.point_date ? (
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 point-meta-pill">
                         {Icons.calendar}
                         {new Date(p.point_date).toLocaleDateString("uk-UA")}
                       </span>
@@ -260,13 +275,15 @@ function PointsSidebar({
                   )}
                   <button
                     type="button"
-                    className="btn btn-ghost"
+                    className="btn btn-icon btn-ghost point-nearby-btn"
                     onClick={(e) => {
                       e.stopPropagation();
                       onNearby?.(p);
                     }}
+                    title="Що поруч"
+                    aria-label="Що поруч"
                   >
-                    Що поруч?
+                    {Icons.sparkles}
                   </button>
                 </div>
 

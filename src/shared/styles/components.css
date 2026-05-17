@@ -159,6 +159,33 @@
   border-color: rgba(10, 132, 255, 0.45) !important;
   background: rgba(10, 132, 255, 0.12) !important;
 }
+.point-meta-row {
+  margin-top: 4px;
+}
+.point-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+.point-meta-author {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.point-nearby-btn {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(10, 132, 255, 0.08);
+  border: 0.5px solid rgba(10, 132, 255, 0.25);
+}
+.point-nearby-btn:hover {
+  color: #fff;
+  background: rgba(10, 132, 255, 0.16);
+  border-color: rgba(10, 132, 255, 0.38);
+}
 
 /* ── Modal ── */
 .modal-overlay {
