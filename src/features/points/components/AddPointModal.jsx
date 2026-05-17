@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { POINT_TYPES, CURRENCIES } from "../../../lib/constants";
+import CalciteIcon from "../../../shared/ui/CalciteIcon";
+import { PLACE_TYPE_ICONS } from "../../../lib/calciteIcons";
 
 export default function AddPointModal({ position, geocoded, onSave, onClose }) {
   const [name, setName] = useState(geocoded?.name || "");
@@ -59,7 +61,7 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
       <div className="modal-box scale-in" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title">Нова точка</div>
-          <button className="modal-close btn btn-icon" onClick={onClose}>×</button>
+          <button className="modal-close btn btn-icon" onClick={onClose}><CalciteIcon name="close" size={20} /></button>
         </div>
 
         <div className="modal-body">
@@ -73,7 +75,7 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
           />
 
           {geocoded?.addr && (
-            <div className="field-addr">📍 {geocoded.addr}</div>
+            <div className="field-addr"><CalciteIcon name="pin" size={16} /> {geocoded.addr}</div>
           )}
 
           <label className="field-label">Тип</label>
@@ -85,7 +87,7 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
                 style={{ "--type-color": t.color }}
                 onClick={() => setType(key)}
               >
-                {t.emoji} {t.label}
+                <CalciteIcon name={PLACE_TYPE_ICONS[key] || "pin"} size={16} /> {t.label}
               </button>
             ))}
           </div>
@@ -146,7 +148,7 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
 
           <label className="field-label">Фото</label>
           <label className="file-upload-btn">
-            📎 Вибрати фото
+            <CalciteIcon name="add" size={16} /> Вибрати фото
             <input
               type="file"
               accept="image/*"
@@ -167,9 +169,7 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
                   <button
                     className="attachment-remove"
                     onClick={() => handleRemoveAttachment(idx)}
-                  >
-                    ×
-                  </button>
+                  ><CalciteIcon name="close" size={16} /></button>
                 </div>
               ))}
             </div>
@@ -183,7 +183,7 @@ export default function AddPointModal({ position, geocoded, onSave, onClose }) {
               onChange={(e) => setIsCompleted(e.target.checked)}
               onClick={(e) => e.stopPropagation()}
             />
-            <label htmlFor="isCompleted">✓ Завдання виконано</label>
+            <label htmlFor="isCompleted">Завдання виконано</label>
           </div>
         </div>
 

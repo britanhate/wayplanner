@@ -1,7 +1,11 @@
-const ICON_PATHS = {
-  menu: 'M4 7h16M4 12h16M4 17h16', search: 'M11 5a6 6 0 100 12 6 6 0 000-12zm7.5 13.5L21 21', logout: 'M14 8l4 4-4 4M18 12H9M12 5H7a2 2 0 00-2 2v10a2 2 0 002 2h5', globe: 'M12 3a9 9 0 100 18 9 9 0 000-18zm-8.25 9h16.5M12 3c2.2 2.3 3.3 5.1 3.3 9S14.2 18.7 12 21c-2.2-2.3-3.3-5.1-3.3-9S9.8 5.3 12 3z', route: 'M6 19a2.5 2.5 0 110-5 2.5 2.5 0 010 5zm12-9a2.5 2.5 0 110-5 2.5 2.5 0 010 5zM8.5 16.5V13a5.5 5.5 0 015.5-5.5h1.5', train: 'M6 4h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2zm0 7h12M8 16l-2 3m10-3l2 3', close: 'M7 7l10 10M17 7L7 17', swap: 'M7 8h11l-3-3M17 16H6l3 3', trash: 'M8 7h8M9 7V5h6v2m-8 0l.7 11h6.6L15 7', edit: 'M7 17l1.2-4.2L15.8 5.2a1.7 1.7 0 112.4 2.4l-7.6 7.6L7 17zm0 0h4.5', check: 'M6 12l4 4 8-8', locate: 'M12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7zm0-5v2.5m0 12.5V21m8.5-9H18m-12 0H3.5M12 3a9 9 0 100 18 9 9 0 000-18z', add: 'M12 5v14M5 12h14', minus: 'M5 12h14', reset: 'M6 12a6 6 0 101.8-4.3M6 5v3h3', arrowLeft: 'M15 6l-6 6 6 6M9 12h11', coin: 'M12 3a9 9 0 100 18 9 9 0 000-18zm2.3 6.2A2.3 2.3 0 0012.2 8h-.8a2 2 0 000 4h1.2a2 2 0 010 4h-1a2.3 2.3 0 01-2-1.1M12 6.5V8m0 8v1.5',
-};
-export default function CalciteIcon({ name, size = 16, strokeWidth = 1.8 }) {
-  const d = ICON_PATHS[name] || ICON_PATHS.close;
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d.split(/(?=M)/).map((segment, idx) => <path key={idx} d={segment} />)}</svg>;
+export default function CalciteIcon({ name, size = 16 }) {
+  const scale = size <= 16 ? "s" : size <= 20 ? "m" : "l";
+  return (
+    <calcite-icon
+      icon={name}
+      scale={scale}
+      style={{ inlineSize: `${size}px`, blockSize: `${size}px`, color: "currentColor" }}
+      aria-hidden="true"
+    />
+  );
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../lib/AuthContext";
 import { USERS } from "../lib/constants";
 import "./Login.css";
+import CalciteIcon from "../shared/ui/CalciteIcon";
 
 export default function Login() {
   const { loginAsUser } = useAuth();
@@ -33,7 +34,7 @@ export default function Login() {
               onClick={() => quickLogin(u)}
               style={{ "--user-color": u.color }}
             >
-              <span className="user-emoji">{u.avatar}</span>
+              <span className="user-emoji"><CalciteIcon name="user" size={20} /></span>
               <span className="user-label">{u.name}</span>
             </button>
           ))}
