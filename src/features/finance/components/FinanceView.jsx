@@ -9,7 +9,6 @@ import {
 } from "../../../lib/constants";
 import "./FinanceView.css";
 import CalciteIcon from "../../../shared/ui/CalciteIcon";
-import { EXPENSE_CATEGORY_ICONS } from "../../../lib/calciteIcons";
 import { markPerf, measurePerf } from "../../../shared/lib/perf";
 
 let hasAutoSyncedPointCosts = false;

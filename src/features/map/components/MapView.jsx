@@ -33,29 +33,6 @@ const NEARBY_CATEGORIES = [
 const RoutePanel = lazy(() => import("../../routes/components/RoutePanel"));
 const MetroPanel = lazy(() => import("../../metro/components/MetroPanel"));
 
-const Icons = {
-  route: (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="6" cy="19" r="3" />
-      <circle cx="18" cy="5" r="3" />
-      <path d="M6 16V9a6 6 0 0 1 6-6h0a6 6 0 0 1 6 6v8" />
-    </svg>
-  ),
-  close: (<CalciteIcon name="close" size={15} />),
-  metro: (<CalciteIcon name="train" size={16} />),
-  pin: (<CalciteIcon name="locate" size={14} />),
-  myLocation: (<CalciteIcon name="locate" size={18} />),
-  arrowLeft: (<CalciteIcon name="arrowLeft" size={15} />),
-};
 
 
 export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
@@ -945,7 +922,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
-              {routePanelOpen ? Icons.close : Icons.route}
+              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="directions" size={16} />} 
               {routePanelOpen ? "Закрити" : "Маршрут"}
             </span>
           </button>
@@ -954,7 +931,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={toggleMetroPanel}
           >
             <span className="flex items-center gap-2">
-              {metroPanelOpen ? Icons.close : Icons.metro}
+              {metroPanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="rail" size={16} />} 
               Метро
             </span>
           </button>
@@ -964,13 +941,13 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           <div className="route-pick-wrap-top fade-in">
             <div className="rp-pick-hint active rp-pick-hint-row">
               <span className="flex items-center gap-2">
-                {Icons.pin} Виберіть точку маршруту
+                <CalciteIcon name="locator" size={16} /> Виберіть точку маршруту
               </span>
               <button
                 className="rp-icon-btn btn btn-icon"
                 onClick={() => setActiveRouteIndex(null)}
               >
-                {Icons.arrowLeft}
+                <CalciteIcon name="arrow-left" size={16} />
               </button>
             </div>
           </div>
@@ -1001,7 +978,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           aria-label="Center map on my location"
           title="My location"
         >
-          {Icons.myLocation}
+          <CalciteIcon name="locator" size={20} />
         </button>
       </div>
 
@@ -1021,14 +998,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
-              {routePanelOpen ? Icons.close : Icons.route} Маршрут
+              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="directions" size={16} />}  Маршрут
             </span>
           </button>
           <button
             className={`sheet-action-btn btn btn-secondary ${metroPanelOpen ? "active" : ""}`}
             onClick={toggleMetroPanel}
           >
-            <span className="flex items-center gap-2">{metroPanelOpen ? Icons.close : Icons.metro} Метро</span>
+            <span className="flex items-center gap-2">{metroPanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="rail" size={16} />}  Метро</span>
           </button>
           </div>
         </div>
@@ -1037,13 +1014,13 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           <div className="route-pick-wrap-bottom fade-in">
             <div className="rp-pick-hint active rp-pick-hint-row">
               <span className="flex items-center gap-2">
-                {Icons.pin} Виберіть точку маршруту
+                <CalciteIcon name="locator" size={16} /> Виберіть точку маршруту
               </span>
               <button
                 className="rp-icon-btn btn btn-icon"
                 onClick={() => setActiveRouteIndex(null)}
               >
-                {Icons.arrowLeft}
+                <CalciteIcon name="arrow-left" size={16} />
               </button>
             </div>
           </div>

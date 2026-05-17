@@ -132,7 +132,7 @@ function PointsSidebar({
                     <span className="flex items-center gap-1 point-meta-pill"><CalciteIcon name={iconNameForType(p.type)} size={16} /> {t.label}</span>
                     {p.point_date ? (
                       <span className="flex items-center gap-1 point-meta-pill">
-                        {Icons.calendar}
+                        <CalciteIcon name="calendar" size={16} />
                         {new Date(p.point_date).toLocaleDateString("uk-UA")}
                       </span>
                     ) : null}
@@ -165,7 +165,7 @@ function PointsSidebar({
                     title="Що поруч"
                     aria-label="Що поруч"
                   >
-                    {Icons.check}
+                    <CalciteIcon name="check" size={16} />
                   </button>
                   {p.created_by === user?.id && (
                     <button

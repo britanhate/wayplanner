@@ -215,7 +215,7 @@ export default function Topbar({
             }}
             aria-label="Меню"
           >
-            <CalciteIcon name="menu" size={20} />
+            <CalciteIcon name="hamburger" size={20} />
           </button>
 
           {menuOpen && (
@@ -329,7 +329,7 @@ export default function Topbar({
 
         {/* GLOBAL ACTIONS */}
         <button className="btn btn-icon topbar-btn" onClick={logout} aria-label="Вийти">
-          <CalciteIcon name="logout" size={19} />
+          <CalciteIcon name="sign-out" size={19} />
         </button>
       </div>
 

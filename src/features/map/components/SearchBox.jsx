@@ -1,18 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { suggestAddresses, findAddress } from '../../../lib/arcgis'
-
-const Icons = {
-  search: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
-    </svg>
-  ),
-  close: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-    </svg>
-  ),
-}
+import CalciteIcon from '../../../shared/ui/CalciteIcon'
 
 export default function SearchBox({ onResult, shouldFocus = false }) {
   const [query, setQuery] = useState('')
@@ -74,7 +62,7 @@ export default function SearchBox({ onResult, shouldFocus = false }) {
   return (
     <div className="search-wrap" ref={wrapRef}>
       <div className="search-input-wrap">
-        <span className="search-icon">{Icons.search}</span>
+        <span className="search-icon"><CalciteIcon name="search" size={16} /></span>
         <input
           ref={inputRef}
           className="search-inp"
@@ -85,7 +73,7 @@ export default function SearchBox({ onResult, shouldFocus = false }) {
         />
         {loading && <div className="search-spinner" />}
         {query && !loading && (
-          <button className="search-clear btn btn-icon btn-ghost" onClick={clear} aria-label="Clear search">{Icons.close}</button>
+          <button className="search-clear btn btn-icon btn-ghost" onClick={clear} aria-label="Clear search"><CalciteIcon name="x" size={16} /></button>
         )}
       </div>
       {open && suggestions.length > 0 && (
