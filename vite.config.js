@@ -67,4 +67,17 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rolldownOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("react") || id.includes("scheduler")) return "react-vendor";
+          if (id.includes("leaflet") || id.includes("maptiler")) return "map-vendor";
+          if (id.includes("@esri/calcite-components")) return "calcite-vendor";
+        },
+      },
+    },
+  },
 })

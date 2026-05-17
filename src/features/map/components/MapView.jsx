@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Suspense, lazy, startTransition, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import L from "leaflet";
 import "@maptiler/leaflet-maptilersdk";
 import "leaflet/dist/leaflet.css";
@@ -110,18 +110,24 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     // Клік по карті — ставимо прев'ю
     map.on("click", (e) => {
       const { lat, lng } = e.latlng;
-      setPreviewPos({ lat, lng });
+      startTransition(() => {
+        setPreviewPos({ lat, lng });
+      });
       const requestId = ++reverseGeocodeRequestRef.current;
       (async () => {
         try {
           const place = await reverseGeocode(lat, lng);
           if (requestId !== reverseGeocodeRequestRef.current) return;
-          setGeocoded(place);
+          startTransition(() => {
+            setGeocoded(place);
+          });
         } catch {
           if (requestId !== reverseGeocodeRequestRef.current) return;
-          setGeocoded({
-            name: "Обране місце",
-            addr: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+          startTransition(() => {
+            setGeocoded({
+              name: "Обране місце",
+              addr: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+            });
           });
         }
       })();
@@ -209,10 +215,12 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     setMetroPanelOpen(false);
     setRoutePanelOpen(false);
     setActiveRouteIndex(null);
-    setNearbyAnchor({ lat: point.lat, lng: point.lng });
-    setNearbyCategory(NEARBY_CATEGORIES[0].id);
-    setNearbyOpen(true);
-    setSnap("expanded");
+    startTransition(() => {
+      setNearbyAnchor({ lat: point.lat, lng: point.lng });
+      setNearbyCategory(NEARBY_CATEGORIES[0].id);
+      setNearbyOpen(true);
+      setSnap("expanded");
+    });
   }, [setSnap]);
 
   const handleOpenNearbyFromPoint = useCallback(
