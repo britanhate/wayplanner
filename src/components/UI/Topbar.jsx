@@ -327,6 +327,19 @@ export default function Topbar({
           </>
         )}
 
+        {/* FINANCE ACTIONS */}
+
+        {activeTab === "finance" && (
+          <button
+            className="btn btn-icon topbar-btn"
+            onClick={() => window.dispatchEvent(new Event("finance-sync-request"))}
+            aria-label="Синхронізувати витрати з точок"
+            title="Синхронізувати витрати з точок"
+          >
+            <CalciteIcon name="reset" size={19} />
+          </button>
+        )}
+
         {/* GLOBAL ACTIONS */}
         <button className="btn btn-icon topbar-btn" onClick={logout} aria-label="Вийти">
           <CalciteIcon name="sign-out" size={19} />

@@ -32,6 +32,7 @@ export default function FinanceView() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [syncingPointCosts, setSyncingPointCosts] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
+  const [addFormOpen, setAddFormOpen] = useState(false);
 
   // ── Бюджет ──
   const [budgetInput, setBudgetInput] = useState(null);
@@ -168,6 +169,14 @@ export default function FinanceView() {
     return () => window.clearTimeout(timer);
   }, [handleSyncPointCosts]);
 
+  useEffect(() => {
+    const onSyncRequest = () => {
+      handleSyncPointCosts();
+    };
+    window.addEventListener("finance-sync-request", onSyncRequest);
+    return () => window.removeEventListener("finance-sync-request", onSyncRequest);
+  }, [handleSyncPointCosts]);
+
   return (
     <div className="finance-view">
       {/* ── Хедер: бюджет ── */}
@@ -199,15 +208,6 @@ export default function FinanceView() {
             </button>
           </div>
 
-          <button
-            className="finance-sync-icon-btn"
-            onClick={handleSyncPointCosts}
-            disabled={syncingPointCosts}
-            title={syncingPointCosts ? "Синхронізація витрат з точок..." : "Синхронізувати витрати з точок"}
-            aria-label="Синхронізувати витрати з точок"
-          >
-            <CalciteIcon name="reset" size={20} />
-          </button>
         </div>
 
         {syncMessage ? <span className="finance-sync-message">{syncMessage}</span> : null}
@@ -279,13 +279,23 @@ export default function FinanceView() {
           </button>
 
           {/* Форма додавання */}
-          <div
-            className="add-expense-form glass-panel"
-            style={{ padding: 14, marginBottom: 14 }}
+          <button
+            className="add-expense-form add-expense-trigger glass-panel"
+            onClick={() => setAddFormOpen((v) => !v)}
+            aria-expanded={addFormOpen}
           >
-            <div className="section-title" style={{ marginBottom: 10 }}>
-              Додати витрату · {budgetCurrency}
-            </div>
+            <span className="section-title">Додати витрату · {budgetCurrency}</span>
+            <CalciteIcon name={addFormOpen ? "chevron-up" : "plus"} size={18} />
+          </button>
+
+          {addFormOpen && (
+            <div
+              className="add-expense-form glass-panel add-expense-expanded"
+              style={{ padding: 14, marginBottom: 14 }}
+            >
+              <div className="section-title" style={{ marginBottom: 10 }}>
+                Додати витрату · {budgetCurrency}
+              </div>
             <input
               className="field-inp"
               value={name}
@@ -317,7 +327,8 @@ export default function FinanceView() {
                 +
               </button>
             </div>
-          </div>
+            </div>
+          )}
 
           {/* Список витрат */}
           <div className="expenses-list">
