@@ -8,6 +8,7 @@ import {
   EXCHANGE_RATES,
 } from "../../../lib/constants";
 import "./FinanceView.css";
+import CalciteIcon from "../../../shared/ui/CalciteIcon";
 import { markPerf, measurePerf } from "../../../shared/lib/perf";
 
 let hasAutoSyncedPointCosts = false;
@@ -87,7 +88,7 @@ export default function FinanceView() {
     USERS.find((u) => u.id === id) || {
       name: id,
       color: "#8888aa",
-      avatar: "👤",
+      avatar: "user",
     };
 
   const catColors = Object.fromEntries(
@@ -205,7 +206,7 @@ export default function FinanceView() {
             title={syncingPointCosts ? "Синхронізація витрат з точок..." : "Синхронізувати витрати з точок"}
             aria-label="Синхронізувати витрати з точок"
           >
-            {syncingPointCosts ? "⟳" : "🔄"}
+            <CalciteIcon name="reset" size={20} />
           </button>
         </div>
 
@@ -258,7 +259,7 @@ export default function FinanceView() {
         {/* Попередження про змішані валюти */}
         {expensesOther.length > 0 && (
           <div className="currency-warning">
-            ⚠️ {expensesOther.length} витрат в інших валютах не враховано в
+            <CalciteIcon name="alert" size={16} /> {expensesOther.length} витрат в інших валютах не враховано в
             бюджеті
           </div>
         )}
@@ -274,7 +275,7 @@ export default function FinanceView() {
             className="btn btn-secondary stats-toggle-btn"
             onClick={() => setStatsOpen(true)}
           >
-            📊 Статистика
+            <CalciteIcon name="organization" size={16} /> Статистика
           </button>
 
           {/* Форма додавання */}
@@ -308,7 +309,7 @@ export default function FinanceView() {
               >
                 {EXPENSE_CATEGORIES.map((c) => (
                   <option key={c.value} value={c.value}>
-                    {c.emoji} {c.value}
+                    {c.value}
                   </option>
                 ))}
               </select>
@@ -322,7 +323,7 @@ export default function FinanceView() {
           <div className="expenses-list">
             {!expenses.length ? (
               <div className="expenses-empty">
-                <div className="stat-icon-large">💸</div>
+                <div className="stat-icon-large"><CalciteIcon name="coin" size={24} /></div>
                 <div className="empty-state-title">Ще немає витрат</div>
                 <div className="text-small">Додайте першу витрату вище, щоб бачити бюджет і статистику по поїздці.</div>
               </div>
@@ -355,9 +356,7 @@ export default function FinanceView() {
         <aside className={`finance-right ${statsOpen ? "open" : ""}`}>
           <div className="finance-right-header">
             <span className="section-title">Статистика</span>
-            <button className="btn btn-icon btn-ghost" onClick={() => setStatsOpen(false)}>
-              ✕
-            </button>
+            <button className="btn btn-icon btn-ghost" onClick={() => setStatsOpen(false)}><CalciteIcon name="close" size={20} /></button>
           </div>
 
           <div className="stat-card glass-panel">
@@ -369,7 +368,7 @@ export default function FinanceView() {
               </div>
               <div className="stat-block">
                 <div className="stat-label" style={{ color: "#30d158" }}>
-                  ✓ Сплачено
+                  Сплачено
                 </div>
                 <div className="stat-value" style={{ color: "#30d158" }}>
                   {totalPaid.toFixed(0)}
@@ -406,7 +405,7 @@ export default function FinanceView() {
                   <div className="stat-currency">{budgetCurrency}</div>
                 </div>
                 <div style={{ fontSize: 32, opacity: 0.4 }}>
-                  {budget.amount - total >= 0 ? "💰" : "🚨"}
+                  <CalciteIcon name={budget.amount - total >= 0 ? "coin" : "close"} size={24} />
                 </div>
               </div>
             </div>
@@ -493,20 +492,18 @@ const ExpenseItem = memo(function ExpenseItem({
         <div className="expense-name">{expense.name}</div>
         <div className="expense-meta">
           <span className="expense-meta-creator" style={{ color: creator.color }}>
-            {creator.avatar} {creator.name}
+            <CalciteIcon name="user" size={16} /> {creator.name}
           </span>
           <span> · {expense.category}</span>
           <span> · {new Date(expense.created_at).toLocaleDateString("uk-UA")}</span>
-          {isOtherCurrency && <span className="expense-meta-warning"> · ⚠️ {expCurrency}</span>}
+          {isOtherCurrency && <span className="expense-meta-warning"> · {expCurrency}</span>}
         </div>
       </div>
       <div className="expense-amount">
         {expense.amount?.toFixed(0)} <span className="text-small">{expCurrency}</span>
       </div>
       {isOwner && (
-        <button className="btn btn-icon btn-ghost expense-del" onClick={() => onDelete(expense.id)}>
-          ×
-        </button>
+        <button className="btn btn-icon btn-ghost expense-del" onClick={() => onDelete(expense.id)}><CalciteIcon name="trash" size={16} /></button>
       )}
     </div>
   );

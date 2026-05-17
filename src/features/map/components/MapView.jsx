@@ -33,29 +33,6 @@ const NEARBY_CATEGORIES = [
 const RoutePanel = lazy(() => import("../../routes/components/RoutePanel"));
 const MetroPanel = lazy(() => import("../../metro/components/MetroPanel"));
 
-const Icons = {
-  route: (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="6" cy="19" r="3" />
-      <circle cx="18" cy="5" r="3" />
-      <path d="M6 16V9a6 6 0 0 1 6-6h0a6 6 0 0 1 6 6v8" />
-    </svg>
-  ),
-  close: (<CalciteIcon name="close" size={15} />),
-  metro: (<CalciteIcon name="train" size={16} />),
-  pin: (<CalciteIcon name="locate" size={14} />),
-  myLocation: (<CalciteIcon name="locate" size={18} />),
-  arrowLeft: (<CalciteIcon name="arrowLeft" size={15} />),
-};
 
 
 export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
@@ -216,7 +193,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     if (cached) return cached;
     const t = POINT_TYPES[type] || POINT_TYPES.sight;
     const icon = L.divIcon({
-      html: `<div class="wp-marker ${isWaypoint ? "wp-marker-from" : ""}" style="background:${t.color}dd">${t.emoji}</div>`,
+      html: `<div class="wp-marker ${isWaypoint ? "wp-marker-from" : ""}" style="background:${t.color}dd"><calcite-icon icon="${t.icon || "pin"}" scale="m"></calcite-icon></div>`,
       className: "wp-marker-wrap",
       iconSize: [32, 32],
       iconAnchor: [16, 16],
@@ -290,7 +267,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         points.map((p) => {
           const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
           const imgSrc = getPointImageSrc(p.attachments);
-          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}<button data-point-id="${p.id}" class="nearby-trigger-btn open-nearby-from-point">✨ Що поруч</button></div></div>`;
+          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle"><calcite-icon icon="${t.icon || "pin"}" scale="s"></calcite-icon> ${t.label}</div>${p.addr ? `<div class="ios-line"><calcite-icon icon="pin" scale="s"></calcite-icon> ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price"><calcite-icon icon="credit-card" scale="s"></calcite-icon> ${p.estimated_cost} ${p.currency}</div>` : ""}<button data-point-id="${p.id}" class="nearby-trigger-btn open-nearby-from-point"><calcite-icon icon="search" scale="s"></calcite-icon> Що поруч</button></div></div>`;
           return [p.id, popup];
         }),
       ),
@@ -344,10 +321,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     <div class="ios-card">
       <div class="ios-card-content">
         <div class="ios-title">${place?.name || "Знайдене місце"}</div>
-        ${place?.addr ? `<div class="ios-popup-addr">📍 ${place.addr}</div>` : ""}
+        ${place?.addr ? `<div class="ios-popup-addr">${place.addr}</div>` : ""}
         <div style="display:flex;gap:8px;margin-top:8px;">
           <button onclick="window.__addPreviewPoint(); event.stopPropagation();" class="add-preview-btn">+ Додати точку</button>
-          <button onclick="window.__openNearbyFromPreview(); event.stopPropagation();" class="nearby-trigger-btn">✨ Що поруч</button>
+          <button onclick="window.__openNearbyFromPreview(); event.stopPropagation();" class="nearby-trigger-btn">Що поруч</button>
         </div>
       </div>
     </div>`, []);
@@ -362,7 +339,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     if (!previewPos || !mapInstance.current) return;
 
     const icon = L.divIcon({
-      html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff">📍</div>`,
+      html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff"><calcite-icon icon="pin" scale="m"></calcite-icon></div>`,
       className: "wp-marker-wrap",
       iconSize: [32, 32],
       iconAnchor: [16, 16],
@@ -592,7 +569,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     }
 
     const payload = {
-      name: `🏷️ ${pointName}`,
+      name: `${pointName}`,
       amount: normalizedAmount,
       currency,
       category: "Місце",
@@ -945,7 +922,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
-              {routePanelOpen ? Icons.close : Icons.route}
+              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="search" size={16} />} 
               {routePanelOpen ? "Закрити" : "Маршрут"}
             </span>
           </button>
@@ -954,7 +931,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={toggleMetroPanel}
           >
             <span className="flex items-center gap-2">
-              {metroPanelOpen ? Icons.close : Icons.metro}
+              {metroPanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="bus" size={16} />} 
               Метро
             </span>
           </button>
@@ -964,13 +941,13 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           <div className="route-pick-wrap-top fade-in">
             <div className="rp-pick-hint active rp-pick-hint-row">
               <span className="flex items-center gap-2">
-                {Icons.pin} Виберіть точку маршруту
+                <CalciteIcon name="locator" size={16} /> Виберіть точку маршруту
               </span>
               <button
                 className="rp-icon-btn btn btn-icon"
                 onClick={() => setActiveRouteIndex(null)}
               >
-                {Icons.arrowLeft}
+                <CalciteIcon name="arrow-left" size={16} />
               </button>
             </div>
           </div>
@@ -1001,7 +978,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           aria-label="Center map on my location"
           title="My location"
         >
-          {Icons.myLocation}
+          <CalciteIcon name="locator" size={20} />
         </button>
       </div>
 
@@ -1021,14 +998,14 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
             onClick={routePanelOpen ? closeRouteMode : openRouteMode}
           >
             <span className="flex items-center gap-2">
-              {routePanelOpen ? Icons.close : Icons.route} Маршрут
+              {routePanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="search" size={16} />}  Маршрут
             </span>
           </button>
           <button
             className={`sheet-action-btn btn btn-secondary ${metroPanelOpen ? "active" : ""}`}
             onClick={toggleMetroPanel}
           >
-            <span className="flex items-center gap-2">{metroPanelOpen ? Icons.close : Icons.metro} Метро</span>
+            <span className="flex items-center gap-2">{metroPanelOpen ? <CalciteIcon name="x" size={16} /> : <CalciteIcon name="bus" size={16} />}  Метро</span>
           </button>
           </div>
         </div>
@@ -1037,13 +1014,13 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           <div className="route-pick-wrap-bottom fade-in">
             <div className="rp-pick-hint active rp-pick-hint-row">
               <span className="flex items-center gap-2">
-                {Icons.pin} Виберіть точку маршруту
+                <CalciteIcon name="locator" size={16} /> Виберіть точку маршруту
               </span>
               <button
                 className="rp-icon-btn btn btn-icon"
                 onClick={() => setActiveRouteIndex(null)}
               >
-                {Icons.arrowLeft}
+                <CalciteIcon name="arrow-left" size={16} />
               </button>
             </div>
           </div>
