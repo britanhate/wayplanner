@@ -302,6 +302,8 @@ function PointsSidebar({
                       e.stopPropagation();
                       onToggleCompleted?.(p);
                     }}
+                    title="Що поруч"
+                    aria-label="Що поруч"
                   >
                     {Icons.check}
                   </button>
