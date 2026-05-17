@@ -216,7 +216,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     if (cached) return cached;
     const t = POINT_TYPES[type] || POINT_TYPES.sight;
     const icon = L.divIcon({
-      html: `<div class="wp-marker ${isWaypoint ? "wp-marker-from" : ""}" style="background:${t.color}dd">${t.emoji}</div>`,
+      html: `<div class="wp-marker ${isWaypoint ? "wp-marker-from" : ""}" style="background:${t.color}dd"><calcite-icon icon="${t.icon || "pin"}" scale="m"></calcite-icon></div>`,
       className: "wp-marker-wrap",
       iconSize: [32, 32],
       iconAnchor: [16, 16],
@@ -290,7 +290,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
         points.map((p) => {
           const t = POINT_TYPES[p.type] || POINT_TYPES.sight;
           const imgSrc = getPointImageSrc(p.attachments);
-          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle">${t.emoji} ${t.label}</div>${p.addr ? `<div class="ios-line">📍 ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price">💰 ${p.estimated_cost} ${p.currency}</div>` : ""}<button data-point-id="${p.id}" class="nearby-trigger-btn open-nearby-from-point">✨ Що поруч</button></div></div>`;
+          const popup = `<div class="ios-card">${imgSrc ? `<div class="ios-card-media"><img src="${imgSrc}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>` : ""}<div class="ios-card-content"><div class="ios-title">${p.name}</div><div class="ios-subtitle"><calcite-icon icon="${t.icon || "pin"}" scale="s"></calcite-icon> ${t.label}</div>${p.addr ? `<div class="ios-line"><calcite-icon icon="pin" scale="s"></calcite-icon> ${p.addr}</div>` : ""}${p.description ? `<div class="ios-desc">${p.description}</div>` : ""}${p.estimated_cost ? `<div class="ios-price"><calcite-icon icon="credit-card" scale="s"></calcite-icon> ${p.estimated_cost} ${p.currency}</div>` : ""}<button data-point-id="${p.id}" class="nearby-trigger-btn open-nearby-from-point"><calcite-icon icon="directions" scale="s"></calcite-icon> Що поруч</button></div></div>`;
           return [p.id, popup];
         }),
       ),
@@ -344,10 +344,10 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     <div class="ios-card">
       <div class="ios-card-content">
         <div class="ios-title">${place?.name || "Знайдене місце"}</div>
-        ${place?.addr ? `<div class="ios-popup-addr">📍 ${place.addr}</div>` : ""}
+        ${place?.addr ? `<div class="ios-popup-addr">${place.addr}</div>` : ""}
         <div style="display:flex;gap:8px;margin-top:8px;">
           <button onclick="window.__addPreviewPoint(); event.stopPropagation();" class="add-preview-btn">+ Додати точку</button>
-          <button onclick="window.__openNearbyFromPreview(); event.stopPropagation();" class="nearby-trigger-btn">✨ Що поруч</button>
+          <button onclick="window.__openNearbyFromPreview(); event.stopPropagation();" class="nearby-trigger-btn">Що поруч</button>
         </div>
       </div>
     </div>`, []);
@@ -362,7 +362,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     if (!previewPos || !mapInstance.current) return;
 
     const icon = L.divIcon({
-      html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff">📍</div>`,
+      html: `<div class="wp-marker" style="background:#0a84ffdd;border:3px solid #0a84ff"><calcite-icon icon="pin" scale="m"></calcite-icon></div>`,
       className: "wp-marker-wrap",
       iconSize: [32, 32],
       iconAnchor: [16, 16],
@@ -592,7 +592,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     }
 
     const payload = {
-      name: `🏷️ ${pointName}`,
+      name: `${pointName}`,
       amount: normalizedAmount,
       currency,
       category: "Місце",
