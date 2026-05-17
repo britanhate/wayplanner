@@ -167,6 +167,10 @@
 .add-expense-form {
   margin: 10px 14px;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  backdrop-filter: blur(10px);
 }
 .finance-add-row {
   display: flex;
