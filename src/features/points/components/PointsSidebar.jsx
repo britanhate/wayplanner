@@ -137,13 +137,6 @@ const Icons = {
       <path d="M8 17v-3a6 6 0 016-6h2" />
     </svg>
   ),
-  details: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <circle cx="12" cy="12" r="9" />
-      <line x1="12" y1="11" x2="12" y2="16" />
-      <line x1="12" y1="8" x2="12" y2="8" />
-    </svg>
-  ),
 };
 
 function PointsSidebar({
@@ -222,7 +215,7 @@ function PointsSidebar({
       </div>
 
       {/* Список точок */}
-      <div className="mt-section space-y-3">
+      <div className="mt-section point-cards-list">
         {!filteredPoints.length ? (
           <div className="empty-state-card">
             <div className="empty-state-title">Ще немає точок</div>
@@ -283,11 +276,10 @@ function PointsSidebar({
                     </div>
                   )}
                   <div className="point-card-actions">
-                    <button type="button" className="btn btn-icon btn-ghost point-action-btn" onClick={(e) => { e.stopPropagation(); onNearby?.(p); }} title="Маршрут / Що поруч" aria-label="Маршрут / Що поруч">{Icons.route}</button>
+                    <button type="button" className="btn btn-icon btn-ghost point-action-btn" onClick={(e) => { e.stopPropagation(); onNearby?.(p); }} title="Що поруч" aria-label="Що поруч">{Icons.route}</button>
                     {p.created_by === user?.id && (
                       <button type="button" className="btn btn-icon btn-ghost point-action-btn" title="Редагувати" aria-label="Редагувати" onClick={(e) => { e.stopPropagation(); onEdit(p); }}>{Icons.edit}</button>
                     )}
-                    <button type="button" className="btn btn-icon btn-ghost point-action-btn" title="Деталі" aria-label="Деталі" onClick={(e) => { e.stopPropagation(); onFly(p); }}>{Icons.details}</button>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">

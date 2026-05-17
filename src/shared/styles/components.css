@@ -192,6 +192,11 @@
   background: rgba(255, 255, 255, 0.03);
   border: 0.5px solid rgba(255, 255, 255, 0.08);
 }
+.point-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .point-card-icon {
   width: 48px;
   height: 48px;
@@ -222,12 +227,19 @@
   gap: 6px;
 }
 .point-action-btn {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 24px;
+  min-width: 30px;
+  min-height: 24px;
+  padding: 0;
   border-radius: 8px;
   color: rgba(230, 238, 248, 0.82);
   background: rgba(255, 255, 255, 0.03);
   border: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+.point-action-btn svg {
+  width: 13px;
+  height: 13px;
 }
 .point-action-btn:hover {
   color: #fff;
