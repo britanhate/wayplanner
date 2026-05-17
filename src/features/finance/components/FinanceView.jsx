@@ -272,7 +272,7 @@ export default function FinanceView() {
       {/* ── Список + форма ── */}
         <div className="finance-left">
           <button
-            className="btn btn-secondary stats-toggle-btn"
+            className="btn btn-secondary stats-toggle-btn stats-toggle-mobile"
             onClick={() => setStatsOpen(true)}
           >
             <CalciteIcon name="organization" size={16} /> Статистика
@@ -367,7 +367,7 @@ export default function FinanceView() {
         <aside className={`finance-right ${statsOpen ? "open" : ""}`}>
           <div className="finance-right-header">
             <span className="section-title">Статистика</span>
-            <button className="btn btn-icon btn-ghost" onClick={() => setStatsOpen(false)}><CalciteIcon name="close" size={20} /></button>
+            <button className="btn btn-icon btn-ghost stats-close-mobile" onClick={() => setStatsOpen(false)}><CalciteIcon name="close" size={20} /></button>
           </div>
 
           <div className="stat-card glass-panel">
