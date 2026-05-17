@@ -187,6 +187,53 @@
   border-color: rgba(10, 132, 255, 0.38);
 }
 
+.point-card-ios {
+  padding: 12px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+.point-card-icon {
+  width: 48px;
+  height: 48px;
+}
+.point-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.point-card-title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+.point-cost-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(240, 246, 255, 0.92);
+}
+.point-card-actions {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.point-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: rgba(230, 238, 248, 0.82);
+  background: rgba(255, 255, 255, 0.03);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+.point-action-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.09);
+}
+
 /* ── Modal ── */
 .modal-overlay {
   position: fixed;
