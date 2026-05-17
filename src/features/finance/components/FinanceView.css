@@ -342,7 +342,7 @@
 .finance-stats-overlay {
   position: absolute;
   inset: 0;
-  z-index: 45;
+  z-index: 2990;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
