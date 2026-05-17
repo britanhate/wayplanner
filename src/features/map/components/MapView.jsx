@@ -978,7 +978,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
           aria-label="Center map on my location"
           title="My location"
         >
-          <CalciteIcon name="locator" size={20} />
+          <CalciteIcon name="gpsOn" size={20} />
         </button>
       </div>
 

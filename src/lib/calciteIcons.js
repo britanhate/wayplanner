@@ -1,8 +1,8 @@
 export const PLACE_TYPE_ICONS = {
   hotel: "home",
   sight: "pin",
-  food: "fork-knife",
-  airport: "launch",
+  food: "banana",
+  airport: "plane",
   photo: "camera",
   museum: "organization",
   bus: "bus",
@@ -12,7 +12,7 @@ export const PLACE_TYPE_ICONS = {
 
 export const EXPENSE_CATEGORY_ICONS = {
   Житло: "home",
-  Їжа: "fork-knife",
+  Їжа: "banana",
   Транспорт: "car",
   Розваги: "theater",
   Шопінг: "shopping-cart",

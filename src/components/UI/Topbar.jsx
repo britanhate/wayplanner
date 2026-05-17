@@ -118,7 +118,7 @@ const StyleIcons = {
 
 const TABS = [
   { id: "map", label: "Карта", icon: <CalciteIcon name="globe" /> },
-  { id: "finance", label: "Фінанси", icon: <CalciteIcon name="coin" /> },
+  { id: "finance", label: "Фінанси", icon: <CalciteIcon name="credit-card" /> },
 ];
 
 const MAP_STYLES = [
