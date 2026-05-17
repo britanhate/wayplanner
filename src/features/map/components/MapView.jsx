@@ -818,9 +818,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
 
   const handleAddRoutePoint = () => {
     setRoutePoints((prev) => {
-      const next = [...prev];
-      next.splice(Math.max(next.length - 1, 1), 0, null);
-      return next;
+      return [...prev, null];
     });
   };
 
@@ -929,7 +927,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
     <div className="map-view">
       {searchOpen && (
         <div className="map-search-overlay">
-          <SearchBox onResult={handleGeocodeResult} />
+          <SearchBox onResult={handleGeocodeResult} shouldFocus />
           
         </div>
       )}
@@ -937,7 +935,7 @@ export default function MapView({ searchOpen, onSearchClose, mapStyle }) {
       <div className="map-sidebar slide-left">
         {searchOpen && (
           <div className="map-search-desktop-wrap">
-            <SearchBox onResult={handleGeocodeResult} />
+            <SearchBox onResult={handleGeocodeResult} shouldFocus />
           </div>
         )}
 
